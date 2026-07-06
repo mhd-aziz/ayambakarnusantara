@@ -30,6 +30,7 @@ import {
 import CreateSellerForm from "../../components/Seller/CreateSellerForm";
 import { updateMyShop, deleteMyShop } from "../../services/ShopService";
 import "../../css/SellerShopInfo.css";
+import { handleShopImageError as handleImageError } from "../../utils/imageFallback";
 const ICON_COLOR = "#C07722";
 
 function SellerShopInfo() {
@@ -157,13 +158,6 @@ function SellerShopInfo() {
     }
   };
 
-  const handleImageError = (e) => {
-    e.target.onerror = null;
-    const shopName = initialShopData?.shopName || "Toko";
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      shopName
-    )}&size=1200&background=efefef&color=757575&font-size=0.2&bold=true`;
-  };
 
   if (!outletContext) {
     return (

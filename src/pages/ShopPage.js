@@ -14,6 +14,7 @@ import {
 import { Link } from "react-router-dom";
 import { getAllShops } from "../services/ShopService";
 import "../css/ShopPage.css";
+import { handleShopImageError } from "../utils/imageFallback";
 import {
   ExclamationTriangleFill,
   Shop,
@@ -88,13 +89,6 @@ function ShopPage() {
     window.scrollTo(0, 0);
   };
 
-  const handleImageError = (e, shopName = "Toko") => {
-    e.target.onerror = null;
-    const nameForAvatar = shopName || "Toko";
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      nameForAvatar
-    )}&size=400&background=efefef&color=757575&font-size=0.33&length=2`;
-  };
 
   let paginationItems = [];
   if (totalPages > 1) {
@@ -269,7 +263,7 @@ function ShopPage() {
                           }
                           alt={shop.shopName || "Toko"}
                           className="shop-card-img"
-                          onError={(e) => handleImageError(e, shop.shopName)}
+                          onError={(e) => handleShopImageError(e)}
                         />
                       </div>
                       <Card.Body className="d-flex flex-column p-3">

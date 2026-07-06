@@ -26,6 +26,7 @@ import {
 } from "react-bootstrap-icons";
 import "../css/HomePage.css";
 import "../css/MenuPage.css";
+import { FALLBACK_AVATAR_IMAGE, FALLBACK_PRODUCT_IMAGE, handleProductImageError as handleImageError, handleAvatarError } from "../utils/imageFallback";
 
 const heroBackgroundImageUrl = "/images/hero-background.jpg";
 
@@ -48,22 +49,12 @@ const StarRatingDisplay = ({ rating, size = 16 }) => {
 };
 
 const RatingCard = ({ rating }) => {
-  const nameForAvatar = rating.userDisplayName || "U";
-  const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-    nameForAvatar
-  )}&background=C07722&color=fff&size=80`;
-
-  const handleAvatarError = (e) => {
-    e.target.onerror = null;
-    e.target.src = avatarUrl;
-  };
-
   return (
     <div className="rating-card-wrapper">
       <Card className="w-100 h-100 text-center p-3 testimonial-card shadow-sm">
         <Card.Img
           variant="top"
-          src={rating.userPhotoURL || avatarUrl}
+          src={rating.userPhotoURL || FALLBACK_AVATAR_IMAGE}
           alt={rating.userDisplayName || "Pengguna"}
           className="rounded-circle mx-auto mb-3"
           style={{
@@ -201,12 +192,6 @@ function HomePage() {
     fetchRatings();
   }, [fetchFeaturedProducts, fetchRecommendedProducts, fetchRatings]);
 
-  const handleImageError = (e, productName) => {
-    e.target.onerror = null;
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      productName || "Ayam"
-    )}&background=f0f2f5&color=757575&size=400`;
-  };
 
   const scrollRatings = (direction) => {
     if (ratingsContainerRef.current) {

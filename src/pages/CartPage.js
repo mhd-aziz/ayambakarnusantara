@@ -27,6 +27,7 @@ import {
   CheckCircleFill,
 } from "react-bootstrap-icons";
 import "../css/CartPage.css";
+import { handleProductSmallImageError as handleImageError } from "../utils/imageFallback";
 
 function CartPage() {
   const { isLoggedIn } = useAuth();
@@ -105,12 +106,6 @@ function CartPage() {
     }
   };
 
-  const handleImageError = (e, itemName = "Produk") => {
-    e.target.onerror = null;
-    e.target.src = `https://placehold.co/100x100/EFEFEF/AAAAAA?text=${encodeURIComponent(
-      itemName
-    )}`;
-  };
 
   const handleConfirmOrder = async () => {
     if (!cart || cart.items.length === 0) {

@@ -16,6 +16,7 @@ import { getProducts } from "../services/MenuService";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { CheckCircleFill } from "react-bootstrap-icons";
+import { FALLBACK_PRODUCT_IMAGE, handleProductImageError as handleImageError } from "../utils/imageFallback";
 import "../css/MenuPage.css";
 
 function MenuPage() {
@@ -131,10 +132,6 @@ function MenuPage() {
     }));
   };
 
-  const handleImageError = (e) => {
-    e.target.onerror = null;
-    e.target.src = `https://via.placeholder.com/400x300.png?text=Ayam+Nusantara`;
-  };
 
   const handleAddToCart = async (product) => {
     if (!isLoggedIn) {
@@ -367,12 +364,7 @@ function MenuPage() {
                   <Card className="w-100 product-card">
                     <Card.Img
                       variant="top"
-                      src={
-                        product.productImageURL ||
-                        `https://via.placeholder.com/400x300.png?text=${encodeURIComponent(
-                          product.name
-                        )}`
-                      }
+                      src={product.productImageURL || FALLBACK_PRODUCT_IMAGE}
                       onError={handleImageError}
                       alt={product.name}
                     />

@@ -24,6 +24,7 @@ import {
 import { getShopDetailById } from "../services/ShopService";
 import { useAuth } from "../context/AuthContext";
 import "../css/ShopDetailPage.css";
+import { handleShopImageError, handleProductImageError, handleAvatarError as handleOwnerAvatarError, FALLBACK_PRODUCT_IMAGE } from "../utils/imageFallback";
 import "../css/ShopPage.css";
 
 function ShopDetailPage({ onInitiateChat }) {
@@ -83,29 +84,6 @@ function ShopDetailPage({ onInitiateChat }) {
     fetchShopDetails();
   }, [fetchShopDetails]);
 
-  const handleShopBannerError = (e) => {
-    e.target.onerror = null;
-    const nameForAvatar = e.target.alt || shopInfo?.shopName || "Toko";
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      nameForAvatar
-    )}&size=600&background=efefef&color=757575&font-size=0.33&length=2&bold=true`;
-  };
-
-  const handleProductImageError = (e, productName) => {
-    e.target.onerror = null;
-    const nameForAvatar = productName || "Produk";
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      nameForAvatar
-    )}&size=300&background=efefef&color=757575&font-size=0.33&length=2`;
-  };
-
-  const handleOwnerAvatarError = (e, ownerName) => {
-    e.target.onerror = null;
-    const nameForAvatar = ownerName || "P";
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      nameForAvatar
-    )}&size=90&background=bdbdbd&color=fff&font-size=0.5&length=2&bold=true`;
-  };
 
   const handleChatWithOwner = async () => {
     if (!isLoggedIn) {
@@ -245,7 +223,7 @@ function ShopDetailPage({ onInitiateChat }) {
                 src={shopInfo.bannerImageURL}
                 alt={`Banner ${shopInfo.shopName}`}
                 className="shop-banner-img"
-                onError={handleShopBannerError}
+                onError={handleShopImageError}
                 fluid
               />
             </div>
@@ -373,15 +351,8 @@ function ShopDetailPage({ onInitiateChat }) {
                       <Card.Img
                         variant="top"
                         className="shop-card-img"
-                        src={
-                          product.imageUrl ||
-                          `https://ui-avatars.com/api/?name=${encodeURIComponent(
-                            product.name || "Produk"
-                          )}&size=300&background=efefef&color=757575&font-size=0.33&length=2`
-                        }
-                        onError={(e) =>
-                          handleProductImageError(e, product.name)
-                        }
+                        src={product.imageUrl || FALLBACK_PRODUCT_IMAGE}
+                        onError={handleProductImageError}
                         alt={product.name}
                       />
                     </div>

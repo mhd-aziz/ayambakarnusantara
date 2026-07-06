@@ -42,6 +42,7 @@ import {
   Shop,
 } from "react-bootstrap-icons";
 import "../css/DetailMenuPage.css";
+import { handleProductImageError, handleProductSmallImageError as handleImageError } from "../utils/imageFallback";
 import "../css/ShopDetailPage.css";
 import "../css/ShopPage.css";
 
@@ -378,13 +379,6 @@ function DetailMenuPage() {
     }
   };
 
-  const handleImageError = (e) => {
-    e.target.onerror = null;
-    const nameForAvatar = e.target.alt || "Produk";
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      nameForAvatar
-    )}&background=EFEFEF&color=AAAAAA&size=600`;
-  };
 
   if (isLoading) {
     return (

@@ -2,14 +2,9 @@ import React from "react";
 import { Card, Button, Col, Badge, Image, Row } from "react-bootstrap";
 import { PencilSquare, TrashFill, Eye } from "react-bootstrap-icons";
 import { Link } from "react-router-dom";
+import { handleProductSmallImageError as handleImageError } from "../../utils/imageFallback";
 
 function ProductListItem({ product, onEdit, onDelete }) {
-  const handleImageError = (e) => {
-    e.target.onerror = null;
-    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(
-      product.name || "Produk"
-    )}&background=EFEFEF&color=AAAAAA&size=100`;
-  };
 
   return (
     <Col md={6} lg={4} className="mb-4 d-flex align-items-stretch">

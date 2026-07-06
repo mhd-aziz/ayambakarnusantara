@@ -34,6 +34,7 @@ import CancelOrderModal from "../components/Order/CancelOrderModal";
 import RatingModal from "../components/Order/RatingModal";
 import PaymentProofViewer from "../components/Order/PaymentProofViewer";
 import "../css/OrderDetailPage.css";
+import { handleProductSmallImageError as handleImageError } from "../utils/imageFallback";
 
 function OrderDetailPage({ onOpenChatbot }) {
   const { orderId } = useParams();
@@ -165,12 +166,6 @@ function OrderDetailPage({ onOpenChatbot }) {
     fetchOrderDetails(true);
   }, [fetchOrderDetails]);
 
-  const handleImageError = (e, itemName = "Produk") => {
-    e.target.onerror = null;
-    e.target.src = `https://placehold.co/80x80/EFEFEF/AAAAAA?text=${encodeURIComponent(
-      itemName
-    )}`;
-  };
 
   const handleShowCancelModal = () => {
     setCancelError("");
