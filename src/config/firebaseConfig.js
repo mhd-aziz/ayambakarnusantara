@@ -1,6 +1,7 @@
 const admin = require("firebase-admin");
 const { initializeApp: initializeClientApp } = require("firebase/app");
 const { getAuth: getClientAuth } = require("firebase/auth");
+const path = require("path");
 require("dotenv").config();
 
 let adminAuth, firestoreDb, adminStorage, adminInstance;
@@ -12,7 +13,9 @@ try {
     );
   }
 
-  const serviceAccount = require(serviceAccountPath);
+
+  const resolvedPath = path.resolve(process.cwd(), serviceAccountPath);
+  const serviceAccount = require(resolvedPath);
 
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
