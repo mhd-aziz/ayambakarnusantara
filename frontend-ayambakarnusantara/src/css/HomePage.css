@@ -1,31 +1,17 @@
+@reference "../index.css";
+
 .hero-section {
-  position: relative;
-  background-size: cover;
-  background-position: center center;
-  background-repeat: no-repeat;
-  color: white;
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  @apply relative bg-cover bg-center bg-no-repeat text-white min-h-screen flex items-center justify-center;
   margin-top: calc(-1 * var(--navbar-height));
 }
 
 .hero-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  @apply absolute top-0 left-0 right-0 bottom-0 z-[1];
   background-color: rgba(0, 0, 0, 0.55);
-  z-index: 1;
 }
 
 .hero-section .hero-content {
-  position: relative;
-  z-index: 2;
-  text-align: center;
-  width: 100%;
+  @apply relative z-[2] text-center w-full;
   padding-top: calc(var(--banner-height) + var(--navbar-height) + 70px);
   padding-bottom: 70px;
   padding-left: 20px;
@@ -33,178 +19,129 @@
 }
 
 .hero-title {
-  font-size: 3.2rem;
-  font-weight: 700;
-  margin-bottom: 1.75rem;
-  text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.6);
-  letter-spacing: 0.5px;
+  @apply text-[3.2rem] font-bold mb-7 shadow-[2px_2px_5px_rgba(0,0,0,0.6)] tracking-[0.5px];
 }
 
 .hero-subtitle {
-  font-size: 1.4rem;
-  font-weight: 400;
-  margin-bottom: 2.25rem;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
-  line-height: 1.5;
+  @apply text-[1.4rem] font-normal mb-9 shadow-[1px_1px_3px_rgba(0,0,0,0.6)] leading-[1.5];
 }
 
 .hero-description {
-  font-size: 1.05rem;
-  margin-bottom: 3rem;
-  max-width: 680px;
-  margin-left: auto;
-  margin-right: auto;
-  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
-  line-height: 1.6;
+  @apply text-[1.05rem] mb-12 max-w-[680px] mx-auto shadow-[1px_1px_3px_rgba(0,0,0,0.6)] leading-[1.6];
 }
 
 .hero-cta-button {
-  background-color: #c07722 !important;
-  border-color: #c07722 !important;
-  color: #333;
-  font-weight: bold;
-  padding: 0.85rem 2rem;
-  font-size: 1.1rem;
-  border-radius: 50px;
-  transition: all 0.3s ease;
+  @apply bg-brand border-brand text-[#333] font-bold py-[0.85rem] px-8 text-[1.1rem] rounded-full transition-all duration-300;
+  background-color: #c07722;
+  border-color: #c07722;
 }
 
 .hero-cta-button:hover {
-  background-color: #e0a800 !important;
-  border-color: #d39e00 !important;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  @apply shadow-[0_4px_15px_rgba(0,0,0,0.2)];
+  background-color: #e0a800;
+  border-color: #d39e00;
 }
 
 .section-title {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #333!important;
-  margin-bottom: 2.5rem !important;
-  text-align: center;
+  @apply text-2xl font-semibold text-[#333] mb-10 text-center;
+  color: #333;
+  margin-bottom: 2.5rem;
 }
 
 .other-content-section h2,
 .testimonials-section h2 {
-  font-size: 2rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 2.5rem;
-  text-align: center;
+  @apply text-2xl font-semibold text-[#333] mb-10 text-center;
 }
 
 .testimonials-section {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .other-content-section h2,
 .testimonials-section h2 {
-  color: #000000 !important;
-  font-weight: 600 !important;
-}
-
-.testimonials-section h2 {
-  color: #000000 !important;
-}
-
-.testimonial-card {
-  border: 1px solid #f0e4d4 !important;
-  background-color: #fff !important;
-  transition: all 0.3s ease;
-}
-
-.testimonial-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1) !important;
-}
-
-.testimonial-card .blockquote {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-grow: 1;
-}
-
-.testimonial-card .blockquote p {
-  font-size: 0.95rem;
-  color: #555;
-  line-height: 1.6;
-}
-
-.testimonial-card .card-title {
-  color: #333;
+  @apply font-semibold;
+  color: #000000;
   font-weight: 600;
 }
 
+.testimonials-section h2 {
+  color: #000000;
+}
+
+.testimonial-card {
+  @apply bg-white transition-all duration-300;
+  border: 1px solid #f0e4d4;
+  background-color: #fff;
+}
+
+.testimonial-card:hover {
+  @apply translate-y-[-8px];
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.testimonial-card .blockquote {
+  @apply flex items-center justify-center grow;
+}
+
+.testimonial-card .blockquote p {
+  @apply text-[0.95rem] text-[#555] leading-[1.6];
+}
+
+.testimonial-card .card-title {
+  @apply text-[#333] font-semibold;
+}
+
 .horizontal-scroll-wrapper {
-  position: relative;
-  padding: 0 40px;
+  @apply relative px-10;
 }
 
 .horizontal-scroll-container {
-  display: flex;
-  overflow-x: auto;
+  @apply flex overflow-x-auto pb-4;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 1rem;
   scrollbar-width: none;
 }
 
 .horizontal-scroll-container::-webkit-scrollbar {
-  display: none;
+  @apply hidden;
 }
 
 .rating-card-wrapper {
-  flex: 0 0 auto;
-  width: 300px;
-  margin-right: 1.5rem;
-  display: inline-block;
-  vertical-align: top;
+  @apply flex-none w-[300px] mr-6 inline-block align-top;
 }
 
 .rating-card-wrapper .testimonial-card {
-  width: 100% !important;
+  width: 100%;
 }
 
 .scroll-button-container {
-  display: none;
+  @apply hidden;
 }
 
 .scroll-button {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-70%);
-  z-index: 10;
-  border-radius: 50%;
-  width: 45px;
-  height: 45px;
-  background-color: #c07722 !important;
-  border: 1px solid #a5671e !important;
-  color: white !important;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  opacity: 0.8;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  @apply absolute top-1/2 translate-y-[-70%] z-10 rounded-full w-[45px] h-[45px] flex items-center justify-center transition-all duration-200 opacity-80 shadow-[0_2px_5px_rgba(0,0,0,0.2)];
+  background-color: #c07722;
+  border: 1px solid #a5671e;
+  color: white;
 }
 
 .scroll-button:hover {
-  background-color: #a5671e !important;
-  border-color: #a5671e !important;
-  opacity: 1;
+  @apply opacity-100;
+  background-color: #a5671e;
+  border-color: #a5671e;
   transform: translateY(-70%) scale(1.05);
 }
 
 .scroll-button.left {
-  left: 0px;
+  @apply left-0;
 }
 
 .scroll-button.right {
-  right: 0px;
+  @apply right-0;
 }
 
 @media (min-width: 992px) {
   .scroll-button-container {
-    display: block;
+    @apply block;
   }
 }
 
@@ -214,26 +151,20 @@
     padding-bottom: 60px;
   }
   .hero-title {
-    font-size: 2.8rem;
-    margin-bottom: 1.5rem;
+    @apply text-[2.8rem] mb-6;
   }
   .hero-subtitle {
-    font-size: 1.25rem;
-    margin-bottom: 2rem;
+    @apply text-[1.25rem] mb-8;
   }
   .hero-description {
-    font-size: 1rem;
-    max-width: 600px;
-    margin-bottom: 2.5rem;
+    @apply text-base max-w-[600px] mb-10;
   }
   .hero-cta-button {
-    padding: 0.8rem 1.9rem;
-    font-size: 1.05rem;
+    @apply py-[0.8rem] px-[1.9rem] text-[1.05rem];
   }
   .other-content-section h2,
   .testimonials-section h2 {
-    font-size: 2rem;
-    margin-bottom: 2.25rem;
+    @apply text-2xl mb-9;
   }
 }
 
@@ -245,32 +176,23 @@
     padding-right: 15px;
   }
   .hero-title {
-    font-size: 2.2rem;
-    letter-spacing: 0;
-    margin-bottom: 1.25rem;
+    @apply text-[2.2rem] tracking-[0] mb-5;
   }
   .hero-subtitle {
-    font-size: 1.1rem;
-    line-height: 1.4;
-    margin-bottom: 1.75rem;
+    @apply text-[1.1rem] leading-[1.4] mb-7;
   }
   .hero-description {
-    font-size: 0.95rem;
-    margin-bottom: 2.25rem;
-    line-height: 1.5;
+    @apply text-[0.95rem] mb-9 leading-[1.5];
   }
   .hero-cta-button {
-    font-size: 1rem;
-    padding: 0.75rem 1.6rem;
+    @apply text-base py-3 px-[1.6rem];
   }
   .other-content-section h2,
   .testimonials-section h2 {
-    font-size: 1.8rem;
-    margin-bottom: 2rem;
+    @apply text-[1.8rem] mb-8;
   }
   .rating-card-wrapper {
-    width: 250px;
-    margin-right: 1rem;
+    @apply w-[250px] mr-4;
   }
 }
 
@@ -280,29 +202,19 @@
     padding-bottom: 40px;
   }
   .hero-title {
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
+    @apply text-[1.8rem] mb-4;
   }
   .hero-subtitle {
-    font-size: 1rem;
-    margin-bottom: 1.5rem;
+    @apply text-base mb-6;
   }
   .hero-description {
-    font-size: 0.9rem;
-    margin-bottom: 2rem;
+    @apply text-[0.9rem] mb-8;
   }
   .hero-cta-button {
-    width: 100%;
-    max-width: 300px;
-    margin-left: auto;
-    margin-right: auto;
-    display: block;
-    font-size: 0.95rem;
-    padding: 0.7rem 1rem;
+    @apply w-full max-w-[300px] mx-auto block text-[0.95rem] py-[0.7rem] px-4;
   }
   .other-content-section h2,
   .testimonials-section h2 {
-    font-size: 1.6rem;
-    margin-bottom: 1.75rem;
+    @apply text-[1.6rem] mb-7;
   }
 }

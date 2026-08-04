@@ -1,3 +1,5 @@
+@reference "../index.css";
+
 :root {
   --brand-primary: #c07722;
   --brand-secondary: #a56317;
@@ -8,64 +10,51 @@
 }
 
 .terms-page-container {
-  background-color: transparent !important;
-  padding-bottom: 4rem;
+  @apply bg-transparent! pb-16;
 }
 
 .terms-card .card-header {
-  background-color: transparent !important;
-  border-bottom: 2px solid var(--border-color-custom);
+  @apply bg-transparent! border-b-2 border-solid border-[var(--border-color-custom)];
 }
 
 .terms-card .card-header .h2,
 .terms-card .card-header .h3 {
-  color: var(--text-dark-custom);
-  font-weight: 600;
+  @apply text-[var(--text-dark-custom)] font-semibold;
 }
 
 .terms-card .card-body {
-  line-height: 1.7;
-  color: var(--text-body-custom);
+  @apply leading-[1.7] text-[var(--text-body-custom)];
 }
 
 .terms-card .card-body .lead {
-  font-size: 1.1rem;
-  font-weight: 400;
+  @apply text-[1.1rem] font-normal;
 }
 
 .terms-card .section-title {
-  color: var(--text-dark-custom);
-  border-left: 4px solid var(--brand-primary);
-  padding-left: 12px;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
+  @apply text-[var(--text-dark-custom)] border-l-4 border-solid border-[var(--brand-primary)] pl-[12px] mt-8 mb-4;
 }
 
 .terms-card ul,
 .terms-card ol {
-  padding-left: 1.5rem;
+  @apply pl-6;
 }
 
 .terms-card li {
-  margin-bottom: 0.5rem;
+  @apply mb-2;
 }
 
 .terms-card .link-brand {
-  color: var(--brand-primary);
-  font-weight: 500;
-  text-decoration: none;
+  @apply text-[var(--brand-primary)] font-medium no-underline;
 }
 
 .terms-card .link-brand:hover {
-  color: var(--brand-secondary);
-  text-decoration: underline;
+  @apply text-[var(--brand-secondary)] underline;
 }
 
 .breadcrumb-custom-terms .breadcrumb-item a {
-  color: var(--brand-primary);
-  text-decoration: none;
+  @apply text-[var(--brand-primary)] no-underline;
 }
 
 .breadcrumb-custom-terms .breadcrumb-item a:hover {
-  text-decoration: underline;
+  @apply underline;
 }

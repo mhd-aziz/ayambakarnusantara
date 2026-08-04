@@ -1,137 +1,91 @@
+@reference "../index.css";
+
 .seller-page-content {
-  padding-top: 1.5rem;
-  padding-bottom: 3rem;
+  @apply pt-6 pb-12;
 }
 
 .seller-page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid #e9ecef;
+  @apply flex justify-between items-center mb-8 pb-4 border-b border-solid border-[#e9ecef];
 }
 
 .seller-page-title {
-  font-size: 1.8rem;
-  font-weight: 500;
-  color: #343a40;
-  margin-bottom: 0;
+  @apply text-[1.8rem] font-medium text-[#343a40] mb-0;
 }
 
 .seller-header-actions {
-  display: flex;
-  gap: 0.75rem;
+  @apply flex gap-3;
 }
 
 .seller-card {
-  border: 1px solid #e9ecef;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.045);
-  margin-bottom: 1.5rem;
-  background-color: #fff;
+  @apply border border-solid border-[#e9ecef] rounded-lg shadow-[0_0.125rem_0.25rem_rgba(0,0,0,0.045)] mb-6 bg-white;
 }
 
 .seller-card-banner {
-  width: 100%;
-  height: 15rem;
-  object-fit: contain;
-  background-color: #f0f2f5;
+  @apply w-full h-[15rem] object-contain bg-[#f0f2f5];
 }
 
 .seller-card .card-header.section-header {
-  background-color: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
-  font-size: 1.1rem;
-  font-weight: 500;
-  color: #495057;
-  padding: 0.75rem 1.25rem;
+  @apply bg-light border-b border-solid border-[#e9ecef] text-[1.1rem] font-medium text-[#495057] py-3 px-5;
 }
 
 .seller-card .card-title {
-  color: #c07722;
-  font-weight: 500;
-  margin-bottom: 1rem;
+  @apply text-brand font-medium mb-4;
 }
 
 .seller-info-list .list-group-item {
-  border-left: none;
-  border-right: none;
-  padding: 1rem 0;
+  @apply border-l-0 border-r-0 p-0 py-4;
 }
 .seller-info-list .list-group-item:first-child {
-  border-top: none;
+  @apply border-t-0;
 }
 .seller-info-list .list-group-item:last-child {
-  border-bottom: none;
+  @apply border-b-0;
 }
 .seller-info-list strong {
-  color: #343a40;
-  display: block;
-  margin-bottom: 0.25rem;
+  @apply text-[#343a40] block mb-1;
 }
 .seller-info-list span,
 .seller-info-list p {
-  color: #495057;
-  word-break: break-word;
+  @apply text-[#495057] break-words;
 }
 
 .seller-form {
-  background-color: #fff;
-  padding: 1.5rem;
-  border-radius: 0.5rem;
+  @apply bg-white p-6 rounded-lg;
 }
 
 .seller-form .form-label {
-  font-weight: 500;
-  color: #495057;
+  @apply font-medium text-[#495057];
 }
 
 .seller-form .form-control:focus,
 .seller-form .form-select:focus {
-  border-color: #c07722;
-  box-shadow: 0 0 0 0.2rem rgba(192, 119, 34, 0.25);
+  @apply border-brand shadow-[0_0_0_0.2rem_rgba(192,119,34,0.25)];
 }
 
 .image-upload-preview {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 0.375rem;
-  object-fit: cover;
-  border: 1px solid #dee2e6;
+  @apply max-w-[200px] max-h-[200px] rounded-md object-cover border border-solid border-line;
 }
 
 .btn-brand {
-  background-color: #c07722;
-  border-color: #c07722;
-  color: white;
+  @apply bg-brand border-brand text-white;
 }
 .btn-brand:hover,
 .btn-brand:focus,
 .btn-brand:active {
-  background-color: #a56317;
-  border-color: #a56317;
-  color: white;
-  box-shadow: 0 0 0 0.2rem rgba(192, 119, 34, 0.35);
+  @apply bg-brand-secondary border-brand-secondary text-white shadow-[0_0_0_0.2rem_rgba(192,119,34,0.35)];
 }
 
 .btn-outline-brand {
-  color: #c07722;
-  border-color: #c07722;
+  @apply text-brand border-brand;
 }
 .btn-outline-brand:hover,
 .btn-outline-brand:focus,
 .btn-outline-brand:active {
-  color: white;
-  background-color: #c07722;
-  border-color: #c07722;
-  box-shadow: 0 0 0 0.2rem rgba(192, 119, 34, 0.35);
+  @apply text-white bg-brand border-brand shadow-[0_0_0_0.2rem_rgba(192,119,34,0.35)];
 }
 
 .modal-header-danger {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-bottom: 1px solid #f5c6cb;
+  @apply bg-[#f8d7da] text-[#721c24] border-b border-solid border-[#f5c6cb];
 }
 .modal-header-danger .btn-close {
   filter: invert(25%) sepia(15%) saturate(2000%) hue-rotate(320deg)
@@ -140,12 +94,12 @@
 
 @media (max-width: 991.98px) {
   .seller-card-banner {
-    height: 12rem;
+    @apply h-[12rem];
   }
 }
 
 @media (max-width: 767.98px) {
   .seller-card-banner {
-    height: 10rem;
+    @apply h-[10rem];
   }
 }

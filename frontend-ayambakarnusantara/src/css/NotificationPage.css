@@ -1,3 +1,5 @@
+@reference "../index.css";
+
 /* Definisikan variabel warna agar konsisten */
 :root {
   --brand-primary: #c07722;
@@ -10,83 +12,71 @@
 }
 
 .notification-page {
-  background-color: transparent !important;
-  padding-top: 2rem;
-  padding-bottom: 4rem;
-  min-height: calc(100vh - 120px);
+  @apply bg-transparent pt-8 pb-16 min-h-[calc(100vh-120px)];
+  background-color: transparent;
 }
 
 .notification-page .container-md {
-  padding-left: 15px;
-  padding-right: 15px;
-  overflow-x: hidden;
+  @apply px-[15px] overflow-x-hidden;
 }
 
 
 .notification-page .page-title {
-  color: var(--brand-primary);
-  font-weight: 600;
+  @apply text-[var(--brand-primary)] font-semibold;
 }
 
 .notification-list .list-group-item {
-  transition: background-color 0.15s ease-in-out;
-  border-bottom: 1px solid var(--border-color) !important;
-  cursor: pointer;
+  @apply transition-[background-color] duration-[0.15s] ease-in-out border-b border-solid border-[var(--border-color)] cursor-pointer;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .notification-list .list-group-item:last-child {
-  border-bottom: none !important;
+  @apply border-b-0;
+  border-bottom: none;
 }
 
 .notification-content {
-  min-width: 0;
-  flex-grow: 1; 
+  @apply min-w-0 grow;
 }
 
 .notification-title {
-  font-weight: 600;
-  color: var(--text-dark);
+  @apply font-semibold text-[var(--text-dark)];
 }
 
 .notification-body {
-  font-size: 0.9rem;
-  color: var(--text-light-muted);
-  word-break: break-word;
+  @apply text-[0.9rem] text-[var(--text-light-muted)] break-words;
 }
 
 .notification-list .bg-light {
-  background-color: var(--brand-primary-light) !important;
+  @apply bg-[var(--brand-primary-light)];
+  background-color: var(--brand-primary-light);
 }
 
 .notification-list .bg-light .notification-title {
-  color: var(--brand-secondary);
+  @apply text-[var(--brand-secondary)];
 }
 
 .notification-timestamp {
-  font-size: 0.75rem;
-  white-space: nowrap;
-  color: #999;
-  flex-shrink: 0; 
+  @apply text-xs whitespace-nowrap text-[#999] shrink-0;
 }
 
 .notification-list .badge.bg-primary {
-  background-color: var(--brand-primary) !important;
+  @apply bg-[var(--brand-primary)];
+  background-color: var(--brand-primary);
 }
 
 .icon-status {
-  transition: color 0.3s ease;
-  flex-shrink: 0;
+  @apply transition-[color] duration-300 ease-[ease] shrink-0;
 }
 
 .icon-read {
-  color: #adb5bd; 
+  @apply text-[#adb5bd];
 }
 
 .icon-unread {
-  color: var(--brand-primary); 
+  @apply text-[var(--brand-primary)];
 }
 
 .empty-notifications-card {
-  border: 2px dashed var(--border-color);
-  background-color: #fff;
+  @apply border-2 border-dashed border-[var(--border-color)] bg-white;
 }

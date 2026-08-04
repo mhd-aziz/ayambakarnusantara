@@ -1,0 +1,21 @@
+// Barrel komponen UI Tailwind — pengganti react-bootstrap (API kompatibel)
+export { default as Alert } from "./Alert";
+export { default as Badge } from "./Badge";
+export { default as Breadcrumb } from "./Breadcrumb";
+export { default as Button } from "./Button";
+export { default as Card } from "./Card";
+export { default as CloseButton } from "./CloseButton";
+export { default as Col } from "./Col";
+export { default as Container } from "./Container";
+export { default as Dropdown } from "./Dropdown";
+export { default as Form } from "./Form";
+export { default as Image } from "./Image";
+export { default as InputGroup } from "./InputGroup";
+export { default as ListGroup } from "./ListGroup";
+export { default as Modal } from "./Modal";
+export { default as Nav } from "./Nav";
+export { default as Navbar } from "./Navbar";
+export { default as Pagination } from "./Pagination";
+export { default as Row } from "./Row";
+export { default as Spinner } from "./Spinner";
+export { default as Tabs } from "./Tabs";

@@ -1,87 +1,85 @@
+@reference "../index.css";
+
 /* src/components/Auth/AuthForms.css */
 :root {
-  --brand-primary-color: #c07722 !important;
-  --brand-primary-hover-color: #a5671e !important;
-  --brand-secondary-color: #ffc633 !important;
-  --brand-text-on-primary: #ffffff !important;
-  --brand-text-color: #333 !important;
-  --brand-icon-color: var(--brand-primary-color) !important;
+  --brand-primary-color: #c07722;
+  --brand-primary-hover-color: #a5671e;
+  --brand-secondary-color: #ffc633;
+  --brand-text-on-primary: #ffffff;
+  --brand-text-color: #333;
+  --brand-icon-color: var(--brand-primary-color);
 }
 
 .btn-brand {
-  background-color: var(--brand-primary-color) !important;
-  border-color: var(--brand-primary-color) !important;
-  color: var(--brand-text-on-primary) !important;
-  font-weight: 600;
-  padding-top: 0.65rem;
-  padding-bottom: 0.65rem;
-  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
-    box-shadow 0.15s ease-in-out;
+  @apply bg-[var(--brand-primary-color)] border-[var(--brand-primary-color)] text-[var(--brand-text-on-primary)] font-semibold pt-[0.65rem] pb-[0.65rem] transition-[background-color,border-color,box-shadow] duration-[0.15s] ease-in-out;
+  background-color: var(--brand-primary-color);
+  border-color: var(--brand-primary-color);
+  color: var(--brand-text-on-primary);
 }
 
 .btn-brand:hover,
 .btn-brand:focus,
 .btn-brand:active {
-  background-color: var(--brand-primary-hover-color) !important;
-  border-color: var(--brand-primary-hover-color) !important;
-  color: var(--brand-text-on-primary) !important;
-  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.45) !important;
+  @apply bg-[var(--brand-primary-hover-color)] border-[var(--brand-primary-hover-color)] text-[var(--brand-text-on-primary)] shadow-[0_0_0_0.25rem_rgba(255,198,51,0.45)];
+  background-color: var(--brand-primary-hover-color);
+  border-color: var(--brand-primary-hover-color);
+  color: var(--brand-text-on-primary);
+  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.45);
 }
 
 .link-brand {
-  color: var(--brand-primary-color) !important;
-  font-weight: 600;
-  text-decoration: none;
-  transition: color 0.15s ease-in-out;
+  @apply text-[var(--brand-primary-color)] font-semibold no-underline transition-[color] duration-[0.15s] ease-in-out;
+  color: var(--brand-primary-color);
 }
 
 .link-brand:hover {
-  color: var(--brand-secondary-color) !important;
-  text-decoration: underline;
+  @apply text-[var(--brand-secondary-color)] underline;
+  color: var(--brand-secondary-color);
 }
 
 .input-group-text-brand {
-  background-color: #f8f9fa !important;
-  border-right: none;
+  @apply bg-light border-r-0;
+  background-color: #f8f9fa;
 }
 .input-group .form-control-brand-focus {
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
+  @apply rounded-tl-none rounded-bl-none;
 }
 .input-group .input-group-text-brand {
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
+  @apply rounded-tr-none rounded-br-none;
 }
 
 .form-control-brand-focus {
-  border-left: none;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+  @apply border-l-0 transition-[border-color,box-shadow] duration-[0.15s] ease-in-out;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
 }
 
 .form-control-brand-focus:focus {
-  border-color: var(--brand-secondary-color) !important;
-  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.35) !important;
+  @apply border-[var(--brand-secondary-color)] shadow-[0_0_0_0.25rem_rgba(255,198,51,0.35)];
+  border-color: var(--brand-secondary-color);
+  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.35);
 }
 
 .btn-toggle-password {
-  border-left-width: 0;
+  @apply border-l-0;
 }
 .btn-toggle-password:focus {
-  border-color: #ced4da !important;
-  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.35) !important;
+  @apply border-[#ced4da] shadow-[0_0_0_0.25rem_rgba(255,198,51,0.35)];
+  border-color: #ced4da;
+  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.35);
 }
 .btn-toggle-password svg {
-  color: var(--brand-icon-color) !important;
-  transition: color 0.15s ease-in-out;
+  @apply text-[var(--brand-icon-color)] transition-[color] duration-[0.15s] ease-in-out;
+  color: var(--brand-icon-color);
 }
 .btn-toggle-password:hover svg {
-  color: var(--brand-secondary-color);
+  @apply text-[var(--brand-secondary-color)];
 }
 .input-group > .btn-toggle-password {
-  border-top-right-radius: var(--bs-border-radius) !important;
-  border-bottom-right-radius: var(--bs-border-radius) !important;
+  @apply rounded-tr-[var(--bs-border-radius)] rounded-br-[var(--bs-border-radius)];
+  border-top-right-radius: var(--bs-border-radius);
+  border-bottom-right-radius: var(--bs-border-radius);
 }
 
 .input-group-text-brand-textarea {
-  align-self: stretch;
+  @apply self-stretch;
 }

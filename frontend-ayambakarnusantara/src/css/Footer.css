@@ -1,3 +1,5 @@
+@reference "../index.css";
+
 /* src/css/Footer.css */
 
 /* Mendefinisikan variabel warna untuk konsistensi */
@@ -13,94 +15,74 @@
 
 /* Kontainer utama footer */
 .footer-container {
-  background-color: var(--footer-bg);
-  color: var(--footer-text-secondary);
-  font-size: 0.9rem;
+  @apply bg-[var(--footer-bg)] text-[var(--footer-text-secondary)] text-[0.9rem];
 }
 
 /* Logo dan nama brand */
 .footer-brand {
-  text-decoration: none; /* Menghilangkan garis bawah dari brand */
-  display: inline-flex;
-  transition: opacity 0.2s ease-in-out;
+  @apply no-underline inline-flex transition-[opacity] duration-200 ease-in-out;
 }
 
 .footer-brand:hover,
 .footer-brand:focus {
-  text-decoration: none; /* Memastikan tidak ada garis bawah saat hover/focus */
-  opacity: 0.9;
+  @apply no-underline opacity-90;
 }
 
 .footer-brand-text {
-  font-weight: bold;
-  font-size: 1.2rem;
-  color: var(--footer-text-primary);
+  @apply font-bold text-[1.2rem] text-[var(--footer-text-primary)];
 }
 
 /* Deskripsi singkat di bawah logo */
 .footer-description {
-  color: var(--footer-text-secondary);
-  line-height: 1.6;
+  @apply text-[var(--footer-text-secondary)] leading-[1.6];
 }
 
 /* Judul setiap kolom di footer */
 .footer-heading {
-  font-size: 1.1rem;
-  color: var(--footer-text-primary);
-  margin-bottom: 1rem;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  @apply text-[1.1rem] text-[var(--footer-text-primary)] mb-4 font-medium uppercase tracking-[0.5px];
 }
 
 /* Gaya untuk link navigasi di footer */
 .footer-link,
 .footer-link-button {
-  color: var(--brand-primary) !important; /* Menggunakan warna brand utama */
-  padding: 0.3rem 0 !important;
-  transition: color 0.2s ease-in-out;
-  text-decoration: none; /* Menghilangkan garis bawah default */
-  text-align: left;
-  display: block;
+  @apply text-[var(--brand-primary)] py-[0.3rem] px-0 transition-[color] duration-200 ease-in-out no-underline text-left block;
+  color: var(--brand-primary);
+  padding: 0.3rem 0;
 }
 
 .footer-link:hover,
 .footer-link:focus,
 .footer-link-button:hover,
 .footer-link-button:focus {
-  color: var(--brand-highlight) !important; /* Warna berubah saat di-hover */
-  text-decoration: none;
+  @apply text-[var(--brand-highlight)] no-underline;
+  color: var(--brand-highlight);
 }
 
 /* Khusus untuk tombol "Cara Pesan" agar terlihat seperti link */
 .footer-link-button {
-  background: none;
-  border: none;
-  width: 100%;
+  @apply bg-transparent border-none w-full;
 }
 
 /* Menghilangkan padding default dari komponen Nav.Link Bootstrap */
 .footer-nav .nav-link {
-  padding-left: 0 !important;
-  padding-right: 0 !important;
+  @apply pl-0 pr-0;
+  padding-left: 0;
+  padding-right: 0;
 }
 
 /* Garis pemisah horizontal */
 .footer-hr {
-  border-top: 1px solid var(--footer-border-color);
-  margin-top: 2rem;
-  margin-bottom: 1.5rem;
+  @apply border-t border-solid border-[var(--footer-border-color)] mt-8 mb-6;
 }
 
 /* Teks hak cipta */
 .footer-copyright {
-  color: #6c757d;
-  font-size: 0.85rem;
+  @apply text-secondary text-[0.85rem];
 }
 
 /* Penyesuaian untuk layar kecil (responsif) */
 @media (max-width: 767.98px) {
   .footer-heading {
-    margin-top: 1rem; /* Memberi sedikit ruang di atas judul pada tampilan mobile */
+    @apply mt-4;
   }
 }

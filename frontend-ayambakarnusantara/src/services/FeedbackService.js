@@ -1,7 +1,7 @@
 // src/services/FeedbackService.js
 import axios from "axios";
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 const sendFeedback = async (feedbackData) => {
   if (

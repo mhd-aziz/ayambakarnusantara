@@ -2,7 +2,7 @@
 import axios from "axios";
 
 // Membaca base URL dari environment variable, fallback ke /api jika tidak ada
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
 /**
  * Adds an item to the cart.

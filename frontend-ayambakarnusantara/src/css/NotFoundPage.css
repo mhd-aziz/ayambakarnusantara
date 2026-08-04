@@ -1,55 +1,42 @@
+@reference "../index.css";
+
 /* src/css/NotFoundPage.css */
 .not-found-page-container {
-  background-color: #f8f9fa;
-  padding: 2rem;
+  @apply bg-light p-8;
 }
 
 .not-found-image {
-  max-width: 350px;
-  margin-left: auto;
-  margin-right: auto;
-  opacity: 0.8;
+  @apply max-w-[350px] ml-auto mr-auto opacity-80;
 }
 
 .not-found-title {
-  font-size: 2.5rem;
-  font-weight: 600;
-  color: #c07722;
-  margin-bottom: 0.75rem;
+  @apply text-[2.5rem] font-semibold text-brand mb-3;
 }
 
 .not-found-subtitle {
-  font-size: 1.1rem;
-  color: #555;
-  margin-bottom: 2rem;
+  @apply text-[1.1rem] text-[#555] mb-8;
 }
 
 .not-found-page-container .btn-brand {
-  background-color: #c07722 !important;
-  border-color: #c07722 !important;
-  color: white !important;
-  padding: 0.6rem 1.2rem;
-  font-weight: 500;
+  @apply bg-brand border-brand text-white py-[0.6rem] px-[1.2rem] font-medium!;
 }
 
 .not-found-page-container .btn-brand:hover {
-  background-color: #a56317 !important;
-  border-color: #a56317 !important;
+  @apply bg-brand-secondary border-brand-secondary!;
 }
 
 .not-found-page-container .btn-outline-secondary {
-  padding: 0.6rem 1.2rem;
-  font-weight: 500;
+  @apply py-[0.6rem] px-[1.2rem] font-medium;
 }
 
 @media (max-width: 767px) {
   .not-found-title {
-    font-size: 2rem;
+    @apply text-[2rem];
   }
   .not-found-subtitle {
-    font-size: 1rem;
+    @apply text-base;
   }
   .not-found-image {
-    max-width: 280px;
+    @apply max-w-[280px];
   }
 }

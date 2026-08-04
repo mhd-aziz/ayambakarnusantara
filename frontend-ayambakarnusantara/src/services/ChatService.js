@@ -1,7 +1,7 @@
 // src/services/ChatService.js
 import axios from "axios";
 
-const BASE_URL = process.env.REACT_APP_API_BASE_URL || "/api";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 const CHAT_API_URL = `${BASE_URL}/chat`;
 const CHATBOT_API_URL = `${BASE_URL}/chatbot`;
 

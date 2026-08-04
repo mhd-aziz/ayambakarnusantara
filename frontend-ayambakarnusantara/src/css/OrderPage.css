@@ -1,33 +1,28 @@
+@reference "../index.css";
+
 .order-page-container {
-  padding-bottom: 3rem;
+  @apply pb-12;
 }
 
 .order-page-title {
-  color: #c07722;
-  font-weight: 600;
-  padding-bottom: 0.75rem;
+  @apply text-brand font-semibold pb-3;
 }
 
 .order-list-item {
-  transition: background-color 0.2s ease-in-out;
-  border-radius: 0.5rem !important;
+  @apply transition-[background-color] duration-200 ease-in-out rounded-lg!;
 }
 .order-list-item:hover {
-  background-color: #f8f9fa;
+  @apply bg-light;
 }
 
 .order-list-item strong {
-  font-size: 0.9em;
-  color: #6c757d;
+  @apply text-[0.9em] text-secondary;
 }
 
 .order-list-item .badge {
-  font-size: 0.85em;
-  font-weight: 500;
+  @apply text-[0.85em] font-medium;
 }
 
 .order-list-item .order-id-text {
-  font-family: monospace;
-  font-size: 0.9em;
-  color: #343a40;
+  @apply font-[monospace] text-[0.9em] text-[#343a40];
 }

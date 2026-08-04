@@ -1,3 +1,5 @@
+@reference "../index.css";
+
 /* src/css/OrderDetailPage.css */
 
 /* Menggunakan variabel root yang konsisten dengan halaman lain */
@@ -13,162 +15,131 @@
 }
 
 .order-detail-page {
-  background-color: transparent !important;
-  padding-top: 1.5rem;
-  padding-bottom: 3rem;
+  @apply bg-transparent pt-6 pb-12;
+  background-color: transparent;
 }
 
 .breadcrumb-custom {
-  background-color: transparent !important;
-  padding-left: 0 !important;
-  padding-right: 0 !important;
-  box-shadow: none !important;
-  border: none !important;
-  margin-bottom: 1.5rem;
+  @apply bg-transparent px-0 shadow-none border-none mb-6;
+  background-color: transparent;
+  padding-left: 0;
+  padding-right: 0;
+  box-shadow: none;
+  border: none;
 }
 
 .breadcrumb-custom .breadcrumb-item a {
-  color: var(--brand-primary);
-  text-decoration: none;
-  font-weight: 500;
+  @apply text-[var(--brand-primary)] no-underline font-medium;
 }
 
 .breadcrumb-custom .breadcrumb-item a:hover {
-  text-decoration: underline;
-  color: var(--brand-secondary);
+  @apply underline text-[var(--brand-secondary)];
 }
 
 .breadcrumb-custom .breadcrumb-item.active {
-  color: var(--brand-secondary);
+  @apply text-[var(--brand-secondary)];
 }
 
 .order-detail-page .card {
-  border: 1px solid var(--border-color);
-  border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  @apply border border-solid border-[var(--border-color)] rounded-lg shadow-[0_2px_4px_rgba(0,0,0,0.05)];
 }
 
 .order-detail-page .card-header {
-  background-color: var(--bg-card);
-  border-bottom: 1px solid var(--border-color);
-  font-weight: 500;
-  color: var(--text-dark);
+  @apply bg-[var(--bg-card)] border-b border-solid border-[var(--border-color)] font-medium text-[var(--text-dark)];
 }
 
 .order-detail-page .list-group-item {
-  border-left: none;
-  border-right: none;
-  padding-top: 0.85rem;
-  padding-bottom: 0.85rem;
-  background-color: transparent;
+  @apply border-l-0 border-r-0 pt-[0.85rem] pb-[0.85rem] bg-transparent;
 }
 
 .order-detail-page .list-group-item strong {
-  color: var(--text-dark);
+  @apply text-[var(--text-dark)];
 }
 
 .order-detail-page .list-group-item .text-primary {
-  color: var(--brand-primary) !important;
+  @apply text-[var(--brand-primary)];
+  color: var(--brand-primary);
 }
 
 .order-detail-page .text-muted {
-  color: var(--text-muted-custom) !important;
+  @apply text-[var(--text-muted-custom)];
+  color: var(--text-muted-custom);
 }
 
 .order-detail-page .fw-semibold {
-  font-weight: 600 !important;
+  @apply font-semibold;
+  font-weight: 600;
 }
 
 .order-detail-page .badge {
-  font-size: 0.8em;
-  vertical-align: middle;
+  @apply text-[0.8em] align-middle;
 }
 
 .order-detail-page .link-brand-color {
-  color: var(--brand-primary);
-  text-decoration: none;
-  font-weight: 500;
+  @apply text-[var(--brand-primary)] no-underline font-medium;
 }
 
 .order-detail-page .link-brand-color:hover {
-  color: var(--brand-secondary);
-  text-decoration: underline;
+  @apply text-[var(--brand-secondary)] underline;
 }
 
 .order-detail-page .btn-outline-brand {
-  color: var(--brand-primary);
-  background-color: transparent;
-  border-color: var(--brand-primary);
+  @apply text-[var(--brand-primary)] bg-transparent border-[var(--brand-primary)];
 }
 
 .order-detail-page .btn-outline-brand:hover,
 .order-detail-page .btn-outline-brand:focus,
 .order-detail-page .btn-outline-brand:active,
 .order-detail-page .btn-outline-brand.active {
-  color: #fff;
-  background-color: var(--brand-secondary) !important;
-  border-color: var(--brand-secondary) !important;
-  box-shadow: 0 0 0 0.2rem rgba(192, 119, 34, 0.5) !important;
+  @apply text-white bg-[var(--brand-secondary)] border-[var(--brand-secondary)] shadow-[0_0_0_0.2rem_rgba(192,119,34,0.5)];
+  background-color: var(--brand-secondary);
+  border-color: var(--brand-secondary);
+  box-shadow: 0 0 0 0.2rem rgba(192, 119, 34, 0.5);
 }
 
 .order-detail-page .btn-outline-brand:disabled {
-  color: #6c757d;
-  border-color: #ced4da;
-  background-color: transparent;
+  @apply text-secondary border-[#ced4da] bg-transparent;
 }
 
 .order-detail-page .card-footer .btn {
-  font-weight: 500;
-  border-radius: 0.3rem;
-  padding: 0.5rem 1rem;
-  transition: all 0.2s ease-in-out;
+  @apply font-medium rounded-[0.3rem] py-2 px-4 transition-all duration-200 ease-in-out;
 }
 
 .order-detail-page .btn-pay {
-  background-color: #28a745;
-  border-color: #28a745;
-  color: white;
+  @apply bg-[#28a745] border-[#28a745] text-white;
 }
 .order-detail-page .btn-pay:hover {
-  background-color: #218838;
-  border-color: #1e7e34;
+  @apply bg-[#218838] border-[#1e7e34];
 }
 
 .order-detail-page .btn-cancel {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: white;
+  @apply bg-danger border-danger text-white;
 }
 .order-detail-page .btn-cancel:hover {
-  background-color: #c82333;
-  border-color: #bd2130;
+  @apply bg-[#c82333] border-[#bd2130];
 }
 
 .order-detail-page .btn-check-status {
-  background-color: #17a2b8;
-  border-color: #17a2b8;
-  color: white;
+  @apply bg-[#17a2b8] border-[#17a2b8] text-white;
 }
 .order-detail-page .btn-check-status:hover {
-  background-color: #138496;
-  border-color: #117a8b;
+  @apply bg-[#138496] border-[#117a8b];
 }
 
 .modal-header-danger {
-  background-color: #f8d7da;
-  color: #721c24;
-  border-bottom: 1px solid #f5c6cb;
+  @apply bg-[#f8d7da] text-[#721c24] border-b border-solid border-[#f5c6cb];
 }
 .modal-header-danger .btn-close {
+  @apply blur-[0px] brightness-[0.9] contrast-[100%];
   filter: invert(25%) sepia(15%) saturate(2000%) hue-rotate(320deg)
     brightness(90%) contrast(100%);
 }
 
 @media (max-width: 576px) {
   .order-detail-page .breadcrumb {
-    font-size: 0.85rem;
+    @apply text-[0.85rem];
   }
   .order-detail-page .card-header.h5 {
-    font-size: 1.1rem;
+    @apply text-[1.1rem];
   }
 }
