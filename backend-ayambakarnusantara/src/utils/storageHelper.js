@@ -63,6 +63,22 @@ function extractPathFromPublicUrl(url, bucket) {
   return url.slice(idx + prefix.length);
 }
 
+/**
+ * Konversi daftar path bukti bayar (bucket privat "orders") menjadi signed URL.
+ * URL publik lama (Firebase / sudah berupa http) dibiarkan apa adanya.
+ */
+async function mapPaymentProofUrls(urls) {
+  if (!Array.isArray(urls) || urls.length === 0) return urls;
+  return Promise.all(
+    urls.map(async (url) => {
+      if (typeof url !== "string") return url;
+      if (url.startsWith("http")) return url; // URL publik lama
+      const signed = await getSignedUrl("orders", url);
+      return signed || url;
+    })
+  );
+}
+
 /** Hapus satu file dari bucket (jika path valid) */
 async function deleteFile(bucket, filePath) {
   if (!filePath) return;
@@ -78,5 +94,6 @@ module.exports = {
   getPublicUrl,
   getSignedUrl,
   extractPathFromPublicUrl,
+  mapPaymentProofUrls,
   deleteFile,
 };

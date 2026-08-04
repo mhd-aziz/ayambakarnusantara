@@ -73,6 +73,7 @@ create index if not exists products_category_idx on public.products(category);
 create table if not exists public.carts (
   user_id uuid primary key references auth.users(id) on delete cascade,
   items jsonb not null default '[]'::jsonb,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
@@ -111,6 +112,7 @@ create table if not exists public.ratings (
   user_display_name text, -- denormalisasi nama pemberi rating (pola lama)
   user_photo_url text, -- denormalisasi foto pemberi rating (pola lama)
   created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
   unique (user_id, product_id, order_id)
 );
 create index if not exists ratings_product_id_idx on public.ratings(product_id);

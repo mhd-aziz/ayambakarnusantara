@@ -1,12 +1,19 @@
 const axios = require("axios");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
-const { firestore } = require("../config/firebaseConfig");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 
-const RASA_WEBHOOK_URL =
-  process.env.RASA_WEBHOOK_URL || "http://localhost:5005/webhooks/rest/webhook";
-const USER_CHAT_HISTORY_COLLECTION = "userChatHistories";
+const OMNIROUTE_API_URL =
+  process.env.OMNIROUTE_API_URL || "https://omniroutelocal.zisaltech.site/v1/chat/completions";
+const OMNIROUTE_API_KEY = process.env.OMNIROUTE_API_KEY || "";
+const OMNIROUTE_MODEL = process.env.OMNIROUTE_MODEL || "auto/best-chat";
 
-exports.forwardToRasa = async (req, res) => {
+const SYSTEM_PROMPT =
+  "Kamu adalah customer service Ayam Bakar Nusantara, marketplace multi-vendor " +
+  "ayam bakar. Bantu pelanggan dengan ramah dalam Bahasa Indonesia. Kamu bisa menjawab " +
+  "pertanyaan tentang produk, toko, cara pemesanan, pembayaran (online via Midtrans atau " +
+  "bayar di tempat), status pesanan, dan lainnya. Jawab singkat, jelas, dan sopan.";
+
+exports.forwardToChatbot = async (req, res) => {
   const { message: userMessageText, sender: senderIdFromFrontend } = req.body;
 
   if (
@@ -20,67 +27,90 @@ exports.forwardToRasa = async (req, res) => {
     });
   }
 
-  const rasaSenderId = req.user?.uid || senderIdFromFrontend || "defaultUser";
+  const senderId = req.user?.uid || senderIdFromFrontend || "defaultUser";
   const userId = req.user?.uid;
 
-  const payloadToRasa = {
-    sender: rasaSenderId,
-    message: userMessageText,
-  };
-
-  const authToken = req.firebaseIdToken;
-
-  if (authToken) {
-    payloadToRasa.metadata = {
-      authToken: authToken,
-    };
-  }
-
   try {
-    const rasaResponse = await axios.post(RASA_WEBHOOK_URL, payloadToRasa);
+    // Ambil riwayat singkat (maks 10 pesan) sebagai konteks percakapan
+    let historyMessages = [];
+    if (userId) {
+      const { data: historyRow } = await supabaseAdmin
+        .from("chat_histories")
+        .select("chats")
+        .eq("user_id", userId)
+        .maybeSingle();
+
+      if (historyRow?.chats && Array.isArray(historyRow.chats)) {
+        historyMessages = historyRow.chats.slice(-10);
+      }
+    }
+
+    const messagesForModel = [
+      { role: "system", content: SYSTEM_PROMPT },
+      ...historyMessages.map((m) => ({
+        role: m.role === "bot" ? "assistant" : "user",
+        content: m.text || "",
+      })),
+      { role: "user", content: userMessageText },
+    ];
+
+    const omniRouteResponse = await axios.post(
+      OMNIROUTE_API_URL,
+      {
+        model: OMNIROUTE_MODEL,
+        messages: messagesForModel,
+        temperature: 0.7,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${OMNIROUTE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        timeout: 60000,
+      }
+    );
+
+    const botText =
+      omniRouteResponse.data?.choices?.[0]?.message?.content ||
+      omniRouteResponse.data?.choices?.[0]?.text ||
+      "Maaf, saya tidak dapat menjawab saat ini.";
+
+    const botMessageEntriesForDb = [{ role: "bot", text: botText }];
 
     if (userId) {
-      const userHistoryDocRef = firestore
-        .collection(USER_CHAT_HISTORY_COLLECTION)
-        .doc(userId);
-
       const userMessageEntry = {
         role: "user",
         text: userMessageText,
         createdAt: new Date().toISOString(),
       };
-
-      const botMessageEntriesForDb =
-        rasaResponse.data && Array.isArray(rasaResponse.data)
-          ? rasaResponse.data.map((botMsg) => ({
-              role: "bot",
-              text: botMsg.text || null,
-              imageUrl: botMsg.image || null,
-              createdAt: new Date().toISOString(),
-            }))
-          : [];
-
       const newMessagesToAdd = [
         userMessageEntry,
-        ...botMessageEntriesForDb.filter((bm) => bm.text || bm.imageUrl),
+        ...botMessageEntriesForDb.map((bm) => ({
+          ...bm,
+          createdAt: new Date().toISOString(),
+        })),
       ];
 
       try {
-        const doc = await userHistoryDocRef.get();
-        if (doc.exists) {
-          const currentMessages = doc.data().messages || [];
-          await userHistoryDocRef.update({
-            messages: [...currentMessages, ...newMessagesToAdd],
-            lastUpdatedAt: new Date().toISOString(),
-          });
-        } else {
-          await userHistoryDocRef.set({
-            userId: userId,
-            messages: newMessagesToAdd,
-            lastUpdatedAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-          });
-        }
+        const { data: existingRow } = await supabaseAdmin
+          .from("chat_histories")
+          .select("chats")
+          .eq("user_id", userId)
+          .maybeSingle();
+
+        const currentMessages =
+          existingRow?.chats && Array.isArray(existingRow.chats)
+            ? existingRow.chats
+            : [];
+
+        await supabaseAdmin.from("chat_histories").upsert(
+          {
+            user_id: userId,
+            chats: [...currentMessages, ...newMessagesToAdd],
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id" }
+        );
       } catch (dbError) {
         console.error(
           "Gagal menyimpan atau memperbarui riwayat percakapan pengguna:",
@@ -89,16 +119,8 @@ exports.forwardToRasa = async (req, res) => {
       }
     }
 
-    let finalPayloadForClient;
-
-    if (rasaResponse.data && Array.isArray(rasaResponse.data)) {
-      finalPayloadForClient = rasaResponse.data.map((botMsg) => {
-        const { quick_replies, buttons, ...messageWithoutSuggestions } = botMsg;
-        return messageWithoutSuggestions;
-      });
-    } else {
-      finalPayloadForClient = rasaResponse.data;
-    }
+    // Shape respons sama seperti Rasa: array objek {text, ...}
+    const finalPayloadForClient = [{ text: botText }];
 
     return handleSuccess(
       res,
@@ -108,7 +130,7 @@ exports.forwardToRasa = async (req, res) => {
     );
   } catch (error) {
     console.error(
-      "Error saat berkomunikasi dengan Rasa:",
+      "Error saat berkomunikasi dengan OmniRoute:",
       error.response?.data || error.message
     );
     const statusCode = error.response?.status || 502;
@@ -117,15 +139,15 @@ exports.forwardToRasa = async (req, res) => {
       error.message ||
       "Gagal berkomunikasi dengan layanan chatbot.";
 
-    if (error.code === "ECONNREFUSED") {
+    if (error.code === "ECONNREFUSED" || error.code === "ENOTFOUND") {
       return handleError(res, {
         statusCode: 503,
-        message: `Layanan chatbot Rasa di ${RASA_WEBHOOK_URL} tidak dapat dijangkau.`,
+        message: `Layanan chatbot (${OMNIROUTE_API_URL}) tidak dapat dijangkau.`,
       });
     }
 
     return handleError(res, {
-      statusCode: statusCode,
+      statusCode,
       message: errorMessage,
       errorDetails: error.response?.data,
     });
@@ -142,12 +164,15 @@ exports.getChatHistory = async (req, res) => {
   }
 
   try {
-    const historyDocRef = firestore
-      .collection(USER_CHAT_HISTORY_COLLECTION)
-      .doc(userId);
-    const doc = await historyDocRef.get();
+    const { data: historyRow, error } = await supabaseAdmin
+      .from("chat_histories")
+      .select("chats")
+      .eq("user_id", userId)
+      .maybeSingle();
 
-    if (!doc.exists) {
+    if (error) throw error;
+
+    if (!historyRow?.chats || !Array.isArray(historyRow.chats)) {
       return handleSuccess(
         res,
         200,
@@ -156,9 +181,7 @@ exports.getChatHistory = async (req, res) => {
       );
     }
 
-    const historyData = doc.data();
-    let messages = historyData.messages || [];
-
+    let messages = historyRow.chats;
     if (messages.length > 20) {
       messages = messages.slice(-20);
     }
@@ -190,21 +213,12 @@ exports.clearChatHistory = async (req, res) => {
   }
 
   try {
-    const historyDocRef = firestore
-      .collection(USER_CHAT_HISTORY_COLLECTION)
-      .doc(userId);
+    const { error } = await supabaseAdmin
+      .from("chat_histories")
+      .delete()
+      .eq("user_id", userId);
 
-    const doc = await historyDocRef.get();
-
-    if (!doc.exists) {
-      return handleSuccess(
-        res,
-        200,
-        "Tidak ada riwayat percakapan untuk dihapus."
-      );
-    }
-
-    await historyDocRef.delete();
+    if (error) throw error;
 
     return handleSuccess(res, 200, "Riwayat percakapan berhasil dihapus.");
   } catch (error) {

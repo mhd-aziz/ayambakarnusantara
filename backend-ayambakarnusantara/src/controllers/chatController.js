@@ -1,7 +1,38 @@
-const { firestore, FieldValue, storage } = require("../config/firebaseConfig");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
 const { sendNotification } = require("./notificationController");
 const { v4: uuidv4 } = require("uuid");
+const {
+  uploadImage,
+  deleteFile,
+  extractPathFromPublicUrl,
+} = require("../utils/storageHelper");
+
+function mapConversation(row) {
+  if (!row) return null;
+  return {
+    _id: row.id,
+    participantUIDs: row.participant_uids,
+    participantInfo: row.participant_info || {},
+    lastMessage: row.last_message,
+    unreadCounts: row.unread_counts || {},
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function mapMessage(row) {
+  if (!row) return null;
+  return {
+    _id: row.id,
+    senderUID: row.sender_uid,
+    timestamp: row.created_at,
+    text: row.text,
+    imageUrl: row.image_url,
+    location: row.location,
+    type: row.type || "text",
+  };
+}
 
 exports.startOrGetConversation = async (req, res) => {
   const initiatorUID = req.user?.uid;
@@ -29,67 +60,58 @@ exports.startOrGetConversation = async (req, res) => {
   const participants = [initiatorUID, recipientUID].sort();
   const conversationId = participants.join("_");
 
-  const conversationRef = firestore
-    .collection("conversations")
-    .doc(conversationId);
-  const usersRef = firestore.collection("users");
-
   try {
-    const conversationDoc = await conversationRef.get();
+    const { data: conversationRow, error: convError } = await supabaseAdmin
+      .from("conversations")
+      .select("*")
+      .eq("id", conversationId)
+      .maybeSingle();
 
-    if (conversationDoc.exists) {
-      let existingConversationData = conversationDoc.data();
-      if (!existingConversationData._id) {
-        existingConversationData._id = conversationDoc.id;
-      }
+    if (convError) throw convError;
 
-      const [initiatorUserDoc, recipientUserDoc] = await Promise.all([
-        usersRef.doc(initiatorUID).get(),
-        usersRef.doc(recipientUID).get(),
-      ]);
+    if (conversationRow) {
+      const existingConversationData = mapConversation(conversationRow);
+
+      const { data: users, error: usersError } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name, photo_url")
+        .in("id", participants);
+
+      if (usersError) throw usersError;
+
+      const userCache = {};
+      (users || []).forEach((u) => {
+        userCache[u.id] = {
+          displayName: u.display_name || "Pengguna",
+          photoURL: u.photo_url || null,
+        };
+      });
 
       let needsInfoUpdate = false;
       const updatedParticipantInfo = {
         ...(existingConversationData.participantInfo || {}),
       };
 
-      if (initiatorUserDoc.exists) {
-        const initiatorData = initiatorUserDoc.data();
+      participants.forEach((uid) => {
+        const fresh = userCache[uid];
+        if (!fresh) return;
+        const current = updatedParticipantInfo[uid];
         if (
-          updatedParticipantInfo[initiatorUID]?.displayName !==
-            initiatorData.displayName ||
-          updatedParticipantInfo[initiatorUID]?.photoURL !==
-            initiatorData.photoURL
+          !current ||
+          current.displayName !== fresh.displayName ||
+          current.photoURL !== fresh.photoURL
         ) {
-          updatedParticipantInfo[initiatorUID] = {
-            displayName: initiatorData.displayName || "Pengguna",
-            photoURL: initiatorData.photoURL || null,
-          };
+          updatedParticipantInfo[uid] = fresh;
           needsInfoUpdate = true;
         }
-      }
-
-      if (recipientUserDoc.exists) {
-        const recipientData = recipientUserDoc.data();
-        if (
-          updatedParticipantInfo[recipientUID]?.displayName !==
-            recipientData.displayName ||
-          updatedParticipantInfo[recipientUID]?.photoURL !==
-            recipientData.photoURL
-        ) {
-          updatedParticipantInfo[recipientUID] = {
-            displayName: recipientData.displayName || "Pengguna",
-            photoURL: recipientData.photoURL || null,
-          };
-          needsInfoUpdate = true;
-        }
-      }
+      });
 
       if (needsInfoUpdate) {
-        await conversationRef.update({
-          participantInfo: updatedParticipantInfo,
-          updatedAt: FieldValue.serverTimestamp(),
-        });
+        const { error: updateError } = await supabaseAdmin
+          .from("conversations")
+          .update({ participant_info: updatedParticipantInfo })
+          .eq("id", conversationId);
+        if (updateError) throw updateError;
         existingConversationData.participantInfo = updatedParticipantInfo;
       }
 
@@ -99,55 +121,70 @@ exports.startOrGetConversation = async (req, res) => {
         "Percakapan sudah ada.",
         existingConversationData
       );
-    } else {
-      const initiatorUserDoc = await usersRef.doc(initiatorUID).get();
-      const recipientUserDoc = await usersRef.doc(recipientUID).get();
-
-      if (!initiatorUserDoc.exists || !recipientUserDoc.exists) {
-        return handleError(res, {
-          statusCode: 404,
-          message: "Satu atau kedua pengguna tidak ditemukan.",
-        });
-      }
-
-      const initiatorData = initiatorUserDoc.data();
-      const recipientData = recipientUserDoc.data();
-
-      const newConversationData = {
-        _id: conversationId,
-        participantUIDs: participants,
-        participantInfo: {
-          [initiatorUID]: {
-            displayName: initiatorData.displayName || "Pengguna",
-            photoURL: initiatorData.photoURL || null,
-          },
-          [recipientUID]: {
-            displayName: recipientData.displayName || "Pengguna",
-            photoURL: recipientData.photoURL || null,
-          },
-        },
-        lastMessage: null,
-        unreadCounts: {
-          [initiatorUID]: 0,
-          [recipientUID]: 0,
-        },
-        createdAt: FieldValue.serverTimestamp(),
-        updatedAt: FieldValue.serverTimestamp(),
-      };
-
-      await conversationRef.set(newConversationData);
-
-      const createdConversationForResponse = {
-        ...newConversationData,
-      };
-
-      return handleSuccess(
-        res,
-        201,
-        "Percakapan berhasil dimulai.",
-        createdConversationForResponse
-      );
     }
+
+    const { data: users, error: usersError } = await supabaseAdmin
+      .from("profiles")
+      .select("id, display_name, photo_url")
+      .in("id", participants);
+
+    if (usersError) throw usersError;
+
+    if (!users || users.length < 2) {
+      return handleError(res, {
+        statusCode: 404,
+        message: "Satu atau kedua pengguna tidak ditemukan.",
+      });
+    }
+
+    const userCache = {};
+    (users || []).forEach((u) => {
+      userCache[u.id] = {
+        displayName: u.display_name || "Pengguna",
+        photoURL: u.photo_url || null,
+      };
+    });
+
+    const newConversationData = {
+      _id: conversationId,
+      participantUIDs: participants,
+      participantInfo: {
+        [initiatorUID]: userCache[initiatorUID] || {
+          displayName: "Pengguna",
+          photoURL: null,
+        },
+        [recipientUID]: userCache[recipientUID] || {
+          displayName: "Pengguna",
+          photoURL: null,
+        },
+      },
+      lastMessage: null,
+      unreadCounts: {
+        [initiatorUID]: 0,
+        [recipientUID]: 0,
+      },
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    const { error: insertError } = await supabaseAdmin
+      .from("conversations")
+      .insert({
+        id: conversationId,
+        participant_uids: participants,
+        participant_info: newConversationData.participantInfo,
+        last_message: null,
+        unread_counts: newConversationData.unreadCounts,
+      });
+
+    if (insertError) throw insertError;
+
+    return handleSuccess(
+      res,
+      201,
+      "Percakapan berhasil dimulai.",
+      newConversationData
+    );
   } catch (error) {
     console.error(
       "Error starting or getting conversation:",
@@ -172,17 +209,19 @@ exports.getUserConversations = async (req, res) => {
   }
 
   try {
-    const conversationsSnapshot = await firestore
-      .collection("conversations")
-      .where("participantUIDs", "array-contains", userUID)
-      .orderBy("updatedAt", "desc")
-      .get();
+    const { data, error } = await supabaseAdmin
+      .from("conversations")
+      .select("*")
+      .contains("participant_uids", [userUID])
+      .order("updated_at", { ascending: false });
 
-    if (conversationsSnapshot.empty) {
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
       return handleSuccess(res, 200, "Tidak ada percakapan ditemukan.", []);
     }
 
-    const conversations = conversationsSnapshot.docs.map((doc) => doc.data());
+    const conversations = data.map(mapConversation);
     return handleSuccess(
       res,
       200,
@@ -220,22 +259,27 @@ exports.sendMessage = async (req, res) => {
     });
   }
 
-  const conversationRef = firestore
-    .collection("conversations")
-    .doc(conversationId);
-  const messagesRef = conversationRef.collection("messages");
-
   try {
-    const conversationDoc = await conversationRef.get();
-    if (!conversationDoc.exists) {
+    const { data: conversationRow, error: convError } = await supabaseAdmin
+      .from("conversations")
+      .select("*")
+      .eq("id", conversationId)
+      .maybeSingle();
+
+    if (convError) throw convError;
+
+    if (!conversationRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Percakapan tidak ditemukan.",
       });
     }
 
-    const conversationData = conversationDoc.data();
-    if (!conversationData.participantUIDs.includes(senderUID)) {
+    const conversationData = mapConversation(conversationRow);
+    if (
+      !conversationData.participantUIDs ||
+      !conversationData.participantUIDs.includes(senderUID)
+    ) {
       return handleError(res, {
         statusCode: 403,
         message: "Anda bukan partisipan dalam percakapan ini.",
@@ -246,15 +290,11 @@ exports.sendMessage = async (req, res) => {
       (uid) => uid !== senderUID
     );
 
-    const newMessageRef = messagesRef.doc();
     let newMessageData = {
-      _id: newMessageRef.id,
-      senderUID: senderUID,
-      timestamp: FieldValue.serverTimestamp(),
-      text: null,
-      imageUrl: null,
-      location: null,
       type: "text",
+      text: null,
+      image_url: null,
+      location: null,
     };
     let lastMessageText = "";
 
@@ -263,29 +303,14 @@ exports.sendMessage = async (req, res) => {
       lastMessageText = text?.trim() || "Gambar";
       newMessageData.text = text?.trim() || null;
 
-      const bucket = storage.bucket();
       const fileExtension = imageFile.originalname.split(".").pop();
-      const fileName = `chat-images/${conversationId}/${
-        newMessageRef.id
-      }-${uuidv4()}.${fileExtension}`;
-      const fileUpload = bucket.file(fileName);
-
-      const blobStream = fileUpload.createWriteStream({
-        metadata: { contentType: imageFile.mimetype },
-        public: true,
-      });
-
-      await new Promise((resolve, reject) => {
-        blobStream.on("error", (error) => {
-          console.error("Kesalahan stream upload:", error);
-          reject(error);
-        });
-        blobStream.on("finish", () => {
-          newMessageData.imageUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-          resolve();
-        });
-        blobStream.end(imageFile.buffer);
-      });
+      const fileName = `chat-images/${conversationId}/${uuidv4()}.${fileExtension}`;
+      newMessageData.image_url = await uploadImage(
+        "chat-images",
+        fileName,
+        imageFile.buffer,
+        imageFile.mimetype
+      );
     } else if (latitude && longitude) {
       newMessageData.type = "location";
       lastMessageText = "📍 Lokasi";
@@ -304,29 +329,45 @@ exports.sendMessage = async (req, res) => {
       lastMessageText = text.trim();
     }
 
-    const batch = firestore.batch();
-    batch.set(newMessageRef, newMessageData);
+    const { data: messageRow, error: insertError } = await supabaseAdmin
+      .from("messages")
+      .insert({
+        conversation_id: conversationId,
+        sender_uid: senderUID,
+        type: newMessageData.type,
+        text: newMessageData.text,
+        image_url: newMessageData.image_url,
+        location: newMessageData.location,
+        read: false,
+      })
+      .select()
+      .single();
 
-    const currentTimestamp = FieldValue.serverTimestamp();
-    batch.update(conversationRef, {
-      lastMessage: {
-        text: lastMessageText,
-        senderUID: senderUID,
-        timestamp: currentTimestamp,
-      },
-      updatedAt: currentTimestamp,
-      [`unreadCounts.${recipientUID}`]: FieldValue.increment(1),
-    });
+    if (insertError) throw insertError;
 
-    await batch.commit();
+    // Update lastMessage + unreadCounts penerima
+    const unreadCounts = { ...(conversationRow.unread_counts || {}) };
+    unreadCounts[recipientUID] = (unreadCounts[recipientUID] || 0) + 1;
 
-    const createdMessageForResponse = {
-      ...newMessageData,
-      timestamp: new Date().toISOString(),
-      _id: newMessageRef.id,
-    };
+    const { error: convUpdateError } = await supabaseAdmin
+      .from("conversations")
+      .update({
+        last_message: {
+          text: lastMessageText,
+          senderUID,
+          timestamp: new Date().toISOString(),
+        },
+        unread_counts: unreadCounts,
+      })
+      .eq("id", conversationId);
 
-    const senderInfo = conversationData.participantInfo[senderUID];
+    if (convUpdateError) throw convUpdateError;
+
+    const createdMessageForResponse = mapMessage(messageRow);
+
+    const senderInfo = conversationData.participantInfo
+      ? conversationData.participantInfo[senderUID]
+      : null;
     const senderName = senderInfo ? senderInfo.displayName : "Seseorang";
 
     const notificationPayload = {
@@ -368,27 +409,33 @@ exports.getConversationMessages = async (req, res) => {
     });
   }
 
-  const conversationRef = firestore
-    .collection("conversations")
-    .doc(conversationId);
-  const messagesRef = conversationRef.collection("messages");
-
   try {
-    const conversationDoc = await conversationRef.get();
-    if (!conversationDoc.exists) {
+    const { data: conversationRow, error: convError } = await supabaseAdmin
+      .from("conversations")
+      .select("id, participant_uids")
+      .eq("id", conversationId)
+      .maybeSingle();
+
+    if (convError) throw convError;
+
+    if (!conversationRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Percakapan tidak ditemukan.",
       });
     }
-    if (!conversationDoc.data().participantUIDs.includes(userUID)) {
+    if (!conversationRow.participant_uids.includes(userUID)) {
       return handleError(res, {
         statusCode: 403,
         message: "Anda bukan partisipan dalam percakapan ini.",
       });
     }
 
-    let query = messagesRef.orderBy("timestamp", "desc").limit(Number(limit));
+    let query = supabaseAdmin
+      .from("messages")
+      .select("*")
+      .eq("conversation_id", conversationId)
+      .order("created_at", { ascending: false });
 
     if (beforeTimestamp) {
       try {
@@ -396,7 +443,7 @@ exports.getConversationMessages = async (req, res) => {
         if (isNaN(parsedTimestamp.valueOf())) {
           throw new Error("Invalid date format for beforeTimestamp");
         }
-        query = query.startAfter(parsedTimestamp);
+        query = query.lt("created_at", parsedTimestamp.toISOString());
       } catch (e) {
         return handleError(res, {
           statusCode: 400,
@@ -405,20 +452,20 @@ exports.getConversationMessages = async (req, res) => {
       }
     }
 
-    const messagesSnapshot = await query.get();
-    const messages = messagesSnapshot.docs.map((doc) => {
-      const data = doc.data();
-      if (data.timestamp && typeof data.timestamp.toDate === "function") {
-        data.timestamp = data.timestamp.toDate().toISOString();
-      }
-      return data;
-    });
+    const numLimit = parseInt(limit, 10);
+    query = query.limit(isNaN(numLimit) || numLimit <= 0 ? 20 : numLimit);
+
+    const { data: messageRows, error: messagesError } = await query;
+
+    if (messagesError) throw messagesError;
+
+    const messages = (messageRows || []).map(mapMessage).reverse();
 
     return handleSuccess(
       res,
       200,
       "Pesan percakapan berhasil diambil.",
-      messages.reverse()
+      messages
     );
   } catch (error) {
     console.error("Error getting conversation messages:", error);
@@ -443,45 +490,37 @@ exports.markConversationAsRead = async (req, res) => {
     });
   }
 
-  const conversationRef = firestore
-    .collection("conversations")
-    .doc(conversationId);
-
   try {
-    const conversationDoc = await conversationRef.get();
-    if (!conversationDoc.exists) {
+    const { data: conversationRow, error: convError } = await supabaseAdmin
+      .from("conversations")
+      .select("participant_uids, unread_counts")
+      .eq("id", conversationId)
+      .maybeSingle();
+
+    if (convError) throw convError;
+
+    if (!conversationRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Percakapan tidak ditemukan.",
       });
     }
-    const conversationData = conversationDoc.data();
-    if (!conversationData.participantUIDs.includes(userUID)) {
+    if (!conversationRow.participant_uids.includes(userUID)) {
       return handleError(res, {
         statusCode: 403,
         message: "Anda bukan partisipan dalam percakapan ini.",
       });
     }
 
-    if (
-      conversationData.unreadCounts &&
-      typeof conversationData.unreadCounts[userUID] === "number" &&
-      conversationData.unreadCounts[userUID] > 0
-    ) {
-      await conversationRef.update({
-        [`unreadCounts.${userUID}`]: 0,
-        updatedAt: FieldValue.serverTimestamp(),
-      });
+    const unreadCounts = conversationRow.unread_counts || {};
+    if (typeof unreadCounts[userUID] === "number" && unreadCounts[userUID] > 0) {
+      unreadCounts[userUID] = 0;
+      const { error: updateError } = await supabaseAdmin
+        .from("conversations")
+        .update({ unread_counts: unreadCounts })
+        .eq("id", conversationId);
+      if (updateError) throw updateError;
       return handleSuccess(res, 200, "Percakapan ditandai sudah dibaca.");
-    } else if (!conversationData.unreadCounts) {
-      console.warn(
-        `Conversation ${conversationId} does not have unreadCounts field. Skipping read update.`
-      );
-      return handleSuccess(
-        res,
-        200,
-        "Percakapan tidak memiliki fitur hitung pesan belum dibaca, status baca tidak diubah."
-      );
     }
 
     return handleSuccess(

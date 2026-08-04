@@ -3,7 +3,7 @@ const router = express.Router();
 const chatbotController = require("../controllers/chatbotController");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
-router.post("/ask", authenticateToken, chatbotController.forwardToRasa);
+router.post("/ask", authenticateToken, chatbotController.forwardToChatbot);
 
 router.get("/history", authenticateToken, chatbotController.getChatHistory);
 

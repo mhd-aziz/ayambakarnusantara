@@ -1,8 +1,44 @@
-const { firestore, storage } = require("../config/firebaseConfig");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
 const { sendNotification } = require("./notificationController");
-const { FieldValue } = require("firebase-admin/firestore");
+const { uploadPrivateImage, mapPaymentProofUrls } = require("../utils/storageHelper");
 const path = require("path");
+
+async function mapOrderAsync(row) {
+  if (!row) return null;
+  const pd = { ...(row.payment_details || {}) };
+  if (pd.proofImageURLs && pd.proofImageURLs.length > 0) {
+    pd.proofImageURLs = await mapPaymentProofUrls(pd.proofImageURLs);
+  }
+  return {
+    orderId: row.id,
+    userId: row.user_id,
+    items: row.items,
+    totalPrice: Number(row.total_price),
+    paymentDetails: pd,
+    orderStatus: row.order_status,
+    orderType: "PICKUP",
+    notes: row.notes,
+    shopIds: row.shop_ids,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function mapOrdersAsync(rows) {
+  if (!rows || rows.length === 0) return [];
+  return Promise.all(rows.map(mapOrderAsync));
+}
+
+async function getShopOwnerUid(shopId) {
+  if (!shopId) return null;
+  const { data } = await supabaseAdmin
+    .from("shops")
+    .select("user_id")
+    .eq("id", shopId)
+    .maybeSingle();
+  return data?.user_id || null;
+}
 
 exports.createOrder = async (req, res) => {
   const userId = req.user?.uid;
@@ -23,172 +59,46 @@ exports.createOrder = async (req, res) => {
     });
   }
 
-  const cartRef = firestore.collection("carts").doc(userId);
-  const productsCollection = firestore.collection("products");
-  const ordersCollection = firestore.collection("orders");
-
   try {
-    const cartDoc = await cartRef.get();
-
-    if (
-      !cartDoc.exists ||
-      !cartDoc.data().items ||
-      cartDoc.data().items.length === 0
-    ) {
-      return handleError(res, {
-        statusCode: 400,
-        message: "Keranjang Anda kosong. Tidak dapat membuat pesanan.",
-      });
-    }
-
-    const cartData = cartDoc.data();
-    const orderItems = [];
-    let calculatedTotalPrice = 0;
-    const shopIds = new Set();
-
-    const productChecks = cartData.items.map(async (item) => {
-      const productRef = productsCollection.doc(item.productId);
-      const productDoc = await productRef.get();
-
-      if (!productDoc.exists) {
-        throw {
-          statusCode: 404,
-          message: `Produk dengan ID ${item.productId} (${item.name}) tidak ditemukan lagi. Harap hapus dari keranjang Anda.`,
-        };
-      }
-
-      const productData = productDoc.data();
-      if (productData.stock < item.quantity) {
-        throw {
-          statusCode: 400,
-          message: `Stok untuk produk ${item.name} tidak mencukupi. Sisa stok: ${productData.stock}, diminta: ${item.quantity}.`,
-        };
-      }
-
-      if (productData.shopId) {
-        shopIds.add(productData.shopId);
-      }
-
-      orderItems.push({
-        productId: item.productId,
-        shopId: item.shopId,
-        name: item.name,
-        price: item.price,
-        quantity: item.quantity,
-        productImageURL: item.productImageURL || null,
-        subtotal: item.price * item.quantity,
-      });
-      calculatedTotalPrice += item.price * item.quantity;
+    const { data: newOrder, error } = await supabaseAdmin.rpc("create_order", {
+      p_user_id: userId,
+      p_payment_method: paymentMethod,
+      p_notes: notes || null,
     });
 
-    await Promise.all(productChecks);
+    if (error) throw error;
 
-    if (Math.abs(calculatedTotalPrice - cartData.totalPrice) > 0.001) {
-      console.warn(
-        `Peringatan: Total harga keranjang (${cartData.totalPrice}) berbeda dengan total yang dihitung ulang (${calculatedTotalPrice}). Menggunakan total yang dihitung ulang.`
-      );
-    }
-
-    let initialOrderStatus;
-    let paymentDetailsStatus;
-    const upperPaymentMethod = paymentMethod.toUpperCase();
-
-    if (upperPaymentMethod === "PAY_AT_STORE") {
-      initialOrderStatus = "PENDING_CONFIRMATION";
-      paymentDetailsStatus = "pay_on_pickup";
-    } else if (upperPaymentMethod === "ONLINE_PAYMENT") {
-      initialOrderStatus = "AWAITING_PAYMENT";
-      paymentDetailsStatus = "awaiting_gateway_interaction";
-    } else {
-      return handleError(res, {
-        statusCode: 400,
-        message:
-          "Metode pembayaran tidak valid. Gunakan 'PAY_AT_STORE' atau 'ONLINE_PAYMENT'.",
-      });
-    }
-
-    const newOrderRef = ordersCollection.doc();
-    const newOrderData = {
-      orderId: newOrderRef.id,
-      userId: userId,
-      items: orderItems,
-      totalPrice: calculatedTotalPrice,
-      paymentDetails: {
-        method: paymentMethod,
-        status: paymentDetailsStatus,
-        gatewayTransactionId: null,
-        gatewayAssignedOrderId: null,
-        gatewaySnapToken: null,
-        gatewayRedirectUrl: null,
-      },
-      orderStatus: initialOrderStatus,
-      orderType: "PICKUP",
-      notes: notes || null,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const batch = firestore.batch();
-    batch.set(newOrderRef, newOrderData);
-
-    orderItems.forEach((item) => {
-      const productRef = productsCollection.doc(item.productId);
-      batch.update(productRef, {
-        stock: FieldValue.increment(-item.quantity),
-      });
-    });
-
-    batch.update(cartRef, {
-      items: [],
-      totalPrice: 0,
-      updatedAt: new Date().toISOString(),
-    });
-
-    await batch.commit();
-
+    // Notifikasi seller
     try {
-      if (shopIds.size > 0) {
-        const customerDoc = await firestore
-          .collection("users")
-          .doc(userId)
-          .get();
-        const customerName = customerDoc.exists
-          ? customerDoc.data().displayName
-          : "Seorang pelanggan";
-
-        const shopId = shopIds.values().next().value;
-        const shopDoc = await firestore.collection("shops").doc(shopId).get();
-
-        if (shopDoc.exists) {
-          const sellerUID = shopDoc.data().ownerUID;
+      const shopId = newOrder.items?.[0]?.shopId;
+      if (shopId) {
+        const sellerUID = await getShopOwnerUid(shopId);
+        if (sellerUID) {
+          const { data: customer } = await supabaseAdmin
+            .from("profiles")
+            .select("display_name")
+            .eq("id", userId)
+            .maybeSingle();
+          const customerName = customer?.display_name || "Seorang pelanggan";
           const notificationPayload = {
             userId: sellerUID,
             title: "Pesanan Baru Diterima!",
-            body: `${customerName} telah membuat pesanan baru #${newOrderRef.id.substring(
-              0,
-              20
-            )}.`,
-            data: { orderId: newOrderRef.id, type: "NEW_ORDER" },
+            body: `${customerName} telah membuat pesanan baru #${newOrder.id.substring(0, 20)}.`,
+            data: { orderId: newOrder.id, type: "NEW_ORDER" },
           };
           await sendNotification(notificationPayload);
         }
       }
     } catch (notifError) {
-      console.error(
-        "Gagal mengirim notifikasi pesanan baru ke seller:",
-        notifError
-      );
+      console.error("Gagal mengirim notifikasi pesanan baru ke seller:", notifError);
     }
 
-    return handleSuccess(res, 201, "Pesanan berhasil dibuat.", newOrderData);
+    return handleSuccess(res, 201, "Pesanan berhasil dibuat.", await mapOrderAsync(newOrder));
   } catch (error) {
     console.error("Error creating order:", error);
-    if (error.statusCode) {
-      return handleError(res, error);
-    }
     return handleError(res, {
       statusCode: 500,
-      message: "Gagal membuat pesanan.",
+      message: `Gagal membuat pesanan: ${error.message || ""}`.trim(),
     });
   }
 };
@@ -204,28 +114,19 @@ exports.getUserOrders = async (req, res) => {
   }
 
   try {
-    const ordersSnapshot = await firestore
-      .collection("orders")
-      .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .get();
+    const { data, error } = await supabaseAdmin
+      .from("orders")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
 
-    if (ordersSnapshot.empty) {
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
       return handleSuccess(res, 200, "Anda belum memiliki pesanan.", []);
     }
 
-    const orders = ordersSnapshot.docs.map((doc) => {
-      const orderData = doc.data();
-      if (
-        orderData.paymentDetails &&
-        orderData.paymentDetails.gatewayTransactionId
-      ) {
-        orderData.paymentDetails.transactionId =
-          orderData.paymentDetails.gatewayTransactionId;
-      }
-      return orderData;
-    });
-
+    const orders = await mapOrdersAsync(data);
     return handleSuccess(res, 200, "Data pesanan berhasil diambil.", orders);
   } catch (error) {
     console.error("Error getting user orders:", error);
@@ -254,18 +155,22 @@ exports.getOrderDetailsForCustomer = async (req, res) => {
   }
 
   try {
-    const orderRef = firestore.collection("orders").doc(orderId);
-    const orderDoc = await orderRef.get();
+    const { data: orderRow, error } = await supabaseAdmin
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
 
-    if (!orderDoc.exists) {
+    if (error) throw error;
+
+    if (!orderRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Pesanan tidak ditemukan.",
       });
     }
-    const orderData = orderDoc.data();
 
-    if (orderData.userId !== customerId) {
+    if (orderRow.user_id !== customerId) {
       return handleError(res, {
         statusCode: 403,
         message: "Anda tidak diizinkan untuk mengakses detail pesanan ini.",
@@ -273,33 +178,30 @@ exports.getOrderDetailsForCustomer = async (req, res) => {
     }
 
     let shopDetails = null;
-    if (orderData.items && orderData.items.length > 0) {
-      const shopId = orderData.items[0].shopId;
+    if (orderRow.items && orderRow.items.length > 0) {
+      const shopId = orderRow.items[0].shopId;
       if (shopId) {
-        const shopDoc = await firestore.collection("shops").doc(shopId).get();
-        if (shopDoc.exists) {
-          const shopData = shopDoc.data();
+        const { data: shopData } = await supabaseAdmin
+          .from("shops")
+          .select("shop_name, shop_address, banner_image_url, description")
+          .eq("id", shopId)
+          .maybeSingle();
+        if (shopData) {
           shopDetails = {
-            shopName: shopData.shopName,
-            shopAddress: shopData.shopAddress,
-            bannerImageURL: shopData.bannerImageURL,
+            shopName: shopData.shop_name,
+            shopAddress: shopData.shop_address,
+            bannerImageURL: shopData.banner_image_url,
             description: shopData.description,
           };
         }
       }
     }
 
-    if (
-      orderData.paymentDetails &&
-      orderData.paymentDetails.gatewayTransactionId
-    ) {
-      orderData.paymentDetails.transactionId =
-        orderData.paymentDetails.gatewayTransactionId;
-    }
+    const orderData = await mapOrderAsync(orderRow);
 
     return handleSuccess(res, 200, "Detail pesanan berhasil diambil.", {
       order: orderData,
-      shopDetails: shopDetails,
+      shopDetails,
     });
   } catch (error) {
     console.error("Error getting order details for customer:", error);
@@ -327,17 +229,22 @@ exports.getSellerOrders = async (req, res) => {
   }
 
   try {
-    const sellerUserDocRef = firestore.collection("users").doc(sellerId);
-    const sellerUserDoc = await sellerUserDocRef.get();
+    const { data: sellerUser, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", sellerId)
+      .maybeSingle();
 
-    if (!sellerUserDoc.exists || sellerUserDoc.data().role !== "seller") {
+    if (userError) throw userError;
+
+    if (!sellerUser || sellerUser.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Hanya seller yang dapat mengakses daftar pesanan ini.",
       });
     }
 
-    const sellerOwnedShopId = sellerUserDoc.data().shopId;
+    const sellerOwnedShopId = sellerUser.shop_id;
     if (!sellerOwnedShopId) {
       return handleError(res, {
         statusCode: 403,
@@ -346,22 +253,20 @@ exports.getSellerOrders = async (req, res) => {
       });
     }
 
-    let ordersQuery = firestore.collection("orders");
+    let ordersQuery = supabaseAdmin.from("orders").select("*");
 
     if (customerUserIdQuery) {
-      ordersQuery = ordersQuery.where("userId", "==", customerUserIdQuery);
+      ordersQuery = ordersQuery.eq("user_id", customerUserIdQuery);
     }
 
     if (statusQuery && statusQuery.toUpperCase() !== "ALL") {
-      ordersQuery = ordersQuery.where(
-        "orderStatus",
-        "==",
-        statusQuery.toUpperCase()
-      );
+      ordersQuery = ordersQuery.eq("order_status", statusQuery.toUpperCase());
     }
 
-    ordersQuery = ordersQuery.orderBy("createdAt", "desc");
-    const ordersSnapshot = await ordersQuery.get();
+    ordersQuery = ordersQuery.order("created_at", { ascending: false });
+
+    const { data: allFetchedOrders, error: ordersError } = await ordersQuery;
+    if (ordersError) throw ordersError;
 
     let messageIfEmpty = "Tidak ada pesanan ditemukan untuk kriteria ini.";
     if (orderIdQuery || customerSearchQuery) {
@@ -369,18 +274,31 @@ exports.getSellerOrders = async (req, res) => {
         "Tidak ada pesanan yang cocok dengan kriteria pencarian untuk toko Anda.";
     }
 
-    if (ordersSnapshot.empty) {
+    if (!allFetchedOrders || allFetchedOrders.length === 0) {
       return handleSuccess(res, 200, messageIfEmpty, []);
     }
 
-    const allFetchedOrders = ordersSnapshot.docs.map((doc) => doc.data());
+    // Ambil data customer (untuk customerDetails & pencarian)
+    const customerIds = [
+      ...new Set(allFetchedOrders.map((o) => o.user_id).filter(Boolean)),
+    ];
+    const customerCache = {};
+    if (customerIds.length > 0) {
+      const { data: customers } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name, email, phone_number, photo_url")
+        .in("id", customerIds);
+      (customers || []).forEach((c) => {
+        customerCache[c.id] = c;
+      });
+    }
 
-    const sellerOrdersPromises = allFetchedOrders.map(async (orderData) => {
+    const sellerOrdersPromises = allFetchedOrders.map(async (orderRow) => {
       if (
         !(
-          orderData.items &&
-          orderData.items.length > 0 &&
-          orderData.items.every((item) => item.shopId === sellerOwnedShopId)
+          orderRow.items &&
+          orderRow.items.length > 0 &&
+          orderRow.items.every((item) => item.shopId === sellerOwnedShopId)
         )
       ) {
         return null;
@@ -388,37 +306,28 @@ exports.getSellerOrders = async (req, res) => {
 
       if (orderIdQuery) {
         const orderIdTerm = orderIdQuery.toLowerCase();
-        if (
-          !orderData.orderId ||
-          !orderData.orderId.toLowerCase().includes(orderIdTerm)
-        ) {
+        if (!orderRow.id || !orderRow.id.toLowerCase().includes(orderIdTerm)) {
           return null;
         }
       }
 
+      const orderData = await mapOrderAsync(orderRow);
+
       let customerDetails = null;
-      if (orderData.userId) {
-        const customerDocRef = firestore
-          .collection("users")
-          .doc(orderData.userId);
-        const customerDoc = await customerDocRef.get();
-        if (customerDoc.exists) {
-          const custData = customerDoc.data();
-          customerDetails = {
-            userId: orderData.userId,
-            displayName: custData.displayName || null,
-            email: custData.email || null,
-            phoneNumber: custData.phoneNumber || null,
-            photoURL: custData.photoURL || null,
-          };
-        }
+      const cust = customerCache[orderRow.user_id];
+      if (cust) {
+        customerDetails = {
+          userId: orderRow.user_id,
+          displayName: cust.display_name || null,
+          email: cust.email || null,
+          phoneNumber: cust.phone_number || null,
+          photoURL: cust.photo_url || null,
+        };
       }
       orderData.customerDetails = customerDetails;
 
       if (customerSearchQuery) {
-        if (!customerDetails) {
-          return null;
-        }
+        if (!customerDetails) return null;
         const searchTerm = customerSearchQuery.toLowerCase();
         const nameMatch =
           customerDetails.displayName &&
@@ -426,19 +335,9 @@ exports.getSellerOrders = async (req, res) => {
         const emailMatch =
           customerDetails.email &&
           customerDetails.email.toLowerCase().includes(searchTerm);
-
-        if (!nameMatch && !emailMatch) {
-          return null;
-        }
+        if (!nameMatch && !emailMatch) return null;
       }
 
-      if (
-        orderData.paymentDetails &&
-        orderData.paymentDetails.gatewayTransactionId
-      ) {
-        orderData.paymentDetails.transactionId =
-          orderData.paymentDetails.gatewayTransactionId;
-      }
       return orderData;
     });
 
@@ -484,16 +383,21 @@ exports.getOrderDetailsForSeller = async (req, res) => {
   }
 
   try {
-    const sellerUserDocRef = firestore.collection("users").doc(sellerId);
-    const sellerUserDoc = await sellerUserDocRef.get();
+    const { data: sellerUser, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", sellerId)
+      .maybeSingle();
 
-    if (!sellerUserDoc.exists || sellerUserDoc.data().role !== "seller") {
+    if (userError) throw userError;
+
+    if (!sellerUser || sellerUser.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Hanya seller yang dapat mengakses ini.",
       });
     }
-    const sellerOwnedShopId = sellerUserDoc.data().shopId;
+    const sellerOwnedShopId = sellerUser.shop_id;
     if (!sellerOwnedShopId) {
       return handleError(res, {
         statusCode: 403,
@@ -501,24 +405,28 @@ exports.getOrderDetailsForSeller = async (req, res) => {
       });
     }
 
-    const orderRef = firestore.collection("orders").doc(orderId);
-    const orderDoc = await orderRef.get();
+    const { data: orderRow, error } = await supabaseAdmin
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
 
-    if (!orderDoc.exists) {
+    if (error) throw error;
+
+    if (!orderRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Pesanan tidak ditemukan.",
       });
     }
-    const orderData = orderDoc.data();
 
-    if (!orderData.items || orderData.items.length === 0) {
+    if (!orderRow.items || orderRow.items.length === 0) {
       return handleError(res, {
         statusCode: 400,
         message: "Pesanan tidak memiliki item.",
       });
     }
-    const orderBelongsToSellerShop = orderData.items.every(
+    const orderBelongsToSellerShop = orderRow.items.every(
       (item) => item.shopId === sellerOwnedShopId
     );
     if (!orderBelongsToSellerShop) {
@@ -530,30 +438,24 @@ exports.getOrderDetailsForSeller = async (req, res) => {
     }
 
     let customerInfo = null;
-    const customerUID = orderData.userId;
+    const customerUID = orderRow.user_id;
     if (customerUID) {
-      const customerUserDoc = await firestore
-        .collection("users")
-        .doc(customerUID)
-        .get();
-      if (customerUserDoc.exists) {
-        const customerUserData = customerUserDoc.data();
+      const { data: customerUser } = await supabaseAdmin
+        .from("profiles")
+        .select("display_name, email, phone_number, photo_url")
+        .eq("id", customerUID)
+        .maybeSingle();
+      if (customerUser) {
         customerInfo = {
-          displayName: customerUserData.displayName,
-          email: customerUserData.email,
-          phoneNumber: customerUserData.phoneNumber,
-          photoURL: customerUserData.photoURL,
+          displayName: customerUser.display_name,
+          email: customerUser.email,
+          phoneNumber: customerUser.phone_number,
+          photoURL: customerUser.photo_url,
         };
       }
     }
 
-    if (
-      orderData.paymentDetails &&
-      orderData.paymentDetails.gatewayTransactionId
-    ) {
-      orderData.paymentDetails.transactionId =
-        orderData.paymentDetails.gatewayTransactionId;
-    }
+    const orderData = await mapOrderAsync(orderRow);
 
     return handleSuccess(res, 200, "Detail pesanan berhasil diambil.", {
       order: orderData,
@@ -585,92 +487,44 @@ exports.cancelOrder = async (req, res) => {
     });
   }
 
-  const orderRef = firestore.collection("orders").doc(orderId);
-  const productsCollection = firestore.collection("products");
-
   try {
-    const orderDoc = await orderRef.get();
-    if (!orderDoc.exists) {
-      return handleError(res, {
-        statusCode: 404,
-        message: "Pesanan tidak ditemukan.",
-      });
-    }
-    const orderData = orderDoc.data();
-
-    if (orderData.userId !== userId) {
-      return handleError(res, {
-        statusCode: 403,
-        message: "Anda tidak diizinkan untuk membatalkan pesanan ini.",
-      });
-    }
-
-    const cancellableStatuses = ["AWAITING_PAYMENT", "PENDING_CONFIRMATION"];
-    if (!cancellableStatuses.includes(orderData.orderStatus)) {
-      return handleError(res, {
-        statusCode: 400,
-        message: `Pesanan dengan status "${orderData.orderStatus}" tidak dapat dibatalkan oleh Anda saat ini.`,
-      });
-    }
-
-    const batch = firestore.batch();
-    batch.update(orderRef, {
-      orderStatus: "CANCELLED",
-      "paymentDetails.status": "cancelled_by_user",
-      updatedAt: new Date().toISOString(),
+    const { data: updatedOrder, error } = await supabaseAdmin.rpc("cancel_order", {
+      p_order_id: orderId,
+      p_user_id: userId,
     });
 
-    orderData.items.forEach((item) => {
-      const productRef = productsCollection.doc(item.productId);
-      batch.update(productRef, {
-        stock: FieldValue.increment(item.quantity),
-      });
-    });
+    if (error) throw error;
 
-    await batch.commit();
-
+    // Notifikasi seller
     try {
-      if (orderData.items && orderData.items.length > 0) {
-        const shopId = orderData.items[0].shopId;
-        const shopDoc = await firestore.collection("shops").doc(shopId).get();
-
-        if (shopDoc.exists) {
-          const sellerUID = shopDoc.data().ownerUID;
+      const shopId = updatedOrder.items?.[0]?.shopId;
+      if (shopId) {
+        const sellerUID = await getShopOwnerUid(shopId);
+        if (sellerUID) {
           const notificationPayload = {
             userId: sellerUID,
             title: "Pesanan Dibatalkan",
-            body: `Pesanan #${orderId.substring(
-              0,
-              20
-            )} telah dibatalkan oleh pelanggan.`,
-            data: { orderId: orderId, type: "ORDER_CANCELLED" },
+            body: `Pesanan #${orderId.substring(0, 20)} telah dibatalkan oleh pelanggan.`,
+            data: { orderId, type: "ORDER_CANCELLED" },
           };
           await sendNotification(notificationPayload);
         }
       }
     } catch (notifError) {
-      console.error(
-        "Gagal mengirim notifikasi pembatalan pesanan ke seller:",
-        notifError
-      );
+      console.error("Gagal mengirim notifikasi pembatalan pesanan ke seller:", notifError);
     }
-
-    const updatedOrderDoc = await orderRef.get();
 
     return handleSuccess(
       res,
       200,
       "Pesanan berhasil dibatalkan.",
-      updatedOrderDoc.data()
+      await mapOrderAsync(updatedOrder)
     );
   } catch (error) {
     console.error("Error cancelling order:", error);
-    if (error.statusCode) {
-      return handleError(res, error);
-    }
     return handleError(res, {
       statusCode: 500,
-      message: "Gagal membatalkan pesanan.",
+      message: `Gagal membatalkan pesanan: ${error.message || ""}`.trim(),
     });
   }
 };
@@ -686,7 +540,6 @@ exports.updateOrderStatusBySeller = async (req, res) => {
       message: "Otentikasi diperlukan.",
     });
   }
-
   if (!orderId) {
     return handleError(res, {
       statusCode: 400,
@@ -703,27 +556,27 @@ exports.updateOrderStatusBySeller = async (req, res) => {
   if (!newStatus || !allowedNewStatuses.includes(newStatus.toUpperCase())) {
     return handleError(res, {
       statusCode: 400,
-      message: `Status baru tidak valid atau tidak disediakan. Harap set 'newStatus' menjadi salah satu dari: ${allowedNewStatuses.join(
-        ", "
-      )}.`,
+      message: `Status baru tidak valid atau tidak disediakan. Harap set 'newStatus' menjadi salah satu dari: ${allowedNewStatuses.join(", ")}.`,
     });
   }
   const normalizedNewStatus = newStatus.toUpperCase();
 
-  const orderRef = firestore.collection("orders").doc(orderId);
-  const usersCollection = firestore.collection("users");
-
   try {
-    const sellerUserDocRef = usersCollection.doc(sellerId);
-    const sellerUserDoc = await sellerUserDocRef.get();
+    const { data: sellerUser, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", sellerId)
+      .maybeSingle();
 
-    if (!sellerUserDoc.exists || sellerUserDoc.data().role !== "seller") {
+    if (userError) throw userError;
+
+    if (!sellerUser || sellerUser.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Hanya seller yang dapat memperbarui status pesanan ini.",
       });
     }
-    const sellerShopId = sellerUserDoc.data().shopId;
+    const sellerShopId = sellerUser.shop_id;
     if (!sellerShopId) {
       return handleError(res, {
         statusCode: 403,
@@ -731,19 +584,24 @@ exports.updateOrderStatusBySeller = async (req, res) => {
       });
     }
 
-    const orderDoc = await orderRef.get();
-    if (!orderDoc.exists) {
+    const { data: orderRow, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (orderError) throw orderError;
+
+    if (!orderRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Pesanan tidak ditemukan.",
       });
     }
-    const orderData = orderDoc.data();
 
-    const orderBelongsToSellerShop = orderData.items.every(
+    const orderBelongsToSellerShop = orderRow.items.every(
       (item) => item.shopId === sellerShopId
     );
-
     if (!orderBelongsToSellerShop) {
       return handleError(res, {
         statusCode: 403,
@@ -752,13 +610,17 @@ exports.updateOrderStatusBySeller = async (req, res) => {
       });
     }
 
+    const pd = orderRow.payment_details || {};
+    const method = (pd.method || "").toUpperCase();
+    const paymentStatus = pd.status;
+
     let validPreviousStatuses;
     let paymentStatusUpdate = {};
 
     switch (normalizedNewStatus) {
       case "CONFIRMED":
         validPreviousStatuses = ["PENDING_CONFIRMATION"];
-        if (orderData.paymentDetails.method.toUpperCase() !== "PAY_AT_STORE") {
+        if (method !== "PAY_AT_STORE") {
           return handleError(res, {
             statusCode: 400,
             message: "Status CONFIRMED hanya untuk pesanan Bayar di Tempat.",
@@ -766,17 +628,14 @@ exports.updateOrderStatusBySeller = async (req, res) => {
         }
         break;
       case "PROCESSING":
-        if (
-          orderData.paymentDetails.method.toUpperCase() === "ONLINE_PAYMENT" &&
-          orderData.paymentDetails.status !== "paid"
-        ) {
+        if (method === "ONLINE_PAYMENT" && paymentStatus !== "paid") {
           return handleError(res, {
             statusCode: 400,
             message: "Pembayaran online untuk pesanan ini belum lunas.",
           });
         }
         validPreviousStatuses =
-          orderData.paymentDetails.method.toUpperCase() === "PAY_AT_STORE"
+          method === "PAY_AT_STORE"
             ? ["CONFIRMED"]
             : ["AWAITING_PAYMENT"];
         break;
@@ -785,10 +644,7 @@ exports.updateOrderStatusBySeller = async (req, res) => {
         break;
       case "COMPLETED":
         validPreviousStatuses = ["READY_FOR_PICKUP"];
-        if (
-          orderData.paymentDetails.method.toUpperCase() === "PAY_AT_STORE" &&
-          orderData.paymentDetails.status !== "paid"
-        ) {
+        if (method === "PAY_AT_STORE" && paymentStatus !== "paid") {
           return handleError(res, {
             statusCode: 400,
             message:
@@ -797,65 +653,59 @@ exports.updateOrderStatusBySeller = async (req, res) => {
         }
         break;
       default:
-        console.error(
-          "Kesalahan logika internal: Status baru tidak dikenal dalam switch:",
-          normalizedNewStatus
-        );
         return handleError(res, {
           statusCode: 500,
           message: "Terjadi kesalahan internal dalam pemrosesan status.",
         });
     }
 
-    if (!validPreviousStatuses.includes(orderData.orderStatus)) {
+    if (!validPreviousStatuses.includes(orderRow.order_status)) {
       return handleError(res, {
         statusCode: 400,
-        message: `Pesanan dengan status "${orderData.orderStatus}" tidak dapat diubah menjadi "${normalizedNewStatus}" saat ini.`,
+        message: `Pesanan dengan status "${orderRow.order_status}" tidak dapat diubah menjadi "${normalizedNewStatus}" saat ini.`,
       });
     }
 
-    if (orderData.orderStatus === normalizedNewStatus) {
+    if (orderRow.order_status === normalizedNewStatus) {
       return handleError(res, {
         statusCode: 400,
         message: `Pesanan sudah dalam status "${normalizedNewStatus}".`,
       });
     }
 
-    const updatePayload = {
-      orderStatus: normalizedNewStatus,
-      updatedAt: new Date().toISOString(),
-      ...paymentStatusUpdate,
-    };
+    const { data: updatedRow, error: updateError } = await supabaseAdmin
+      .from("orders")
+      .update({ order_status: normalizedNewStatus })
+      .eq("id", orderId)
+      .select()
+      .single();
 
-    await orderRef.update(updatePayload);
+    if (updateError) throw updateError;
 
-    const customerId = orderData.userId;
-    const notificationPayload = {
-      userId: customerId,
-      title: "Status Pesanan Diperbarui!",
-      body: `Status pesanan #${orderId.substring(
-        0,
-        20
-      )} kini adalah ${normalizedNewStatus}.`,
-      data: { orderId: orderId, type: "ORDER_STATUS_UPDATE" },
-    };
-    await sendNotification(notificationPayload);
+    // Notifikasi customer
+    try {
+      const notificationPayload = {
+        userId: orderRow.user_id,
+        title: "Status Pesanan Diperbarui!",
+        body: `Status pesanan #${orderId.substring(0, 20)} kini adalah ${normalizedNewStatus}.`,
+        data: { orderId, type: "ORDER_STATUS_UPDATE" },
+      };
+      await sendNotification(notificationPayload);
+    } catch (notifError) {
+      console.error("Gagal mengirim notifikasi status pesanan:", notifError);
+    }
 
-    const updatedOrderDoc = await orderRef.get();
     return handleSuccess(
       res,
       200,
       `Status pesanan berhasil diperbarui menjadi ${normalizedNewStatus}.`,
-      updatedOrderDoc.data()
+      await mapOrderAsync(updatedRow)
     );
   } catch (error) {
     console.error("Error updating order status by seller:", error);
-    if (error.statusCode) {
-      return handleError(res, error);
-    }
     return handleError(res, {
       statusCode: 500,
-      message: "Gagal memperbarui status pesanan.",
+      message: `Gagal memperbarui status pesanan: ${error.message || ""}`.trim(),
     });
   }
 };
@@ -878,44 +728,50 @@ exports.confirmPayAtStorePaymentBySeller = async (req, res) => {
     });
   }
 
-  const orderRef = firestore.collection("orders").doc(orderId);
-
   try {
-    const orderDoc = await orderRef.get();
-    if (!orderDoc.exists) {
+    const { data: orderRow, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (orderError) throw orderError;
+
+    if (!orderRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Pesanan tidak ditemukan.",
       });
     }
-    const orderData = orderDoc.data();
 
-    const sellerUserDoc = await firestore
-      .collection("users")
-      .doc(sellerId)
-      .get();
+    const { data: sellerUser, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", sellerId)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
     if (
-      !sellerUserDoc.exists ||
-      sellerUserDoc.data().role !== "seller" ||
-      !orderData.items.every(
-        (item) => item.shopId === sellerUserDoc.data().shopId
-      )
+      !sellerUser ||
+      sellerUser.role !== "seller" ||
+      !orderRow.items.every((item) => item.shopId === sellerUser.shop_id)
     ) {
       return handleError(res, { statusCode: 403, message: "Akses ditolak." });
     }
 
-    if (orderData.paymentDetails.method.toUpperCase() !== "PAY_AT_STORE") {
+    const pd = orderRow.payment_details || {};
+    if ((pd.method || "").toUpperCase() !== "PAY_AT_STORE") {
       return handleError(res, {
         statusCode: 400,
         message: "Fungsi ini hanya untuk pesanan 'Bayar di Tempat'.",
       });
     }
 
-    const proofImageURLs = orderData.paymentDetails.proofImageURLs || [];
+    const proofImageURLs = pd.proofImageURLs || [];
     let newProofsUploaded = false;
     if (req.files && req.files.length > 0) {
       newProofsUploaded = true;
-      const bucket = storage.bucket();
       for (const file of req.files) {
         const timestamp = Date.now();
         const originalNameWithoutExt = path.parse(file.originalname).name;
@@ -924,43 +780,44 @@ exports.confirmPayAtStorePaymentBySeller = async (req, res) => {
           /\s+/g,
           "_"
         )}${extension}`;
-        const fileUpload = bucket.file(fileName);
-        await fileUpload.save(file.buffer, {
-          metadata: { contentType: file.mimetype },
-          public: true,
-        });
-        proofImageURLs.push(
-          `https://storage.googleapis.com/${bucket.name}/${fileName}`
+        const storedPath = await uploadPrivateImage(
+          "orders",
+          fileName,
+          file.buffer,
+          file.mimetype
         );
+        proofImageURLs.push(storedPath);
       }
     }
 
-    const updatePayload = {
-      "paymentDetails.status": "paid",
-      "paymentDetails.confirmedAt": new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const newPd = {
+      ...pd,
+      status: "paid",
+      confirmedAt: new Date().toISOString(),
     };
-
     if (paymentConfirmationNotes) {
-      updatePayload["paymentDetails.confirmationNotes"] =
-        paymentConfirmationNotes;
+      newPd.confirmationNotes = paymentConfirmationNotes;
     }
     if (newProofsUploaded || proofImageURLs.length > 0) {
-      updatePayload["paymentDetails.proofImageURLs"] = proofImageURLs;
+      newPd.proofImageURLs = proofImageURLs;
     }
 
-    await orderRef.update(updatePayload);
+    const { data: updatedRow, error: updateError } = await supabaseAdmin
+      .from("orders")
+      .update({ payment_details: newPd })
+      .eq("id", orderId)
+      .select()
+      .single();
 
+    if (updateError) throw updateError;
+
+    // Notifikasi customer
     try {
-      const customerId = orderData.userId;
       const notificationPayload = {
-        userId: customerId,
+        userId: orderRow.user_id,
         title: "Pembayaran Dikonfirmasi",
-        body: `Pembayaran untuk pesanan #${orderId.substring(
-          0,
-          20
-        )} telah dikonfirmasi oleh penjual.`,
-        data: { orderId: orderId, type: "PAYMENT_CONFIRMED" },
+        body: `Pembayaran untuk pesanan #${orderId.substring(0, 20)} telah dikonfirmasi oleh penjual.`,
+        data: { orderId, type: "PAYMENT_CONFIRMED" },
       };
       await sendNotification(notificationPayload);
     } catch (notifError) {
@@ -970,32 +827,27 @@ exports.confirmPayAtStorePaymentBySeller = async (req, res) => {
       );
     }
 
-    const updatedOrderDoc = await orderRef.get();
     return handleSuccess(
       res,
       200,
       "Pembayaran Bayar di Tempat berhasil dikonfirmasi" +
-        (newProofsUploaded ? " dan bukti transaksi diunggah." : "."),
-      updatedOrderDoc.data()
+        (newProofsUploaded ? " dan bukti pembayaran berhasil diunggah." : "."),
+      await mapOrderAsync(updatedRow)
     );
   } catch (error) {
-    console.error("Error confirming pay at store payment by seller:", error);
-    if (error.statusCode) {
-      return handleError(res, error);
-    }
+    console.error("Error confirming PAY_AT_STORE payment:", error);
     return handleError(res, {
       statusCode: 500,
-      message: "Gagal mengkonfirmasi pembayaran.",
-      detail: error.message,
+      message: `Gagal mengonfirmasi pembayaran: ${error.message || ""}`.trim(),
     });
   }
 };
 
 exports.getOrderPaymentProofs = async (req, res) => {
-  const currentAuthUserId = req.user?.uid;
+  const userId = req.user?.uid;
   const { orderId } = req.params;
 
-  if (!currentAuthUserId) {
+  if (!userId) {
     return handleError(res, {
       statusCode: 401,
       message: "Otentikasi diperlukan.",
@@ -1009,71 +861,55 @@ exports.getOrderPaymentProofs = async (req, res) => {
   }
 
   try {
-    const orderRef = firestore.collection("orders").doc(orderId);
-    const orderDoc = await orderRef.get();
-
-    if (!orderDoc.exists) {
+    const orderRow = await getOrderRow(orderId);
+    if (!orderRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Pesanan tidak ditemukan.",
       });
     }
-    const orderData = orderDoc.data();
 
-    let authorized = false;
-    const customerIdFromOrder = orderData.userId;
-
-    if (customerIdFromOrder === currentAuthUserId) {
-      authorized = true;
-    } else {
-      const userDocRef = firestore.collection("users").doc(currentAuthUserId);
-      const userDoc = await userDocRef.get();
-
-      if (userDoc.exists && userDoc.data().role === "seller") {
-        const sellerShopId = userDoc.data().shopId;
-        if (
-          sellerShopId &&
-          orderData.items &&
-          orderData.items.length > 0 &&
-          orderData.items.every((item) => item.shopId === sellerShopId)
-        ) {
-          authorized = true;
-        }
-      }
+    const isBuyer = orderRow.user_id === userId;
+    let isSeller = false;
+    if (!isBuyer) {
+      const { data: profile } = await supabaseAdmin
+        .from("profiles")
+        .select("shop_id")
+        .eq("id", userId)
+        .maybeSingle();
+      isSeller = !!(
+        profile?.shop_id &&
+        orderRow.shop_ids &&
+        orderRow.shop_ids.includes(profile.shop_id)
+      );
     }
 
-    if (!authorized) {
+    if (!isBuyer && !isSeller) {
       return handleError(res, {
         statusCode: 403,
-        message: "Anda tidak berhak mengakses bukti transaksi ini.",
+        message: "Anda tidak berhak melihat bukti pembayaran pesanan ini.",
       });
     }
 
-    const paymentDetails = orderData.paymentDetails || {};
-    const paymentProofData = {
-      confirmationNotes: paymentDetails.confirmationNotes || null,
-      proofImageURLs: paymentDetails.proofImageURLs || [],
-    };
+    const pd = orderRow.payment_details || {};
+    const proofs = await mapPaymentProofUrls(pd.proofImageURLs || []);
 
-    return handleSuccess(
-      res,
-      200,
-      "Bukti dan catatan transaksi berhasil diambil.",
-      paymentProofData
-    );
+    return handleSuccess(res, 200, "Bukti pembayaran berhasil diambil.", {
+      orderId,
+      proofs,
+    });
   } catch (error) {
     console.error("Error getting order payment proofs:", error);
     return handleError(res, {
       statusCode: 500,
-      message: "Gagal mengambil bukti transaksi.",
-      detail: error.message,
+      message: "Gagal mengambil bukti pembayaran pesanan.",
     });
   }
 };
 
 exports.getOrders = async (req, res) => {
   const currentUserId = req.user?.uid;
-  const { status: statusQuery, limit = 10, offset = 0 } = req.query;
+  const { status: statusQuery, limit = 50 } = req.query;
 
   if (!currentUserId) {
     return handleError(res, {
@@ -1083,31 +919,31 @@ exports.getOrders = async (req, res) => {
   }
 
   try {
-    const userRef = firestore.collection("users").doc(currentUserId);
-    const userDoc = await userRef.get();
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", currentUserId)
+      .maybeSingle();
 
-    if (!userDoc.exists) {
+    if (userError) throw userError;
+
+    if (!userData) {
       return handleError(res, {
         statusCode: 404,
         message: "Data pengguna tidak ditemukan.",
       });
     }
-    const userData = userDoc.data();
     const userRole = userData.role;
 
-    let ordersQuery = firestore.collection("orders");
+    let ordersQuery = supabaseAdmin.from("orders").select("*");
 
     if (userRole === "customer") {
-      ordersQuery = ordersQuery.where("userId", "==", currentUserId);
+      ordersQuery = ordersQuery.eq("user_id", currentUserId);
       if (statusQuery && statusQuery.toUpperCase() !== "ALL") {
-        ordersQuery = ordersQuery.where(
-          "orderStatus",
-          "==",
-          statusQuery.toUpperCase()
-        );
+        ordersQuery = ordersQuery.eq("order_status", statusQuery.toUpperCase());
       }
     } else if (userRole === "seller") {
-      const sellerOwnedShopId = userData.shopId;
+      const sellerOwnedShopId = userData.shop_id;
       if (!sellerOwnedShopId) {
         return handleError(res, {
           statusCode: 403,
@@ -1115,11 +951,7 @@ exports.getOrders = async (req, res) => {
         });
       }
       if (statusQuery && statusQuery.toUpperCase() !== "ALL") {
-        ordersQuery = ordersQuery.where(
-          "orderStatus",
-          "==",
-          statusQuery.toUpperCase()
-        );
+        ordersQuery = ordersQuery.eq("order_status", statusQuery.toUpperCase());
       }
     } else {
       return handleError(res, {
@@ -1128,46 +960,25 @@ exports.getOrders = async (req, res) => {
       });
     }
 
-    ordersQuery = ordersQuery.orderBy("createdAt", "desc");
+    const numLimit = parseInt(limit, 10);
+    ordersQuery = ordersQuery
+      .order("created_at", { ascending: false })
+      .limit(isNaN(numLimit) || numLimit <= 0 ? 50 : numLimit);
 
-    ordersQuery = ordersQuery.limit(parseInt(limit));
+    const { data: orderRows, error: ordersError } = await ordersQuery;
+    if (ordersError) throw ordersError;
 
-    const ordersSnapshot = await ordersQuery.get();
-
-    if (ordersSnapshot.empty && userRole === "customer") {
+    if ((!orderRows || orderRows.length === 0) && userRole === "customer") {
       return handleSuccess(res, 200, "Anda belum memiliki pesanan.", []);
     }
-    if (
-      ordersSnapshot.empty &&
-      userRole === "seller" &&
-      fetchedOrders.length === 0
-    ) {
-      return handleSuccess(
-        res,
-        200,
-        "Tidak ada pesanan ditemukan untuk toko Anda dengan kriteria ini.",
-        []
-      );
-    }
 
-    let fetchedOrders = ordersSnapshot.docs.map((doc) => {
-      const orderData = doc.data();
-      if (
-        orderData.paymentDetails &&
-        orderData.paymentDetails.gatewayTransactionId
-      ) {
-        orderData.paymentDetails.transactionId =
-          orderData.paymentDetails.gatewayTransactionId;
-      }
-      return orderData;
-    });
+    let fetchedOrders = await mapOrdersAsync(orderRows || []);
 
     if (userRole === "seller") {
-      const sellerOwnedShopId = userData.shopId;
+      const sellerOwnedShopId = userData.shop_id;
       fetchedOrders = fetchedOrders.filter(
         (order) =>
-          order.items &&
-          order.items.some((item) => item.shopId === sellerOwnedShopId)
+          order.items && order.items.some((item) => item.shopId === sellerOwnedShopId)
       );
 
       if (fetchedOrders.length === 0) {
@@ -1179,43 +990,45 @@ exports.getOrders = async (req, res) => {
         );
       }
 
-      const ordersWithCustomerDetails = await Promise.all(
-        fetchedOrders.map(async (order) => {
-          if (order.userId) {
-            const custDoc = await firestore
-              .collection("users")
-              .doc(order.userId)
-              .get();
-            if (custDoc.exists) {
-              const custData = custDoc.data();
-              order.customerRingkas = {
-                displayName: custData.displayName || null,
-              };
-            }
-          }
-          return order;
-        })
-      );
-      fetchedOrders = ordersWithCustomerDetails;
+      // customerRingkas
+      const customerIds = [...new Set(fetchedOrders.map((o) => o.user_id).filter(Boolean))];
+      const customerCache = {};
+      if (customerIds.length > 0) {
+        const { data: customers } = await supabaseAdmin
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", customerIds);
+        (customers || []).forEach((c) => {
+          customerCache[c.id] = c.display_name;
+        });
+      }
+      fetchedOrders = fetchedOrders.map((order) => ({
+        ...order,
+        customerRingkas: { displayName: customerCache[order.user_id] || null },
+      }));
     } else if (userRole === "customer") {
-      const ordersWithShopDetails = await Promise.all(
-        fetchedOrders.map(async (order) => {
-          if (order.items && order.items.length > 0 && order.items[0].shopId) {
-            const shopDoc = await firestore
-              .collection("shops")
-              .doc(order.items[0].shopId)
-              .get();
-            if (shopDoc.exists) {
-              const shopData = shopDoc.data();
-              order.shopRingkas = {
-                shopName: shopData.shopName || null,
-              };
-            }
-          }
-          return order;
-        })
-      );
-      fetchedOrders = ordersWithShopDetails;
+      // shopRingkas
+      const shopIds = [
+        ...new Set(
+          fetchedOrders
+            .map((o) => o.items?.[0]?.shopId)
+            .filter(Boolean)
+        ),
+      ];
+      const shopCache = {};
+      if (shopIds.length > 0) {
+        const { data: shops } = await supabaseAdmin
+          .from("shops")
+          .select("id, shop_name")
+          .in("id", shopIds);
+        (shops || []).forEach((s) => {
+          shopCache[s.id] = s.shop_name;
+        });
+      }
+      fetchedOrders = fetchedOrders.map((order) => ({
+        ...order,
+        shopRingkas: { shopName: shopCache[order.items?.[0]?.shopId] || null },
+      }));
     }
 
     return handleSuccess(
