@@ -8,10 +8,140 @@ const OMNIROUTE_API_KEY = process.env.OMNIROUTE_API_KEY || "";
 const OMNIROUTE_MODEL = process.env.OMNIROUTE_MODEL || "auto/best-chat";
 
 const SYSTEM_PROMPT =
-  "Kamu adalah customer service Ayam Bakar Nusantara, marketplace multi-vendor " +
-  "ayam bakar. Bantu pelanggan dengan ramah dalam Bahasa Indonesia. Kamu bisa menjawab " +
-  "pertanyaan tentang produk, toko, cara pemesanan, pembayaran (online via Midtrans atau " +
-  "bayar di tempat), status pesanan, dan lainnya. Jawab singkat, jelas, dan sopan.";
+  "Kamu adalah customer service Ayam Bakar Nusantara, marketplace multi-vendor ayam bakar. " +
+  "Bantu pelanggan dengan ramah dalam Bahasa Indonesia, jawab singkat (maks 3-4 kalimat) dan sopan. " +
+  "Kamu bisa menjawab: produk & menu, toko, cara pemesanan, pembayaran (online via Midtrans atau " +
+  "bayar di tempat), status pesanan, dan lainnya.\n" +
+  "ATURAN PENTING:\n" +
+  "1. Bila diberikan \"DATA PESANAN USER\", GUNAKAN data itu untuk menjawab pertanyaan tentang " +
+  "pesanan pengguna (sebutkan status, item, total, dan status pembayarannya). Jangan pernah mengaku " +
+  "tidak punya akses ke data pesanan.\n" +
+  "2. Bila tidak ada \"DATA PESANAN USER\" dan pengguna bertanya soal pesanan, katakan dengan ramah " +
+  "bahwa tidak ditemukan pesanan yang cocok (atau minta nomor pesanan), lalu tawarkan bantuan lain " +
+  "seperti melihat menu atau cara memesan.\n" +
+  "3. Bila diberikan \"DATA MENU UNGGULAN\", gunakan untuk menjawab pertanyaan tentang menu/produk " +
+  "dengan harga yang nyata.\n" +
+  "4. Jangan meminta pengguna meninggalkan aplikasi — semua layanan tersedia di aplikasi ini.\n" +
+  "5. Jika pengguna menyebutkan nomor/nama pesanan yang tidak ditemukan, sampaikan dengan sopan dan " +
+  "minta memastikan kembali nomornya.";
+
+// Label status order & pembayaran dalam Bahasa Indonesia
+const ORDER_STATUS_LABEL = {
+  PENDING_CONFIRMATION: "Menunggu Konfirmasi Penjual",
+  CONFIRMED: "Dikonfirmasi Penjual",
+  PROCESSING: "Sedang Diproses",
+  READY_FOR_PICKUP: "Siap Diambil",
+  COMPLETED: "Selesai",
+  CANCELLED: "Dibatalkan",
+  AWAITING_PAYMENT: "Menunggu Pembayaran",
+};
+
+const PAYMENT_STATUS_LABEL = {
+  paid: "Lunas",
+  pending: "Belum Dibayar",
+  pending_gateway_payment: "Menunggu Pembayaran di Gerbang Pembayaran",
+  refunded: "Dikembalikan",
+  failed: "Gagal",
+};
+
+const formatRupiah = (n) => "Rp " + Number(n || 0).toLocaleString("id-ID");
+
+// Deteksi apakah pesan user menanyakan soal pesanan (dan apakah menyebut ID order)
+function detectOrderIntent(text) {
+  const lower = (text || "").toLowerCase();
+  const isOrder = /(pesanan?|order|nota|transaksi|pembayaran|status|cek|dimana|kapan|proses|siap|selesai|kirim|sampai|terima)/i.test(
+    lower
+  );
+  const orderIdMatch = lower.match(
+    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i
+  );
+  return { isOrder, orderId: orderIdMatch ? orderIdMatch[0] : null };
+}
+
+// Ambil order milik user (terbaru, atau by id bila disebut) lalu rangkai jadi konteks prompt
+async function buildOrderContext(userId, userText) {
+  if (!userId) return null;
+  try {
+    const { isOrder, orderId } = detectOrderIntent(userText);
+    if (!isOrder) return null;
+
+    let query = supabaseAdmin
+      .from("orders")
+      .select("id,order_status,payment_method,payment_details,items,total_price,created_at");
+    if (orderId) {
+      query = query.eq("id", orderId);
+    } else {
+      query = query.order("created_at", { ascending: false }).limit(1);
+    }
+    query = query.eq("user_id", userId);
+
+    const { data: order, error } = await query.maybeSingle();
+    if (error) {
+      console.error("Chatbot gagal mengambil data pesanan:", error.message);
+      return null;
+    }
+
+    if (!order) {
+      return (
+        "DATA PESANAN USER: Tidak ditemukan pesanan yang cocok untuk pengguna ini" +
+        (orderId ? " (nomor yang disebutkan tidak terdaftar pada akun ini)." : " (belum ada pesanan terdaftar).") +
+        " Bila pengguna bertanya soal pesanan, sampaikan dengan ramah bahwa tidak ada pesanan " +
+        "yang ditemukan, lalu tawarkan bantuan lain."
+      );
+    }
+
+    const items = (order.items || [])
+      .map((it) => `${it.name} x${it.quantity} (${formatRupiah(it.subtotal)})`)
+      .join(", ");
+    const payMethod =
+      order.payment_method === "ONLINE_PAYMENT" ? "Pembayaran Online (Midtrans)" : "Bayar di Tempat";
+    const payStatus =
+      order.payment_details?.status ||
+      (order.payment_method === "PAY_AT_STORE" ? "paid" : "pending");
+
+    return [
+      `DATA PESANAN USER (pesanan #${String(order.id).slice(0, 8)}):`,
+      `- Status pesanan: ${ORDER_STATUS_LABEL[order.order_status] || order.order_status}`,
+      `- Item: ${items || "-"}`,
+      `- Total: ${formatRupiah(order.total_price)}`,
+      `- ${payMethod}; status pembayaran: ${PAYMENT_STATUS_LABEL[payStatus] || payStatus}`,
+      `- Tanggal order: ${new Date(order.created_at).toLocaleString("id-ID")}`,
+      "Gunakan data di atas untuk menjawab pertanyaan pengguna tentang pesanannya.",
+    ].join("\n");
+  } catch (err) {
+    console.error("Chatbot buildOrderContext error:", err.message);
+    return null;
+  }
+}
+
+// Ambil menu unggulan nyata sebagai konteks jawaban soal produk
+async function buildMenuContext() {
+  try {
+    const { data: products, error } = await supabaseAdmin
+      .from("products")
+      .select("name,price,shop_id")
+      .order("created_at", { ascending: false })
+      .limit(5);
+    if (error || !products || products.length === 0) return null;
+
+    const shopMap = {};
+    const { data: shopRows } = await supabaseAdmin.from("shops").select("id,name");
+    (shopRows || []).forEach((s) => {
+      shopMap[s.id] = s.name;
+    });
+
+    const lines = products.map(
+      (p) => `- ${p.name} ${formatRupiah(p.price)} (toko: ${shopMap[p.shop_id] || "tidak diketahui"})`
+    );
+    return (
+      "DATA MENU UNGGULAN SAAT INI:\n" +
+      lines.join("\n") +
+      "\nGunakan data ini bila pengguna bertanya tentang menu/produk yang tersedia."
+    );
+  } catch (e) {
+    return null;
+  }
+}
 
 exports.forwardToChatbot = async (req, res) => {
   const { message: userMessageText, sender: senderIdFromFrontend } = req.body;
@@ -45,8 +175,18 @@ exports.forwardToChatbot = async (req, res) => {
       }
     }
 
+    // Konteks dinamis: data pesanan user (bila bertanya pesanan) + menu unggulan nyata
+    const [orderContext, menuContext] = await Promise.all([
+      buildOrderContext(userId, userMessageText),
+      buildMenuContext(),
+    ]);
+    const dynamicContext = [orderContext, menuContext].filter(Boolean).join("\n\n");
+    const systemContent = dynamicContext
+      ? `${SYSTEM_PROMPT}\n\n${dynamicContext}`
+      : SYSTEM_PROMPT;
+
     const messagesForModel = [
-      { role: "system", content: SYSTEM_PROMPT },
+      { role: "system", content: systemContent },
       ...historyMessages.map((m) => ({
         role: m.role === "bot" ? "assistant" : "user",
         content: m.text || "",
