@@ -1,4 +1,15 @@
-require("dotenv").config();
+const path = require("path");
+// Load env: .env (base/fallback) lalu .env.dev (developer) atau .env.prod (produksi).
+// Pilihan file ditentukan NODE_ENV: 'production' → .env.prod, selain itu → .env.dev.
+// `override: true` membuat nilai di file spesifik-environment menang atas .env.
+const envDir = path.join(__dirname, "..");
+require("dotenv").config({ path: path.join(envDir, ".env") });
+const envFile =
+  process.env.NODE_ENV === "production" ? ".env.prod" : ".env.dev";
+require("dotenv").config({
+  path: path.join(envDir, envFile),
+  override: true,
+});
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");

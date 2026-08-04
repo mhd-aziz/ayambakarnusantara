@@ -2,7 +2,8 @@
 setupProxy.js
 /.pnp
 .pnp.js
-.env
+.env*
+!.env.example
 Dockerfile
 nginx.conf
 .dockerignore
