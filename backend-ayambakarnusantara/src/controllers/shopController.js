@@ -1,100 +1,54 @@
-const { firestore, auth, storage } = require("../config/firebaseConfig");
-const { FieldValue } = require("firebase-admin/firestore");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
 const { v4: uuidv4 } = require("uuid");
+const {
+  uploadImage,
+  deleteFile,
+  extractPathFromPublicUrl,
+} = require("../utils/storageHelper");
 
-async function deleteShopBannerFromStorage(bannerURL, bucket) {
-  if (!bannerURL || !bucket) {
-    console.log(
-      "Tidak ada bannerURL atau bucket yang disediakan untuk deleteShopBannerFromStorage."
-    );
-    return;
-  }
-  try {
-    const prefixPattern1 = `https://storage.googleapis.com/${bucket.name}/`;
-    const prefixPattern2 = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/`;
-    let filePath;
-
-    if (bannerURL.startsWith(prefixPattern1)) {
-      filePath = bannerURL.substring(prefixPattern1.length);
-    } else if (bannerURL.startsWith(prefixPattern2)) {
-      filePath = bannerURL.substring(prefixPattern2.length);
-      filePath = filePath.split("?")[0];
-    } else {
-      console.warn(
-        "Format URL banner lama tidak dikenali (shop banner), tidak dapat menghapus:",
-        bannerURL
-      );
-      return;
-    }
-    filePath = decodeURIComponent(filePath.split("?")[0]);
-    if (filePath) {
-      console.log(`Mencoba menghapus file banner toko di Storage: ${filePath}`);
-      await bucket.file(filePath).delete();
-      console.log(
-        `Berhasil menghapus file banner toko dari Storage: ${filePath}`
-      );
-    }
-  } catch (error) {
-    if (error.code === 404 || error.message.includes("No such object")) {
-      console.warn(
-        `File banner toko tidak ditemukan di Storage (mungkin sudah dihapus atau path salah): ${error.message}`
-      );
-    } else {
-      console.warn(
-        "Gagal menghapus file banner toko dari Storage:",
-        error.message
-      );
-    }
-  }
+function mapShop(row) {
+  if (!row) return null;
+  return {
+    shopId: row.id,
+    shopName: row.shop_name,
+    description: row.description,
+    shopAddress: row.shop_address,
+    bannerImageURL: row.banner_image_url,
+    shopName_lowercase: row.shop_name ? row.shop_name.toLowerCase() : null,
+    ownerUID: row.user_id,
+    totalSumOfRatings: Number(row.sum_of_ratings || 0),
+    totalRatingCount: row.total_ratings || 0,
+    averageShopRating: Number(row.average_rating || 0),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
 }
 
-async function deleteUserProfilePhotoFromStorage(photoURL, bucket) {
-  if (!photoURL || !bucket) {
-    console.log(
-      "Tidak ada photoURL atau bucket yang disediakan untuk deleteUserProfilePhotoFromStorage."
-    );
-    return;
-  }
-  try {
-    const prefixPattern1 = `https://storage.googleapis.com/${bucket.name}/`;
-    const prefixPattern2 = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/`;
-    let filePath;
+function formatShopObject(row, ownerName) {
+  if (!row) return null;
+  const shop = mapShop(row);
+  return {
+    shopId: shop.shopId,
+    shopName: shop.shopName,
+    description: shop.description,
+    shopAddress: shop.shopAddress,
+    bannerImageURL: shop.bannerImageURL,
+    createdAt: shop.createdAt,
+    updatedAt: shop.updatedAt,
+    ownerName: ownerName || "Nama Pemilik Tidak Tersedia",
+    ownerUID: shop.ownerUID,
+  };
+}
 
-    if (photoURL.startsWith(prefixPattern1)) {
-      filePath = photoURL.substring(prefixPattern1.length);
-    } else if (photoURL.startsWith(prefixPattern2)) {
-      filePath = photoURL.substring(prefixPattern2.length);
-      filePath = filePath.split("?")[0];
-    } else {
-      console.warn(
-        "Format URL foto profil pengguna tidak dikenali, tidak dapat menghapus:",
-        photoURL
-      );
-      return;
-    }
-    filePath = decodeURIComponent(filePath.split("?")[0]);
-    if (filePath) {
-      console.log(
-        `Mencoba menghapus file foto profil pengguna di Storage: ${filePath}`
-      );
-      await bucket.file(filePath).delete();
-      console.log(
-        `Berhasil menghapus file foto profil pengguna dari Storage: ${filePath}`
-      );
-    }
-  } catch (error) {
-    if (error.code === 404 || error.message.includes("No such object")) {
-      console.warn(
-        `File foto profil pengguna tidak ditemukan di Storage (mungkin sudah dihapus atau path salah): ${error.message}`
-      );
-    } else {
-      console.warn(
-        "Gagal menghapus file foto profil pengguna dari Storage:",
-        error.message
-      );
-    }
-  }
+async function getShopByOwner(uid) {
+  const { data, error } = await supabaseAdmin
+    .from("shops")
+    .select("*")
+    .eq("user_id", uid)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }
 
 exports.createShop = async (req, res) => {
@@ -116,97 +70,79 @@ exports.createShop = async (req, res) => {
   }
 
   try {
-    const userDocRef = firestore.collection("users").doc(uid);
-    const shopQuery = firestore
-      .collection("shops")
-      .where("ownerUID", "==", uid)
-      .limit(1);
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", uid)
+      .maybeSingle();
 
-    const [userDocSnapshot, shopSnapshot] = await Promise.all([
-      userDocRef.get(),
-      shopQuery.get(),
-    ]);
+    if (userError) throw userError;
 
-    if (!userDocSnapshot.exists) {
+    if (!userData) {
       return handleError(res, {
         statusCode: 404,
         message: "Data pengguna tidak ditemukan.",
       });
     }
 
-    if (!shopSnapshot.empty) {
+    const existingShop = await getShopByOwner(uid);
+    if (existingShop) {
       return handleError(res, {
         statusCode: 400,
         message: "Anda sudah memiliki toko. Silakan kelola toko yang ada.",
       });
     }
 
-    const userData = userDocSnapshot.data();
-
     const shopNameFromProfile =
-      userData.displayName || "Toko Milik " + userData.email.split("@")[0];
+      userData.display_name || "Toko Milik " + userData.email.split("@")[0];
     const shopAddressFromProfile = userData.address || null;
-    let initialBannerImageURL = userData.photoURL || null;
-
-    const bucket = storage.bucket();
+    let initialBannerImageURL = userData.photo_url || null;
 
     if (req.file) {
       const fileExtension = req.file.originalname.split(".").pop();
       const fileName = `shop-banners/${uid}/${uuidv4()}.${fileExtension}`;
-      const fileUpload = bucket.file(fileName);
-      const blobStream = fileUpload.createWriteStream({
-        metadata: { contentType: req.file.mimetype },
-      });
-
-      await new Promise((resolve, reject) => {
-        blobStream.on("error", (uploadError) => {
-          console.error("Upload error banner toko:", uploadError);
-          reject(uploadError);
-        });
-        blobStream.on("finish", async () => {
-          try {
-            await fileUpload.makePublic();
-            initialBannerImageURL = fileUpload.publicUrl();
-            resolve();
-          } catch (publicError) {
-            console.error(
-              "Error making banner public or getting URL:",
-              publicError
-            );
-            reject(publicError);
-          }
-        });
-        blobStream.end(req.file.buffer);
-      }).catch((uploadError) => {
-        return handleError(res, {
-          statusCode: 500,
-          message: `Gagal mengunggah banner toko: ${uploadError.message}`,
-        });
-      });
-      if (res.headersSent) return;
+      initialBannerImageURL = await uploadImage(
+        "shop-banners",
+        fileName,
+        req.file.buffer,
+        req.file.mimetype
+      );
     }
 
-    const newShopRef = firestore.collection("shops").doc();
-    const newShopData = {
-      _id: newShopRef.id,
-      ownerUID: uid,
-      shopName: shopNameFromProfile,
-      shopName_lowercase: shopNameFromProfile.toLowerCase(),
-      description,
-      shopAddress: shopAddressFromProfile,
-      bannerImageURL: initialBannerImageURL,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+    const { data: newShop, error: insertError } = await supabaseAdmin
+      .from("shops")
+      .insert({
+        user_id: uid,
+        shop_name: shopNameFromProfile,
+        description,
+        shop_address: shopAddressFromProfile,
+        banner_image_url: initialBannerImageURL,
+      })
+      .select()
+      .single();
 
-    await newShopRef.set(newShopData);
-    await userDocRef.update({ role: "seller", shopId: newShopRef.id });
+    if (insertError) throw insertError;
+
+    // User menjadi seller + tercatat shop_id-nya
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: "seller", shop_id: newShop.id })
+      .eq("id", uid);
+
+    if (profileError) throw profileError;
 
     return handleSuccess(
       res,
       201,
-      "Toko berhasil dibuat berdasarkan profil Anda.",
-      newShopData
+      "Toko berhasil dibuat. Selamat berjualan!",
+      {
+        ...formatShopObject(newShop, userData.display_name),
+        ownerProfile: {
+          uid,
+          displayName: userData.display_name,
+          photoURL: userData.photo_url,
+        },
+      }
     );
   } catch (error) {
     console.error("Error creating shop:", error);
@@ -226,109 +162,74 @@ exports.updateShop = async (req, res) => {
   }
 
   try {
-    const userDocRef = firestore.collection("users").doc(uid);
-    const userSnapshot = await userDocRef.get();
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("*")
+      .eq("id", uid)
+      .maybeSingle();
 
-    if (!userSnapshot.exists || userSnapshot.data().role !== "seller") {
+    if (userError) throw userError;
+
+    if (!userData || userData.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Hanya seller yang dapat memperbarui toko.",
       });
     }
 
-    const shopQuery = firestore
-      .collection("shops")
-      .where("ownerUID", "==", uid)
-      .limit(1);
-    const shopSnapshot = await shopQuery.get();
+    const currentShopData = await getShopByOwner(uid);
 
-    if (shopSnapshot.empty) {
+    if (!currentShopData) {
       return handleError(res, {
         statusCode: 404,
         message: "Toko tidak ditemukan untuk diperbarui.",
       });
     }
 
-    const shopDocRef = shopSnapshot.docs[0].ref;
-    const currentShopData = shopSnapshot.docs[0].data();
-    const currentUserData = userSnapshot.data();
-
     const fieldsToUpdateShop = {};
-    const fieldsToUpdateUser = {};
-    const authUpdates = {};
-
-    const bucket = storage.bucket();
+    const fieldsToUpdateProfile = {};
 
     if (req.file) {
-      if (currentShopData.bannerImageURL) {
-        await deleteShopBannerFromStorage(
-          currentShopData.bannerImageURL,
-          bucket
+      if (currentShopData.banner_image_url) {
+        const oldPath = extractPathFromPublicUrl(
+          currentShopData.banner_image_url,
+          "shop-banners"
         );
+        if (oldPath) await deleteFile("shop-banners", oldPath);
       }
       const fileExtension = req.file.originalname.split(".").pop();
       const fileName = `shop-banners/${uid}/${uuidv4()}.${fileExtension}`;
-      const fileUpload = bucket.file(fileName);
-      const blobStream = fileUpload.createWriteStream({
-        metadata: { contentType: req.file.mimetype },
-      });
-
-      let newBannerImageURL;
-      await new Promise((resolve, reject) => {
-        blobStream.on("error", reject);
-        blobStream.on("finish", async () => {
-          try {
-            await fileUpload.makePublic();
-            newBannerImageURL = fileUpload.publicUrl();
-            resolve();
-          } catch (publicError) {
-            reject(publicError);
-          }
-        });
-        blobStream.end(req.file.buffer);
-      }).catch((uploadError) => {
-        console.error("Upload error banner toko:", uploadError);
-        return handleError(res, {
-          statusCode: 500,
-          message: `Gagal mengunggah banner toko baru: ${uploadError.message}`,
-        });
-      });
-      if (res.headersSent) return;
-      fieldsToUpdateShop.bannerImageURL = newBannerImageURL;
-      if (newBannerImageURL !== currentUserData.photoURL) {
-        fieldsToUpdateUser.photoURL = newBannerImageURL;
-        authUpdates.photoURL = newBannerImageURL;
+      const newBannerImageURL = await uploadImage(
+        "shop-banners",
+        fileName,
+        req.file.buffer,
+        req.file.mimetype
+      );
+      fieldsToUpdateShop.banner_image_url = newBannerImageURL;
+      if (newBannerImageURL !== userData.photo_url) {
+        fieldsToUpdateProfile.photo_url = newBannerImageURL;
         if (
-          currentUserData.photoURL &&
-          currentUserData.photoURL !== currentShopData.bannerImageURL
+          userData.photo_url &&
+          userData.photo_url !== currentShopData.banner_image_url
         ) {
-          await deleteUserProfilePhotoFromStorage(
-            currentUserData.photoURL,
-            bucket
+          const oldProfilePath = extractPathFromPublicUrl(
+            userData.photo_url,
+            "profile-images"
           );
+          if (oldProfilePath) await deleteFile("profile-images", oldProfilePath);
         }
       }
     } else if (removeBannerImage === "true" || removeBannerImage === true) {
-      if (currentShopData.bannerImageURL) {
-        await deleteShopBannerFromStorage(
-          currentShopData.bannerImageURL,
-          bucket
+      if (currentShopData.banner_image_url) {
+        const oldPath = extractPathFromPublicUrl(
+          currentShopData.banner_image_url,
+          "shop-banners"
         );
+        if (oldPath) await deleteFile("shop-banners", oldPath);
       }
-      fieldsToUpdateShop.bannerImageURL = null;
-      if (currentUserData.photoURL) {
-        if (currentUserData.photoURL === currentShopData.bannerImageURL) {
-          await deleteUserProfilePhotoFromStorage(
-            currentUserData.photoURL,
-            bucket
-          );
-          fieldsToUpdateUser.photoURL = null;
-          authUpdates.photoURL = null;
-        } else if (
-          currentUserData.photoURL &&
-          !currentShopData.bannerImageURL
-        ) {
-        }
+      fieldsToUpdateShop.banner_image_url = null;
+      if (userData.photo_url === currentShopData.banner_image_url) {
+        fieldsToUpdateProfile.photo_url = null;
       }
     }
 
@@ -340,13 +241,10 @@ exports.updateShop = async (req, res) => {
           message: "Nama toko tidak boleh kosong.",
         });
       }
-      if (trimmedShopName !== currentShopData.shopName) {
-        fieldsToUpdateShop.shopName = trimmedShopName;
-        fieldsToUpdateShop.shopName_lowercase = trimmedShopName.toLowerCase();
-
-        if (trimmedShopName !== currentUserData.displayName) {
-          fieldsToUpdateUser.displayName = trimmedShopName;
-          authUpdates.displayName = trimmedShopName;
+      if (trimmedShopName !== currentShopData.shop_name) {
+        fieldsToUpdateShop.shop_name = trimmedShopName;
+        if (trimmedShopName !== userData.display_name) {
+          fieldsToUpdateProfile.display_name = trimmedShopName;
         }
       }
     }
@@ -360,17 +258,17 @@ exports.updateShop = async (req, res) => {
 
     if (
       shopAddress !== undefined &&
-      shopAddress !== currentShopData.shopAddress
+      shopAddress !== currentShopData.shop_address
     ) {
-      fieldsToUpdateShop.shopAddress = shopAddress;
-      if (shopAddress !== currentUserData.address) {
-        fieldsToUpdateUser.address = shopAddress;
+      fieldsToUpdateShop.shop_address = shopAddress;
+      if (shopAddress !== userData.address) {
+        fieldsToUpdateProfile.address = shopAddress;
       }
     }
+
     if (
       Object.keys(fieldsToUpdateShop).length === 0 &&
-      Object.keys(fieldsToUpdateUser).length === 0 &&
-      Object.keys(authUpdates).length === 0
+      Object.keys(fieldsToUpdateProfile).length === 0
     ) {
       return handleError(res, {
         statusCode: 400,
@@ -379,60 +277,53 @@ exports.updateShop = async (req, res) => {
       });
     }
 
-    if (Object.keys(fieldsToUpdateShop).length > 0) {
-      fieldsToUpdateShop.updatedAt = new Date().toISOString();
-    }
-    if (Object.keys(fieldsToUpdateUser).length > 0) {
-      fieldsToUpdateUser.updatedAt = new Date().toISOString();
-    }
+    const { data: updatedShop, error: updateError } = await supabaseAdmin
+      .from("shops")
+      .update(fieldsToUpdateShop)
+      .eq("id", currentShopData.id)
+      .select()
+      .single();
 
-    const batch = firestore.batch();
-    if (Object.keys(fieldsToUpdateShop).length > 0) {
-      batch.update(shopDocRef, fieldsToUpdateShop);
-    }
-    if (Object.keys(fieldsToUpdateUser).length > 0) {
-      batch.update(userDocRef, fieldsToUpdateUser);
-    }
+    if (updateError) throw updateError;
 
-    await batch.commit();
+    if (Object.keys(fieldsToUpdateProfile).length > 0) {
+      const { error: profileError } = await supabaseAdmin
+        .from("profiles")
+        .update(fieldsToUpdateProfile)
+        .eq("id", uid);
+      if (profileError) throw profileError;
 
-    if (Object.keys(authUpdates).length > 0) {
-      try {
-        await auth.updateUser(uid, authUpdates);
-      } catch (authError) {
-        console.warn(
-          "Gagal memperbarui data di Firebase Auth (sebagian atau seluruhnya):",
-          authError
-        );
+      // Sinkronkan nama tampilan ke metadata auth
+      if (fieldsToUpdateProfile.display_name) {
+        await supabaseAdmin.auth.admin
+          .updateUserById(uid, {
+            user_metadata: {
+              ...(userData.meta || {}),
+              display_name: fieldsToUpdateProfile.display_name,
+            },
+          })
+          .catch((authErr) =>
+            console.warn("Gagal sinkron displayName ke auth:", authErr.message)
+          );
       }
     }
 
-    const updatedShopDoc = await shopDocRef.get();
     const formattedShop = {
-      shopId: updatedShopDoc.data()._id,
-      shopName: updatedShopDoc.data().shopName,
-      description: updatedShopDoc.data().description,
-      shopAddress: updatedShopDoc.data().shopAddress,
-      bannerImageURL: updatedShopDoc.data().bannerImageURL,
-      createdAt: updatedShopDoc.data().createdAt,
-      updatedAt: updatedShopDoc.data().updatedAt,
-      shopName_lowercase: updatedShopDoc.data().shopName_lowercase,
+      shopId: updatedShop.id,
+      shopName: updatedShop.shop_name,
+      description: updatedShop.description,
+      shopAddress: updatedShop.shop_address,
+      bannerImageURL: updatedShop.banner_image_url,
+      createdAt: updatedShop.created_at,
+      updatedAt: updatedShop.updated_at,
+      shopName_lowercase: updatedShop.shop_name
+        ? updatedShop.shop_name.toLowerCase()
+        : null,
     };
 
     let message = "Toko berhasil diperbarui.";
-    if (
-      Object.keys(fieldsToUpdateUser).length > 0 ||
-      Object.keys(authUpdates).length > 0
-    ) {
+    if (Object.keys(fieldsToUpdateProfile).length > 0) {
       message = "Toko dan profil pengguna terkait berhasil diperbarui.";
-    }
-    if (
-      removeBannerImage === "true" &&
-      authUpdates.photoURL === null &&
-      fieldsToUpdateUser.photoURL === null
-    ) {
-      message +=
-        " Banner toko dan foto profil pengguna (jika sebelumnya sinkron) telah dihapus.";
     }
 
     return handleSuccess(res, 200, message, formattedShop);
@@ -457,44 +348,35 @@ exports.getMyShop = async (req, res) => {
   }
 
   try {
-    const userDoc = await firestore.collection("users").doc(uid).get();
-    if (!userDoc.exists || userDoc.data().role !== "seller") {
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", uid)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
+    if (!userData || userData.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Akses ditolak. Hanya untuk seller.",
       });
     }
 
-    const shopQuery = firestore
-      .collection("shops")
-      .where("ownerUID", "==", uid)
-      .limit(1);
-    const shopSnapshot = await shopQuery.get();
+    const shopData = await getShopByOwner(uid);
 
-    if (shopSnapshot.empty) {
+    if (!shopData) {
       return handleError(res, {
         statusCode: 404,
         message: "Toko tidak ditemukan. Anda mungkin belum membuat toko.",
       });
     }
 
-    const shopData = shopSnapshot.docs[0].data();
-    const formattedShop = {
-      shopId: shopData._id,
-      shopName: shopData.shopName,
-      description: shopData.description,
-      shopAddress: shopData.shopAddress,
-      bannerImageURL: shopData.bannerImageURL,
-      createdAt: shopData.createdAt,
-      updatedAt: shopData.updatedAt,
-      shopName_lowercase: shopData.shopName_lowercase,
-      ownerUID: shopData.ownerUID,
-    };
     return handleSuccess(
       res,
       200,
       "Data toko berhasil diambil.",
-      formattedShop
+      mapShop(shopData)
     );
   } catch (error) {
     console.error("Error getting my shop:", error);
@@ -514,153 +396,73 @@ exports.deleteShop = async (req, res) => {
 
   try {
     console.log(`[deleteShop] UID: ${uid} - Memulai proses penghapusan toko.`);
-    const userSnapshot = await firestore.collection("users").doc(uid).get();
-    if (!userSnapshot.exists || userSnapshot.data().role !== "seller") {
-      console.log(
-        `[deleteShop] UID: ${uid} - Pengguna bukan seller atau tidak ditemukan.`
-      );
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", uid)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
+    if (!userData || userData.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Hanya seller yang dapat menghapus toko.",
       });
     }
-    console.log(
-      `[deleteShop] UID: ${uid} - Pengguna terverifikasi sebagai seller. Mencari toko...`
-    );
 
-    const shopQuery = firestore
-      .collection("shops")
-      .where("ownerUID", "==", uid)
-      .limit(1);
-    const shopSnapshot = await shopQuery.get();
-
-    if (shopSnapshot.empty) {
-      console.log(
-        `[deleteShop] UID: ${uid} - Tidak ada toko yang ditemukan untuk pengguna ini.`
-      );
+    const shopData = await getShopByOwner(uid);
+    if (!shopData) {
       return handleError(res, {
         statusCode: 404,
         message: "Toko tidak ditemukan untuk dihapus.",
       });
     }
-    console.log(
-      `[deleteShop] UID: ${uid} - Toko ditemukan. Jumlah dokumen: ${shopSnapshot.docs.length}`
-    );
 
-    const shopDocumentInstance = shopSnapshot.docs[0];
-    if (!shopDocumentInstance) {
-      console.error(
-        `[deleteShop] UID: ${uid} - shopSnapshot.docs[0] adalah null atau undefined.`
-      );
-      return handleError(res, {
-        statusCode: 500,
-        message: "Kesalahan internal server (dokumen toko tidak valid).",
-      });
-    }
+    // 1. Hapus file gambar produk (perbaikan: file tidak meninggalkan sampah)
+    const { data: products } = await supabaseAdmin
+      .from("products")
+      .select("product_image_url")
+      .eq("shop_id", shopData.id);
 
-    const shopDocRef = shopDocumentInstance.ref;
-    if (!shopDocRef || typeof shopDocRef.delete !== "function") {
-      console.error(
-        `[deleteShop] UID: ${uid} - shopDocRef tidak valid atau tidak memiliki metode .delete(). Tipe shopDocRef: ${typeof shopDocRef}`,
-        shopDocRef
-      );
-      return handleError(res, {
-        statusCode: 500,
-        message: "Referensi dokumen toko tidak valid atau korup.",
-      });
-    }
-
-    const shopData = shopDocumentInstance.data();
-    if (!shopData) {
-      console.error(
-        `[deleteShop] UID: ${uid} - Gagal mendapatkan data dari shopDocumentInstance.`
-      );
-      return handleError(res, {
-        statusCode: 500,
-        message: "Kesalahan internal server (gagal membaca data toko).",
-      });
-    }
-
-    const productsQuery = firestore
-      .collection("products")
-      .where("shopId", "==", shopDocRef.id);
-    const productsSnapshot = await productsQuery.get();
-    if (!productsSnapshot.empty) {
-      console.log(
-        `[deleteShop] UID: ${uid} - Menemukan ${productsSnapshot.size} produk untuk dihapus dari toko ${shopDocRef.id}.`
-      );
-      const productDeletionPromises = [];
-      const bucket = storage.bucket();
-
-      productsSnapshot.forEach((doc) => {
-        const productData = doc.data();
-        console.log(
-          `[deleteShop] UID: ${uid} - Menjadwalkan penghapusan produk ${doc.id}.`
-        );
-        productDeletionPromises.push(doc.ref.delete());
-      });
-      await Promise.all(productDeletionPromises);
-      console.log(
-        `[deleteShop] UID: ${uid} - Semua produk dari toko ${shopDocRef.id} berhasil dihapus.`
-      );
-    } else {
-      console.log(
-        `[deleteShop] UID: ${uid} - Tidak ada produk yang ditemukan untuk toko ${shopDocRef.id}.`
-      );
-    }
-
-    if (shopData.bannerImageURL) {
-      console.log(
-        `[deleteShop] UID: ${uid} - Menghapus banner toko: ${shopData.bannerImageURL}`
-      );
-      const bucket = storage.bucket();
-      if (!bucket || typeof bucket.file !== "function") {
-        console.error(
-          "[deleteShop] UID: " +
-            uid +
-            " - Firebase Storage bucket tidak terkonfigurasi dengan benar."
-        );
-      } else {
-        await deleteShopBannerFromStorage(shopData.bannerImageURL, bucket);
-        console.log(
-          `[deleteShop] UID: ${uid} - Proses penghapusan banner toko selesai.`
-        );
+    if (products && products.length > 0) {
+      for (const p of products) {
+        if (p.product_image_url) {
+          const path = extractPathFromPublicUrl(
+            p.product_image_url,
+            "product-images"
+          );
+          if (path) await deleteFile("product-images", path);
+        }
       }
     }
 
-    console.log(
-      `[deleteShop] UID: ${uid} - Menghapus dokumen toko: ${shopDocRef.path}`
-    );
-    await shopDocRef.delete();
-    console.log(
-      `[deleteShop] UID: ${uid} - Dokumen toko berhasil dihapus. Memperbarui peran pengguna di Firestore...`
-    );
-
-    const userDocRefToUpdate = firestore.collection("users").doc(uid);
-
-    const userDataToUpdate = {
-      role: "customer",
-      shopId: FieldValue.delete(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    try {
-      await userDocRefToUpdate.update(userDataToUpdate);
-      console.log(
-        `[deleteShop] UID: ${uid} - Peran pengguna di Firestore BERHASIL diperbarui ke 'customer'.`
+    // 2. Hapus banner toko
+    if (shopData.banner_image_url) {
+      const bannerPath = extractPathFromPublicUrl(
+        shopData.banner_image_url,
+        "shop-banners"
       );
-    } catch (userUpdateDbError) {
-      console.error(
-        `[deleteShop] UID: ${uid} - GAGAL memperbarui peran pengguna di Firestore:`,
-        userUpdateDbError
-      );
-      return handleError(
-        res,
-        userUpdateDbError,
-        "Toko dan produk berhasil dihapus, namun terjadi kesalahan saat memperbarui status akhir pengguna."
-      );
+      if (bannerPath) await deleteFile("shop-banners", bannerPath);
     }
 
+    // 3. Hapus toko (produk + rating ikut terhapus via FK CASCADE)
+    const { error: deleteError } = await supabaseAdmin
+      .from("shops")
+      .delete()
+      .eq("id", shopData.id);
+    if (deleteError) throw deleteError;
+
+    // 4. User kembali jadi customer
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: "customer", shop_id: null })
+      .eq("id", uid);
+    if (profileError) throw profileError;
+
+    console.log(
+      `[deleteShop] UID: ${uid} - Toko ${shopData.id} berhasil dihapus, status kembali ke customer.`
+    );
     return handleSuccess(
       res,
       200,
@@ -679,21 +481,6 @@ exports.deleteShop = async (req, res) => {
   }
 };
 
-function formatShopObject(shopData, ownerName) {
-  if (!shopData) return null;
-  return {
-    shopId: shopData._id,
-    shopName: shopData.shopName,
-    description: shopData.description,
-    shopAddress: shopData.shopAddress,
-    bannerImageURL: shopData.bannerImageURL,
-    createdAt: shopData.createdAt,
-    updatedAt: shopData.updatedAt,
-    ownerName: ownerName || "Nama Pemilik Tidak Tersedia",
-    ownerUID: shopData.ownerUID,
-  };
-}
-
 exports.listShops = async (req, res) => {
   try {
     const {
@@ -703,135 +490,80 @@ exports.listShops = async (req, res) => {
       order = "asc",
       page = 1,
       limit = 10,
-      shopNameCaseInsensitive = "true",
     } = req.query;
 
-    let shopsQuery = firestore.collection("shops");
-    let isSearchingById = false;
-    let allShopsData = [];
-
-    const isShopNameSearchCaseInsensitive = shopNameCaseInsensitive === "true";
-
-    if (searchById) {
-      shopsQuery = shopsQuery.where("_id", "==", searchById);
-      isSearchingById = true;
-    } else {
-      if (
-        sortBy &&
-        sortBy !== "shopName" &&
-        sortBy !== "shopName_lowercase" &&
-        sortBy !== "createdAt"
-      ) {
-        shopsQuery = shopsQuery.orderBy(sortBy, order);
-      } else if (!sortBy) {
-        shopsQuery = shopsQuery.orderBy("createdAt", "desc");
-      }
-    }
-
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
     const offset = (pageNum - 1) * limitNum;
 
-    let formattedShops = [];
-    let totalShops = 0;
+    let query = supabaseAdmin.from("shops").select("*", { count: "exact" });
+    let isSearchingById = false;
 
-    if (isSearchingById) {
-      const shopSnapshot = await shopsQuery.get();
-      if (!shopSnapshot.empty) {
-        const shopData = shopSnapshot.docs[0].data();
-        let ownerName = "Nama Pemilik Tidak Tersedia";
-        if (shopData.ownerUID) {
-          try {
-            const userDoc = await firestore
-              .collection("users")
-              .doc(shopData.ownerUID)
-              .get();
-            if (userDoc.exists) {
-              ownerName = userDoc.data().displayName || ownerName;
-            }
-          } catch (userError) {
-            console.warn(
-              `Gagal mengambil data pemilik untuk toko ${shopData._id}: ${userError.message}`
-            );
-          }
-        }
-        formattedShops.push(formatShopObject(shopData, ownerName));
-        totalShops = 1;
-      }
+    if (searchById) {
+      query = query.eq("id", searchById);
+      isSearchingById = true;
     } else {
-      const allMatchingDocsSnapshot = await shopsQuery.get();
-      allShopsData = allMatchingDocsSnapshot.docs.map((doc) => doc.data());
-
       if (searchByShopName) {
-        const searchTerm = isShopNameSearchCaseInsensitive
-          ? searchByShopName.toLowerCase()
-          : searchByShopName;
-        allShopsData = allShopsData.filter((shop) => {
-          if (!shop.shopName) return false;
-          const shopNameForFilter = isShopNameSearchCaseInsensitive
-            ? shop.shopName_lowercase || shop.shopName.toLowerCase()
-            : shop.shopName;
-          return shopNameForFilter.includes(searchTerm);
-        });
+        query = query.ilike("shop_name", `%${searchByShopName}%`);
       }
 
-      if (sortBy) {
-        allShopsData.sort((a, b) => {
-          let valA, valB;
-          if (sortBy === "shopName" || sortBy === "shopName_lowercase") {
-            valA = isShopNameSearchCaseInsensitive
-              ? a.shopName_lowercase || (a.shopName || "").toLowerCase()
-              : a.shopName || "";
-            valB = isShopNameSearchCaseInsensitive
-              ? b.shopName_lowercase || (b.shopName || "").toLowerCase()
-              : b.shopName || "";
-          } else {
-            valA = a[sortBy];
-            valB = b[sortBy];
-          }
-
-          if (valA === undefined || valA === null) valA = "";
-          if (valB === undefined || valB === null) valB = "";
-
-          if (typeof valA === "string" && typeof valB === "string") {
-            return order === "asc"
-              ? valA.localeCompare(valB)
-              : valB.localeCompare(valA);
-          } else {
-            if (valA < valB) return order === "asc" ? -1 : 1;
-            if (valA > valB) return order === "asc" ? 1 : -1;
-            return 0;
-          }
-        });
+      if (sortBy && sortBy !== "shopName" && sortBy !== "shopName_lowercase") {
+        const orderColumn = sortBy === "createdAt" ? "created_at" : sortBy;
+        query = query.order(orderColumn, { ascending: order === "asc" });
+      } else if (!sortBy) {
+        query = query.order("created_at", { ascending: false });
       }
-
-      totalShops = allShopsData.length;
-      const paginatedShopsData = allShopsData.slice(offset, offset + limitNum);
-
-      const shopsWithOwnersPromises = paginatedShopsData.map(
-        async (shopData) => {
-          let ownerName = "Nama Pemilik Tidak Tersedia";
-          if (shopData.ownerUID) {
-            try {
-              const userDoc = await firestore
-                .collection("users")
-                .doc(shopData.ownerUID)
-                .get();
-              if (userDoc.exists) {
-                ownerName = userDoc.data().displayName || ownerName;
-              }
-            } catch (userError) {
-              console.warn(
-                `Gagal mengambil data pemilik untuk toko ${shopData._id}: ${userError.message}`
-              );
-            }
-          }
-          return formatShopObject(shopData, ownerName);
-        }
-      );
-      formattedShops = await Promise.all(shopsWithOwnersPromises);
     }
 
+    query = query.range(offset, offset + limitNum - 1);
+
+    const { data: shopRows, count, error } = await query;
+
+    if (error) throw error;
+
+    let shops = (shopRows || []).map(mapShop);
+
+    // Sortir nama case-insensitive di aplikasi (seperti sebelumnya)
+    if (!isSearchingById && (sortBy === "shopName" || sortBy === "shopName_lowercase")) {
+      shops.sort((a, b) => {
+        const nameA = (a.shopName || "").toLowerCase();
+        const nameB = (b.shopName || "").toLowerCase();
+        return order === "asc"
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
+      });
+    }
+
+    // Ambil nama pemilik dari profiles
+    const ownerIds = [...new Set(shops.map((s) => s.ownerUID).filter(Boolean))];
+    const ownerCache = {};
+    if (ownerIds.length > 0) {
+      const { data: owners } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name, photo_url")
+        .in("id", ownerIds);
+      (owners || []).forEach((o) => {
+        ownerCache[o.id] = o.display_name || "Nama Pemilik Tidak Tersedia";
+      });
+    }
+
+    const formattedShops = shops.map((shop) =>
+      formatShopObject(
+        {
+          id: shop.shopId,
+          shop_name: shop.shopName,
+          description: shop.description,
+          shop_address: shop.shopAddress,
+          banner_image_url: shop.bannerImageURL,
+          user_id: shop.ownerUID,
+          created_at: shop.createdAt,
+          updated_at: shop.updatedAt,
+        },
+        ownerCache[shop.ownerUID]
+      )
+    );
+
+    const totalShops = isSearchingById ? formattedShops.length : count || 0;
     const totalPages = Math.ceil(totalShops / limitNum);
 
     if (formattedShops.length === 0) {
@@ -855,21 +587,6 @@ exports.listShops = async (req, res) => {
     });
   } catch (error) {
     console.error("Error listing shops:", error);
-    if (
-      error.message &&
-      error.message.includes("INVALID_ARGUMENT") &&
-      (error.message.includes("orderBy") ||
-        error.message.includes("inequality"))
-    ) {
-      return handleError(
-        res,
-        {
-          statusCode: 400,
-          message: `Kombinasi filter dan urutan tidak valid di Firestore. Error: ${error.message}`,
-        },
-        "Gagal mengambil daftar toko."
-      );
-    }
     return handleError(res, error, "Gagal mengambil daftar toko.");
   }
 };
@@ -885,72 +602,69 @@ exports.getShopDetails = async (req, res) => {
   }
 
   try {
-    const shopDocRef = firestore.collection("shops").doc(shopId);
-    const shopDoc = await shopDocRef.get();
+    const { data: shopData, error: shopError } = await supabaseAdmin
+      .from("shops")
+      .select("*")
+      .eq("id", shopId)
+      .maybeSingle();
 
-    if (!shopDoc.exists) {
+    if (shopError) throw shopError;
+
+    if (!shopData) {
       return handleError(res, {
         statusCode: 404,
         message: "Toko tidak ditemukan.",
       });
     }
-    const shopData = shopDoc.data();
 
-    let ownerProfile = null;
     let ownerName = "Nama Pemilik Tidak Tersedia";
-    if (shopData.ownerUID) {
-      const userDocRef = firestore.collection("users").doc(shopData.ownerUID);
-      const userDoc = await userDocRef.get();
-      if (userDoc.exists) {
-        const userData = userDoc.data();
-        ownerName = userData.displayName || ownerName;
+    let ownerProfile = null;
+
+    if (shopData.user_id) {
+      const { data: ownerUser } = await supabaseAdmin
+        .from("profiles")
+        .select("id, display_name, photo_url, email")
+        .eq("id", shopData.user_id)
+        .maybeSingle();
+
+      if (ownerUser) {
+        ownerName = ownerUser.display_name || ownerName;
         ownerProfile = {
-          uid: userDoc.id,
-          displayName: userData.displayName,
-          photoURL: userData.photoURL,
+          uid: ownerUser.id,
+          displayName: ownerUser.display_name,
+          photoURL: ownerUser.photo_url,
+          email: ownerUser.email,
         };
-      } else {
-        console.warn(
-          `Profil pemilik dengan UID: ${shopData.ownerUID} untuk toko ${shopId} tidak ditemukan.`
-        );
       }
     }
 
-    const productsQuery = firestore
-      .collection("products")
-      .where("shopId", "==", shopId)
-      .orderBy("createdAt", "desc")
+    const { data: productRows, error: productsError } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("shop_id", shopId)
+      .order("created_at", { ascending: false })
       .limit(20);
 
-    const productsSnapshot = await productsQuery.get();
-    const products = productsSnapshot.docs.map((doc) => {
-      const productData = doc.data();
-      return {
-        productId: doc.id,
-        name: productData.name,
-        description: productData.description,
-        price: productData.price,
-        stock: productData.stock,
-        imageUrl: productData.productImageURL,
-        category: productData.category,
-        createdAt: productData.createdAt,
-      };
-    });
+    if (productsError) throw productsError;
+
+    const products = (productRows || []).map((p) => ({
+      productId: p.id,
+      name: p.name,
+      description: p.description,
+      price: Number(p.price),
+      stock: p.stock,
+      imageUrl: p.product_image_url,
+      category: p.category,
+      createdAt: p.created_at,
+    }));
 
     const formattedShopData = formatShopObject(shopData, ownerName);
 
-    const responseData = {
+    return handleSuccess(res, 200, "Detail toko berhasil diambil.", {
       shop: formattedShopData,
       owner: ownerProfile,
-      products: products,
-    };
-
-    return handleSuccess(
-      res,
-      200,
-      "Detail toko berhasil diambil.",
-      responseData
-    );
+      products,
+    });
   } catch (error) {
     console.error(`Error getting shop details for shopId ${shopId}:`, error);
     return handleError(res, error, "Gagal mengambil detail toko.");
@@ -969,15 +683,22 @@ exports.getShopStatistics = async (req, res) => {
   }
 
   try {
-    const userDoc = await firestore.collection("users").doc(uid).get();
-    if (!userDoc.exists || userDoc.data().role !== "seller") {
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", uid)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
+    if (!userData || userData.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Hanya seller yang dapat mengakses statistik toko.",
       });
     }
 
-    const shopId = userDoc.data().shopId;
+    const shopId = userData.shop_id;
     if (!shopId) {
       return handleError(res, {
         statusCode: 404,
@@ -985,13 +706,16 @@ exports.getShopStatistics = async (req, res) => {
       });
     }
 
-    const productsSnapshot = await firestore
-      .collection("products")
-      .where("shopId", "==", shopId)
-      .get();
-    const totalProducts = productsSnapshot.size;
+    const { count: totalProducts, error: countError } = await supabaseAdmin
+      .from("products")
+      .select("id", { count: "exact", head: true })
+      .eq("shop_id", shopId);
+    if (countError) throw countError;
 
-    let ordersQuery = firestore.collection("orders");
+    let ordersQuery = supabaseAdmin
+      .from("orders")
+      .select("*")
+      .contains("shop_ids", [shopId]);
 
     const now = new Date();
     let startDate;
@@ -1005,36 +729,33 @@ exports.getShopStatistics = async (req, res) => {
     }
 
     if (startDate) {
-      ordersQuery = ordersQuery.where(
-        "createdAt",
-        ">=",
-        startDate.toISOString()
-      );
+      ordersQuery = ordersQuery.gte("created_at", startDate.toISOString());
     }
 
-    const ordersSnapshot = await ordersQuery.get();
+    const { data: orders, error: ordersError } = await ordersQuery;
+    if (ordersError) throw ordersError;
+
     let totalRevenue = 0;
     let newOrdersCount = 0;
     let completedOrdersCount = 0;
 
-    ordersSnapshot.forEach((doc) => {
-      const orderData = doc.data();
+    (orders || []).forEach((orderData) => {
       if (
         orderData.items &&
         orderData.items.some((item) => item.shopId === shopId)
       ) {
-        newOrdersCount++; 
+        newOrdersCount++;
 
-        if (orderData.orderStatus === "COMPLETED") {
+        if (orderData.order_status === "COMPLETED") {
           completedOrdersCount++;
-          totalRevenue += orderData.totalPrice;
+          totalRevenue += Number(orderData.total_price);
         }
       }
     });
 
     const statistics = {
       period,
-      totalProducts,
+      totalProducts: totalProducts || 0,
       newOrders: {
         count: newOrdersCount,
         description: `Total pesanan yang masuk dalam periode ini.`,

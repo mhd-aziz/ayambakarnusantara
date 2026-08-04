@@ -108,6 +108,8 @@ create table if not exists public.ratings (
   order_id uuid references public.orders(id) on delete cascade,
   rating_value int not null check (rating_value between 1 and 5),
   review_text text,
+  user_display_name text, -- denormalisasi nama pemberi rating (pola lama)
+  user_photo_url text, -- denormalisasi foto pemberi rating (pola lama)
   created_at timestamptz not null default now(),
   unique (user_id, product_id, order_id)
 );
