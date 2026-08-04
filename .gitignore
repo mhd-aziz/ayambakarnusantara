@@ -1,0 +1,35 @@
+# === Dependencies ===
+node_modules/
+
+# === Environment & secrets (JANGAN PERNAH di-commit) ===
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Firebase service account (rahasia!)
+serviceAccountKey.json
+firebase-adminsdk*.json
+*-service-account*.json
+
+# === Build output ===
+dist/
+build/
+*.tsbuildinfo
+
+# === Logs ===
+*.log
+npm-debug.log*
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === IDE ===
+.vscode/
+.idea/
+*.swp
+
+# === Supabase (lokal) ===
+supabase/.temp/
+supabase/.branches
