@@ -1,6 +1,6 @@
 # 🔌 API REFERENCE — Ayam Bakar Nusantara
 
-> Daftar lengkap endpoint backend. Base URL: `http://localhost:5000/api` (dev).
+> Daftar lengkap endpoint backend. Base URL: `http://localhost:5000` (dev).
 > Semua respons: `{ success: boolean, message: string, data: any }`.
 > Error: HTTP 4xx/5xx + `{ success: false, message }`.
 > Autentikasi: cookie `authToken` (httpOnly) — dikirim otomatis oleh browser (withCredentials).
@@ -32,25 +32,25 @@
 
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/shops` | 🔐 | multipart: `description, bannerImage?` → **role jadi seller**, shopName = displayName |
-| GET | `/shops/my-shop` | 🏪 | Data toko sendiri |
-| GET | `/shops/my-shop/statistics?period=daily\|weekly\|monthly\|all_time` | 🏪 | `totalProducts, newOrders, completedOrders, revenue` |
-| PUT | `/shops/my-shop` | 🏪 | multipart: `shopName?, description?, shopAddress?, bannerImage?, removeBannerImage?` (sinkron displayName profil) |
-| DELETE | `/shops/my-shop` | 🏪 | Hapus toko + produk (⚠️ gambar produk tidak ikut terhapus — lihat ROADMAP) |
-| GET | `/shops?page=&limit=&search=` | 🔓 | Daftar toko (paginasi) |
-| GET | `/shops/:shopId/detail` | 🔓 | `{ shop, owner, products (max 20) }` |
+| POST | `/shop` | 🔐 | multipart: `description, bannerImage?` → **role jadi seller**, shopName = displayName |
+| GET | `/shop/my-shop` | 🏪 | Data toko sendiri |
+| GET | `/shop/my-shop/statistics?period=daily\|weekly\|monthly\|all_time` | 🏪 | `totalProducts, newOrders, completedOrders, revenue` |
+| PUT | `/shop/my-shop` | 🏪 | multipart: `shopName?, description?, shopAddress?, bannerImage?, removeBannerImage?` (sinkron displayName profil) |
+| DELETE | `/shop/my-shop` | 🏪 | Hapus toko + produk (⚠️ gambar produk tidak ikut terhapus — lihat ROADMAP) |
+| GET | `/shop?page=&limit=&search=` | 🔓 | Daftar toko (paginasi) |
+| GET | `/shop/:shopId/detail` | 🔓 | `{ shop, owner, products (max 20) }` |
 
 ## Produk
 
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/products` | 🏪 | multipart: `name, description, price, stock, category, productImage` |
-| GET | `/products/my-products` | 🏪 | Produk toko sendiri |
-| PUT | `/products/:productId` | 🏪 | multipart: field sama + `removeProductImage?` |
-| DELETE | `/products/:productId` | 🏪 | Hapus produk + gambar Storage |
-| GET | `/products?category=&searchByName=&sortBy=&order=&page=&limit=` | 🔓 | Katalog (default sort `createdAt desc`, limit 10) |
-| GET | `/products/recommendations` | 🔓 | Produk rating ≥ 4 |
-| GET | `/products/:productId` | 🔓 | Detail produk |
+| POST | `/product` | 🏪 | multipart: `name, description, price, stock, category, productImage` |
+| GET | `/product/my-products` | 🏪 | Produk toko sendiri |
+| PUT | `/product/:productId` | 🏪 | multipart: field sama + `removeProductImage?` |
+| DELETE | `/product/:productId` | 🏪 | Hapus produk + gambar Storage |
+| GET | `/product?category=&searchByName=&sortBy=&order=&page=&limit=` | 🔓 | Katalog (default sort `createdAt desc`, limit 10) |
+| GET | `/product/recommendations` | 🔓 | Produk rating ≥ 4 |
+| GET | `/product/:productId` | 🔓 | Detail produk |
 
 ## Keranjang
 
@@ -66,16 +66,16 @@
 
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/orders` | 🔐 | `{ paymentMethod: PAY_AT_STORE\|ONLINE_PAYMENT, notes? }` → validasi stok+harga dari DB, batch kurangi stok, kosongkan cart, notif seller |
-| GET | `/orders` | 🔐 | Daftar order pembeli |
-| GET | `/orders/customer/:orderId` | 🔐 | Detail order (pembeli) + `shopDetails` |
-| PATCH | `/orders/:orderId/cancel` | 🔐 | Batal (hanya AWAITING_PAYMENT / PENDING_CONFIRMATION) → stok kembali |
-| GET | `/orders/seller/all` | 🏪 | Order yang berisi produk toko sendiri (customerDetails ikut) |
-| GET | `/orders/seller/:orderId` | 🏪 | Detail order untuk seller |
-| PATCH | `/orders/:orderId/seller/status` | 🏪 | `{ newStatus }` — hanya transisi valid (state machine) |
-| PATCH | `/orders/:orderId/seller/confirm-payment` | 🏪 | multipart: `paymentProofs[]` (max 10, ≤5MB), `paymentConfirmationNotes?` → bayar di tempat lunas |
-| GET | `/orders/:orderId/payment-proofs` | 🔐 | Bukti bayar (signed URLs) |
-| GET | `/orders/all?status=&limit=&offset=` | 🔐 | Gabungan daftar order (⚠️ bug TDZ — lihat ROADMAP #1) |
+| POST | `/order` | 🔐 | `{ paymentMethod: PAY_AT_STORE\|ONLINE_PAYMENT, notes? }` → validasi stok+harga dari DB, batch kurangi stok, kosongkan cart, notif seller |
+| GET | `/order` | 🔐 | Daftar order pembeli |
+| GET | `/order/customer/:orderId` | 🔐 | Detail order (pembeli) + `shopDetails` |
+| PATCH | `/order/:orderId/cancel` | 🔐 | Batal (hanya AWAITING_PAYMENT / PENDING_CONFIRMATION) → stok kembali |
+| GET | `/order/seller/all` | 🏪 | Order yang berisi produk toko sendiri (customerDetails ikut) |
+| GET | `/order/seller/:orderId` | 🏪 | Detail order untuk seller |
+| PATCH | `/order/:orderId/seller/status` | 🏪 | `{ newStatus }` — hanya transisi valid (state machine) |
+| PATCH | `/order/:orderId/seller/confirm-payment` | 🏪 | multipart: `paymentProofs[]` (max 10, ≤5MB), `paymentConfirmationNotes?` → bayar di tempat lunas |
+| GET | `/order/:orderId/payment-proofs` | 🔐 | Bukti bayar (signed URLs) |
+| GET | `/order/all?status=&limit=&offset=` | 🔐 | Gabungan daftar order (⚠️ bug TDZ — lihat ROADMAP #1) |
 
 ## Pembayaran (Midtrans)
 
@@ -90,11 +90,11 @@
 
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
-| POST | `/ratings/:productId` | 🔐 | `{ orderId, ratingValue (1-5), reviewText? }` — hanya order COMPLETED, 1x per order+produk |
-| GET | `/ratings/:productId` | 🔓 | Rating produk + info user |
-| PUT | `/ratings/:ratingId` | 🔐 | `{ ratingValue?, reviewText? }` → update rata-rata |
-| DELETE | `/ratings/:ratingId` | 🔐 | Hapus → hitung ulang rata-rata |
-| GET | `/ratings?sortBy=&order=&limit=` | 🔓 | Semua rating (dipakai beranda) |
+| POST | `/rating/:productId` | 🔐 | `{ orderId, ratingValue (1-5), reviewText? }` — hanya order COMPLETED, 1x per order+produk |
+| GET | `/rating/:productId` | 🔓 | Rating produk + info user |
+| PUT | `/rating/:ratingId` | 🔐 | `{ ratingValue?, reviewText? }` → update rata-rata |
+| DELETE | `/rating/:ratingId` | 🔐 | Hapus → hitung ulang rata-rata |
+| GET | `/rating?sortBy=&order=&limit=` | 🔓 | Semua rating (dipakai beranda) |
 
 ## Chat
 
@@ -118,8 +118,8 @@
 
 | Method | Endpoint | Akses | Keterangan |
 |---|---|---|---|
-| GET | `/notifications` | 🔐 | 30 notif terbaru |
-| PATCH | `/notifications/:notificationId/read` | 🔐 | Tandai terbaca |
+| GET | `/notification` | 🔐 | 30 notif terbaru |
+| PATCH | `/notification/:notificationId/read` | 🔐 | Tandai terbaca |
 | POST | `/feedback` | 🔓 | `{ name, email, subject, message }` (tanpa rate limit — lihat ROADMAP) |
 
 ---
@@ -135,5 +135,5 @@
 | 404 | Data tidak ditemukan |
 | 500 | Error server (lihat `ROADMAP.md` untuk yang sudah diketahui) |
 
-> ⚠️ Catatan: GET `/orders/all` belum dipakai frontend dan memiliki bug (ROADMAP #1).
+> ⚠️ Catatan: GET `/order/all` belum dipakai frontend dan memiliki bug (ROADMAP #1).
 > POST `/chatbot/ask` butuh server Rasa aktif (`localhost:5005`).

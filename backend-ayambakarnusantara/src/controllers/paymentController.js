@@ -1,7 +1,9 @@
 require("dotenv").config();
+const crypto = require("crypto");
 const { supabaseAdmin } = require("../config/supabaseConfig");
 const snap = require("../config/midtransConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
+const { sendNotification } = require("./notificationController");
 
 const getCallbackUrl = (req) => {
   const allowedOriginsString = process.env.CORS_ALLOWED_ORIGINS || "";
@@ -701,6 +703,156 @@ exports.retryMidtransPayment = async (req, res) => {
     return handleError(res, {
       statusCode: responseStatusCode,
       message: `Gagal membuat transaksi pembayaran ulang: ${userFacingErrorMessage}`,
+    });
+  }
+};
+
+/**
+ * Webhook notifikasi dari Midtrans (Payment Notification).
+ * Dipanggil SERVER Midtrans, bukan dari frontend → TANPA authenticateToken.
+ * Verifikasi signature_key (sha512) → sinkronkan order → kirim notifikasi customer.
+ * Idempotent: aman jika Midtrans mengirim notifikasi berulang.
+ */
+exports.handlePaymentNotification = async (req, res) => {
+  try {
+    const notification = req.body || {};
+
+    const {
+      order_id: gatewayOrderId,
+      status_code,
+      gross_amount,
+      transaction_status,
+      fraud_status,
+      payment_type,
+      transaction_id,
+      signature_key,
+    } = notification;
+
+    if (!gatewayOrderId || !signature_key) {
+      return handleError(res, {
+        statusCode: 400,
+        message: "Payload notifikasi tidak valid.",
+      });
+    }
+
+    // 1. Verifikasi signature: sha512(order_id + status_code + gross_amount + server_key)
+    const serverKey = process.env.MIDTRANS_SERVER_KEY || "";
+    const expectedSignature = crypto
+      .createHash("sha512")
+      .update(
+        `${gatewayOrderId}${status_code || ""}${gross_amount || ""}${serverKey}`
+      )
+      .digest("hex");
+
+    if (expectedSignature !== signature_key) {
+      console.warn(
+        `[PaymentWebhook] Signature tidak valid untuk order_id: ${gatewayOrderId}`
+      );
+      return handleError(res, {
+        statusCode: 403,
+        message: "Signature tidak valid.",
+      });
+    }
+
+    // 2. Mapping gatewayOrderId (format "<orderId>-<timestamp>") ke orderId internal.
+    //    orderId internal = uuid (mengandung "-"), timestamp = angka tanpa "-",
+    //    jadi potong dari dash terakhir.
+    const dashIdx = gatewayOrderId.lastIndexOf("-");
+    const orderId =
+      dashIdx > 0 ? gatewayOrderId.slice(0, dashIdx) : gatewayOrderId;
+
+    const orderData = await getOrderRow(orderId);
+    if (!orderData) {
+      console.warn(`[PaymentWebhook] Order tidak ditemukan: ${orderId}`);
+      return handleError(res, {
+        statusCode: 404,
+        message: "Pesanan tidak ditemukan.",
+      });
+    }
+
+    const pd = orderData.payment_details || {};
+    if ((pd.method || "").toUpperCase() !== "ONLINE_PAYMENT") {
+      return handleSuccess(res, 200, "OK — bukan pesanan online payment.");
+    }
+
+    // 3. Sinkronkan status (pola sama dengan getMidtransTransactionStatus)
+    const currentPaymentStatus = pd.status;
+    let needsUpdate = false;
+    let newPd = { ...pd };
+    let newOrderStatus = orderData.order_status;
+
+    if (transaction_status === "capture") {
+      if (fraud_status === "accept" && currentPaymentStatus !== "paid") {
+        newOrderStatus = "PROCESSING";
+        newPd.status = "paid";
+        needsUpdate = true;
+      }
+    } else if (
+      transaction_status === "settlement" &&
+      currentPaymentStatus !== "paid"
+    ) {
+      newOrderStatus = "PROCESSING";
+      newPd.status = "paid";
+      needsUpdate = true;
+    } else if (
+      transaction_status === "pending" &&
+      currentPaymentStatus !== "pending_gateway_payment"
+    ) {
+      newOrderStatus = "AWAITING_PAYMENT";
+      newPd.status = "pending_gateway_payment";
+      needsUpdate = true;
+    } else if (
+      (transaction_status === "deny" ||
+        transaction_status === "expire" ||
+        transaction_status === "cancel") &&
+      orderData.order_status !== "PAYMENT_FAILED"
+    ) {
+      newOrderStatus = "PAYMENT_FAILED";
+      newPd.status = transaction_status;
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      newPd.gatewayTransactionId = transaction_id || pd.gatewayTransactionId;
+      newPd.paymentType = payment_type || pd.paymentType;
+
+      const { error: updateError } = await supabaseAdmin
+        .from("orders")
+        .update({ order_status: newOrderStatus, payment_details: newPd })
+        .eq("id", orderId);
+      if (updateError) throw updateError;
+
+      // Notifikasi customer saat pembayaran diterima
+      if (newPd.status === "paid") {
+        try {
+          await sendNotification({
+            userId: orderData.user_id,
+            title: "Pembayaran Diterima!",
+            body: `Pembayaran pesanan #${orderId.substring(
+              0,
+              20
+            )} telah diterima. Pesanan sedang diproses penjual.`,
+            data: { orderId, type: "PAYMENT_SUCCESS" },
+          });
+        } catch (notifError) {
+          console.error(
+            "Gagal kirim notifikasi pembayaran diterima:",
+            notifError
+          );
+        }
+      }
+    }
+
+    console.log(
+      `[PaymentWebhook] Order ${orderId} disinkronkan: ${orderData.order_status} -> ${newOrderStatus} (gateway: ${transaction_status})`
+    );
+
+    return handleSuccess(res, 200, "Notifikasi diterima dan diproses.");
+  } catch (error) {
+    console.error("[PaymentWebhook] Error:", error);
+    return handleError(res, {
+      statusCode: 500,
+      message: `Gagal memproses notifikasi: ${error.message || ""}`.trim(),
     });
   }
 };

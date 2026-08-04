@@ -21,4 +21,10 @@ router.get(
   paymentController.getMidtransTransactionStatus
 );
 
+// Webhook Midtrans (payment notification) — dipanggil server Midtrans, TANPA auth
+router.post(
+  "/notification",
+  paymentController.handlePaymentNotification
+);
+
 module.exports = router;

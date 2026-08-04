@@ -161,7 +161,7 @@ const MessageBubble = ({ message, isSender }) => {
   const renderLocation = () => {
     if (!message.location) return null;
     const { latitude, longitude } = message.location;
-    const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=$${latitude},${longitude}`;
+    const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 
     if (MAPS_API_KEY === "YOUR_Maps_API_KEY") {
       return (

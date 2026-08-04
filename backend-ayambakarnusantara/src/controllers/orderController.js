@@ -68,18 +68,27 @@ exports.createOrder = async (req, res) => {
 
     if (error) throw error;
 
-    // Notifikasi seller
+    // Notifikasi seller — SEMUA toko yang terlibat (perbaikan ROADMAP #3:
+    // sebelumnya hanya items[0].shopId, seller lain di order multi-toko tidak mendapat notif)
     try {
-      const shopId = newOrder.items?.[0]?.shopId;
-      if (shopId) {
-        const sellerUID = await getShopOwnerUid(shopId);
-        if (sellerUID) {
-          const { data: customer } = await supabaseAdmin
-            .from("profiles")
-            .select("display_name")
-            .eq("id", userId)
-            .maybeSingle();
-          const customerName = customer?.display_name || "Seorang pelanggan";
+      const shopIds = [
+        ...new Set(
+          (newOrder.items || [])
+            .map((item) => item.shopId)
+            .filter(Boolean)
+        ),
+      ];
+      if (shopIds.length > 0) {
+        const { data: customer } = await supabaseAdmin
+          .from("profiles")
+          .select("display_name")
+          .eq("id", userId)
+          .maybeSingle();
+        const customerName = customer?.display_name || "Seorang pelanggan";
+
+        for (const shopId of shopIds) {
+          const sellerUID = await getShopOwnerUid(shopId);
+          if (!sellerUID) continue;
           const notificationPayload = {
             userId: sellerUID,
             title: "Pesanan Baru Diterima!",
