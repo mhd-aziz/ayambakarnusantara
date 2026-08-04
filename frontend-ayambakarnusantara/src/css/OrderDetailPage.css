@@ -1,0 +1,174 @@
+/* src/css/OrderDetailPage.css */
+
+/* Menggunakan variabel root yang konsisten dengan halaman lain */
+:root {
+  --brand-primary: #c07722;
+  --brand-secondary: #a56317;
+  --text-dark: #2c3e50;
+  --text-light: #555;
+  --text-muted-custom: #777;
+  --bg-soft: #f8f9fa;
+  --bg-card: #ffffff;
+  --border-color: #e9ecef;
+}
+
+.order-detail-page {
+  background-color: transparent !important;
+  padding-top: 1.5rem;
+  padding-bottom: 3rem;
+}
+
+.breadcrumb-custom {
+  background-color: transparent !important;
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  box-shadow: none !important;
+  border: none !important;
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumb-custom .breadcrumb-item a {
+  color: var(--brand-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.breadcrumb-custom .breadcrumb-item a:hover {
+  text-decoration: underline;
+  color: var(--brand-secondary);
+}
+
+.breadcrumb-custom .breadcrumb-item.active {
+  color: var(--brand-secondary);
+}
+
+.order-detail-page .card {
+  border: 1px solid var(--border-color);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.order-detail-page .card-header {
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  font-weight: 500;
+  color: var(--text-dark);
+}
+
+.order-detail-page .list-group-item {
+  border-left: none;
+  border-right: none;
+  padding-top: 0.85rem;
+  padding-bottom: 0.85rem;
+  background-color: transparent;
+}
+
+.order-detail-page .list-group-item strong {
+  color: var(--text-dark);
+}
+
+.order-detail-page .list-group-item .text-primary {
+  color: var(--brand-primary) !important;
+}
+
+.order-detail-page .text-muted {
+  color: var(--text-muted-custom) !important;
+}
+
+.order-detail-page .fw-semibold {
+  font-weight: 600 !important;
+}
+
+.order-detail-page .badge {
+  font-size: 0.8em;
+  vertical-align: middle;
+}
+
+.order-detail-page .link-brand-color {
+  color: var(--brand-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.order-detail-page .link-brand-color:hover {
+  color: var(--brand-secondary);
+  text-decoration: underline;
+}
+
+.order-detail-page .btn-outline-brand {
+  color: var(--brand-primary);
+  background-color: transparent;
+  border-color: var(--brand-primary);
+}
+
+.order-detail-page .btn-outline-brand:hover,
+.order-detail-page .btn-outline-brand:focus,
+.order-detail-page .btn-outline-brand:active,
+.order-detail-page .btn-outline-brand.active {
+  color: #fff;
+  background-color: var(--brand-secondary) !important;
+  border-color: var(--brand-secondary) !important;
+  box-shadow: 0 0 0 0.2rem rgba(192, 119, 34, 0.5) !important;
+}
+
+.order-detail-page .btn-outline-brand:disabled {
+  color: #6c757d;
+  border-color: #ced4da;
+  background-color: transparent;
+}
+
+.order-detail-page .card-footer .btn {
+  font-weight: 500;
+  border-radius: 0.3rem;
+  padding: 0.5rem 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.order-detail-page .btn-pay {
+  background-color: #28a745;
+  border-color: #28a745;
+  color: white;
+}
+.order-detail-page .btn-pay:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+
+.order-detail-page .btn-cancel {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: white;
+}
+.order-detail-page .btn-cancel:hover {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.order-detail-page .btn-check-status {
+  background-color: #17a2b8;
+  border-color: #17a2b8;
+  color: white;
+}
+.order-detail-page .btn-check-status:hover {
+  background-color: #138496;
+  border-color: #117a8b;
+}
+
+.modal-header-danger {
+  background-color: #f8d7da;
+  color: #721c24;
+  border-bottom: 1px solid #f5c6cb;
+}
+.modal-header-danger .btn-close {
+  filter: invert(25%) sepia(15%) saturate(2000%) hue-rotate(320deg)
+    brightness(90%) contrast(100%);
+}
+
+@media (max-width: 576px) {
+  .order-detail-page .breadcrumb {
+    font-size: 0.85rem;
+  }
+  .order-detail-page .card-header.h5 {
+    font-size: 1.1rem;
+  }
+}

@@ -1,0 +1,10 @@
+/node_modules
+setupProxy.js
+/.pnp
+.pnp.js
+.env
+Dockerfile
+nginx.conf
+.dockerignore
+/coverage
+/build

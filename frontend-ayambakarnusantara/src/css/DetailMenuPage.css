@@ -1,0 +1,120 @@
+:root {
+  --brand-primary: #c0392b;
+  --text-dark: #2c3e50;
+}
+
+.breadcrumb-custom .breadcrumb-item a {
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+.breadcrumb-custom .breadcrumb-item a:hover {
+  text-decoration: underline;
+}
+.breadcrumb-custom .breadcrumb-item.active {
+  color: #6c757d;
+}
+
+.detail-menu-image {
+  width: 100%;
+  height: auto;
+  max-height: 500px;
+  object-fit: contain;
+}
+
+.detail-menu-info-col .badge.category-badge {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.detail-menu-title {
+  color: var(--text-dark, #2c3e50);
+  font-weight: 600;
+}
+
+.detail-menu-description.lead {
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 767.98px) {
+  .product-info-tabs .nav-link {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+}
+.stock-badge {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.badge.bg-success-light {
+  background-color: rgba(25, 135, 84, 0.15) !important;
+}
+.badge.bg-danger-light {
+  background-color: rgba(220, 53, 69, 0.15) !important;
+}
+
+.actions-row .btn-action {
+  font-weight: 500;
+}
+
+.z-index-toast {
+  z-index: 1056 !important;
+}
+
+.product-info-tabs {
+  margin-top: 2.5rem;
+  overflow: hidden;
+}
+
+.product-info-tabs .nav-tabs {
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.product-info-tabs .nav-link {
+  color: #6c757d;
+  font-weight: 600;
+  font-size: 1rem;
+  border: none;
+  border-bottom: 3px solid transparent;
+  text-align: center;
+  transition: color 0.3s ease, border-color 0.3s ease;
+}
+
+.product-info-tabs .nav-tabs .nav-item:first-child .nav-link {
+  margin-left: 0;
+}
+
+.product-info-tabs .nav-tabs .nav-item:last-child .nav-link {
+  margin-right: 0;
+}
+
+.product-info-tabs .nav-link.active {
+  color: var(--brand-primary, #c0392b);
+  border-bottom-color: var(--brand-primary, #c0392b);
+  background-color: transparent;
+}
+
+.product-info-tabs .nav-link:hover {
+  border-bottom-color: var(--brand-secondary, #a56717);
+  color: var(--text-dark);
+}
+
+.product-info-tabs .tab-content {
+  position: relative;
+}
+
+.tab-content-wrapper {
+  display: flex;
+  transition: transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.tab-pane-wrapper {
+  width: 100%;
+  flex-shrink: 0;
+  padding-top: 2rem;
+}

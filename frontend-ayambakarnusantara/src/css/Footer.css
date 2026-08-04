@@ -1,0 +1,106 @@
+/* src/css/Footer.css */
+
+/* Mendefinisikan variabel warna untuk konsistensi */
+:root {
+  --brand-primary: #c07722;
+  --brand-secondary: #a56317;
+  --brand-highlight: #ffc633; /* Warna lebih cerah untuk hover */
+  --footer-bg: #212529;
+  --footer-text-primary: #ffffff;
+  --footer-text-secondary: #adb5bd;
+  --footer-border-color: #495057;
+}
+
+/* Kontainer utama footer */
+.footer-container {
+  background-color: var(--footer-bg);
+  color: var(--footer-text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Logo dan nama brand */
+.footer-brand {
+  text-decoration: none; /* Menghilangkan garis bawah dari brand */
+  display: inline-flex;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.footer-brand:hover,
+.footer-brand:focus {
+  text-decoration: none; /* Memastikan tidak ada garis bawah saat hover/focus */
+  opacity: 0.9;
+}
+
+.footer-brand-text {
+  font-weight: bold;
+  font-size: 1.2rem;
+  color: var(--footer-text-primary);
+}
+
+/* Deskripsi singkat di bawah logo */
+.footer-description {
+  color: var(--footer-text-secondary);
+  line-height: 1.6;
+}
+
+/* Judul setiap kolom di footer */
+.footer-heading {
+  font-size: 1.1rem;
+  color: var(--footer-text-primary);
+  margin-bottom: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Gaya untuk link navigasi di footer */
+.footer-link,
+.footer-link-button {
+  color: var(--brand-primary) !important; /* Menggunakan warna brand utama */
+  padding: 0.3rem 0 !important;
+  transition: color 0.2s ease-in-out;
+  text-decoration: none; /* Menghilangkan garis bawah default */
+  text-align: left;
+  display: block;
+}
+
+.footer-link:hover,
+.footer-link:focus,
+.footer-link-button:hover,
+.footer-link-button:focus {
+  color: var(--brand-highlight) !important; /* Warna berubah saat di-hover */
+  text-decoration: none;
+}
+
+/* Khusus untuk tombol "Cara Pesan" agar terlihat seperti link */
+.footer-link-button {
+  background: none;
+  border: none;
+  width: 100%;
+}
+
+/* Menghilangkan padding default dari komponen Nav.Link Bootstrap */
+.footer-nav .nav-link {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+/* Garis pemisah horizontal */
+.footer-hr {
+  border-top: 1px solid var(--footer-border-color);
+  margin-top: 2rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Teks hak cipta */
+.footer-copyright {
+  color: #6c757d;
+  font-size: 0.85rem;
+}
+
+/* Penyesuaian untuk layar kecil (responsif) */
+@media (max-width: 767.98px) {
+  .footer-heading {
+    margin-top: 1rem; /* Memberi sedikit ruang di atas judul pada tampilan mobile */
+  }
+}

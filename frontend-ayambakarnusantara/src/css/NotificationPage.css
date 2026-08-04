@@ -1,0 +1,92 @@
+/* Definisikan variabel warna agar konsisten */
+:root {
+  --brand-primary: #c07722;
+  --brand-secondary: #a56317;
+  --brand-primary-light: #fdf5e6;
+  --text-dark: #2c3e50;
+  --text-light-muted: #6c757d;
+  --border-color: #e9ecef;
+  --body-bg: #f8f9fa;
+}
+
+.notification-page {
+  background-color: transparent !important;
+  padding-top: 2rem;
+  padding-bottom: 4rem;
+  min-height: calc(100vh - 120px);
+}
+
+.notification-page .container-md {
+  padding-left: 15px;
+  padding-right: 15px;
+  overflow-x: hidden;
+}
+
+
+.notification-page .page-title {
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+
+.notification-list .list-group-item {
+  transition: background-color 0.15s ease-in-out;
+  border-bottom: 1px solid var(--border-color) !important;
+  cursor: pointer;
+}
+
+.notification-list .list-group-item:last-child {
+  border-bottom: none !important;
+}
+
+.notification-content {
+  min-width: 0;
+  flex-grow: 1; 
+}
+
+.notification-title {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.notification-body {
+  font-size: 0.9rem;
+  color: var(--text-light-muted);
+  word-break: break-word;
+}
+
+.notification-list .bg-light {
+  background-color: var(--brand-primary-light) !important;
+}
+
+.notification-list .bg-light .notification-title {
+  color: var(--brand-secondary);
+}
+
+.notification-timestamp {
+  font-size: 0.75rem;
+  white-space: nowrap;
+  color: #999;
+  flex-shrink: 0; 
+}
+
+.notification-list .badge.bg-primary {
+  background-color: var(--brand-primary) !important;
+}
+
+.icon-status {
+  transition: color 0.3s ease;
+  flex-shrink: 0;
+}
+
+.icon-read {
+  color: #adb5bd; 
+}
+
+.icon-unread {
+  color: var(--brand-primary); 
+}
+
+.empty-notifications-card {
+  border: 2px dashed var(--border-color);
+  background-color: #fff;
+}
