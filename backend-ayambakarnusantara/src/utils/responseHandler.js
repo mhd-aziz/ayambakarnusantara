@@ -34,35 +34,50 @@ exports.handleError = (
     switch (error.code) {
       case "auth/email-already-exists":
       case "auth/email-already-in-use":
+      case "email_exists":
+      case "user_already_exists":
         statusCode = 400;
         message = "Email sudah terdaftar.";
         break;
       case "auth/invalid-email":
+      case "invalid_email":
         statusCode = 400;
         message = "Format email tidak valid.";
         break;
       case "auth/weak-password":
+      case "weak_password":
         statusCode = 400;
         message = "Password terlalu lemah. Minimal 6 karakter.";
         break;
       case "auth/user-not-found":
+      case "user_not_found":
         statusCode = 404;
         message = "Pengguna tidak ditemukan.";
         break;
       case "auth/invalid-credential":
+      case "invalid_credentials":
         statusCode = 401;
         message = "Kredensial tidak valid atau autentikasi gagal.";
+        break;
+      case "email_not_confirmed":
+        statusCode = 400;
+        message = "Email belum dikonfirmasi.";
+        break;
+      case "over_email_send_rate_limit":
+        statusCode = 429;
+        message = "Terlalu banyak permintaan email. Silakan coba lagi nanti.";
         break;
       case "auth/invalid-phone-number":
         statusCode = 400;
         message =
-          "Nomor telepon tidak valid. Pastikan formatnya benar (misal: +6281234567890).";
+          "Nomor telepon tidak valid. Pastikan formatnya benar (misal: +628****7890).";
         break;
       case "auth/phone-number-already-exists":
         statusCode = 400;
         message = "Nomor telepon sudah digunakan oleh akun lain.";
         break;
       case "auth/id-token-expired":
+      case "JWT expired":
         statusCode = 401;
         message = "Sesi Anda telah berakhir. Silakan login kembali.";
         break;

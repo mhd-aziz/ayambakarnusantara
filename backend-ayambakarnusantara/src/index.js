@@ -15,7 +15,7 @@ const chatbotRoutes = require("./routes/chatbotRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const notificationsRoutes = require("./routes/notificationRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
-require("./config/firebaseConfig");
+require("./config/supabaseConfig");
 
 const { handleError } = require("./utils/responseHandler");
 const app = express();

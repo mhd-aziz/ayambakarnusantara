@@ -1,5 +1,44 @@
-const { auth, firestore } = require("../config/firebaseConfig");
+const { supabaseAdmin, supabaseAnon } = require("../config/supabaseConfig");
 const { handleError } = require("../utils/responseHandler");
+
+const isProduction = process.env.NODE_ENV === "production";
+
+const authCookieOptions = {
+  httpOnly: true,
+  secure: isProduction,
+  sameSite: isProduction ? "None" : "Lax",
+  maxAge: 24 * 60 * 60 * 1000, // 24 jam (token di dalamnya berlaku 1 jam, di-refresh otomatis)
+  path: "/",
+};
+
+const refreshCookieOptions = {
+  ...authCookieOptions,
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 hari
+};
+
+function clearAuthCookies(res) {
+  const expired = { ...authCookieOptions, expires: new Date(0) };
+  res.cookie("authToken", "", expired);
+  res.cookie("authRefreshToken", "", { ...expired, maxAge: undefined });
+}
+
+function normalizeUser(user) {
+  return {
+    uid: user.id,
+    email: user.email,
+    displayName:
+      user.user_metadata?.display_name || (user.email ? user.email.split("@")[0] : null),
+    phoneNumber: user.phone || null,
+    role: user.user_metadata?.role || "customer",
+    emailVerified: Boolean(user.email_confirmed_at),
+    raw: user,
+  };
+}
+
+function isJwtExpiredError(error) {
+  const msg = (error && (error.message || error.error_description || "")) || "";
+  return msg.includes("JWT expired") || msg.includes("Token has expired");
+}
 
 exports.authenticateToken = async (req, res, next) => {
   let token = null;
@@ -21,51 +60,55 @@ exports.authenticateToken = async (req, res, next) => {
   }
 
   try {
-    const decodedToken = await auth.verifyIdToken(token, true);
-    req.user = decodedToken;
-    req.firebaseIdToken = token;
-    next();
-  } catch (error) {
-    if (
-      error.code === "auth/id-token-expired" ||
-      error.code === "auth/argument-error" ||
-      error.code === "auth/id-token-revoked"
-    ) {
-      res.cookie("authToken", "", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "None",
-        expires: new Date(0),
-        path: "/", 
-      });
+    const { data, error } = await supabaseAdmin.auth.getUser(token);
+    if (error || !data?.user) {
+      throw error || new Error("Pengguna tidak ditemukan untuk token ini.");
     }
-
-    if (error.code === "auth/id-token-expired") {
+    req.user = normalizeUser(data.user);
+    req.supabaseAccessToken = token;
+    return next();
+  } catch (error) {
+    // Access token kedaluwarsa: coba perpanjang via refresh token (cookie)
+    if (isJwtExpiredError(error)) {
+      const refreshToken = req.cookies && req.cookies.authRefreshToken;
+      if (refreshToken) {
+        try {
+          const { data: refreshData, error: refreshError } =
+            await supabaseAnon.auth.refreshSession({
+              refresh_token: refreshToken,
+            });
+          if (!refreshError && refreshData?.session) {
+            res.cookie("authToken", refreshData.session.access_token, authCookieOptions);
+            res.cookie(
+              "authRefreshToken",
+              refreshData.session.refresh_token,
+              refreshCookieOptions
+            );
+            const { data: userData } = await supabaseAdmin.auth.getUser(
+              refreshData.session.access_token
+            );
+            req.user = normalizeUser(userData.user);
+            req.supabaseAccessToken = refreshData.session.access_token;
+            return next();
+          }
+        } catch (refreshErr) {
+          console.error("Auto-refresh gagal:", refreshErr.message);
+        }
+      }
+      clearAuthCookies(res);
       return handleError(res, {
         statusCode: 401,
-        message: "Akses ditolak. Token telah kedaluwarsa.",
+        message: "Sesi Anda telah berakhir. Silakan login kembali.",
         errorCode: "TOKEN_EXPIRED",
       });
     }
-    if (error.code === "auth/id-token-revoked") {
-      return handleError(res, {
-        statusCode: 401,
-        message: "Akses ditolak. Token telah dicabut.",
-        errorCode: "TOKEN_REVOKED",
-      });
-    }
-    if (error.code === "auth/argument-error") {
-      return handleError(res, {
-        statusCode: 401,
-        message: "Akses ditolak. Token tidak valid.",
-        errorCode: "TOKEN_INVALID_FORMAT",
-      });
-    }
-    console.error("Error verifying ID token:", error.code, error.message);
+
+    clearAuthCookies(res);
+    console.error("Error verifying token:", error.message);
     return handleError(res, {
-      statusCode: 403,
-      message: "Akses ditolak. Gagal memverifikasi token.",
-      errorCode: "TOKEN_VERIFICATION_FAILED",
+      statusCode: 401,
+      message: "Akses ditolak. Token tidak valid.",
+      errorCode: "TOKEN_INVALID",
     });
   }
 };
@@ -81,18 +124,22 @@ exports.isSeller = async (req, res, next) => {
   const uid = req.user.uid;
 
   try {
-    const userDocRef = firestore.collection("users").doc(uid);
-    const userDoc = await userDocRef.get();
+    const { data, error } = await supabaseAdmin
+      .from("profiles")
+      .select("role")
+      .eq("id", uid)
+      .maybeSingle();
 
-    if (!userDoc.exists) {
+    if (error) throw error;
+
+    if (!data) {
       return handleError(res, {
         statusCode: 404,
         message: "Data pengguna tidak ditemukan untuk verifikasi peran.",
       });
     }
 
-    const userData = userDoc.data();
-    if (userData.role === "seller") {
+    if (data.role === "seller") {
       next();
     } else {
       return handleError(res, {
