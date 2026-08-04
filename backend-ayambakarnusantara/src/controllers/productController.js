@@ -1,54 +1,34 @@
-const { firestore, storage } = require("../config/firebaseConfig");
-const { FieldValue } = require("firebase-admin/firestore");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
 const { v4: uuidv4 } = require("uuid");
+const {
+  uploadImage,
+  deleteFile,
+  extractPathFromPublicUrl,
+} = require("../utils/storageHelper");
 
-async function deleteProductImageFromStorage(imageURL, bucket) {
-  if (!imageURL || !bucket) {
-    console.log(
-      "Tidak ada imageURL atau bucket yang disediakan untuk deleteProductImageFromStorage."
-    );
-    return;
-  }
-  try {
-    const prefixPattern1 = `https://storage.googleapis.com/${bucket.name}/`;
-    const prefixPattern2 = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/`;
-    let filePath;
+function mapProduct(row) {
+  if (!row) return null;
+  return {
+    _id: row.id,
+    shopId: row.shop_id,
+    ownerUID: row.owner_uid,
+    name: row.name,
+    description: row.description,
+    price: Number(row.price),
+    stock: row.stock,
+    category: row.category,
+    productImageURL: row.product_image_url,
+    name_lowercase: row.name ? row.name.toLowerCase() : null,
+    sumOfRatings: Number(row.sum_of_ratings || 0),
+    ratingCount: row.total_ratings || 0,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
 
-    if (imageURL.startsWith(prefixPattern1)) {
-      filePath = imageURL.substring(prefixPattern1.length);
-    } else if (imageURL.startsWith(prefixPattern2)) {
-      filePath = imageURL.substring(prefixPattern2.length);
-      filePath = filePath.split("?")[0];
-    } else {
-      console.warn(
-        "Format URL gambar produk tidak dikenali, tidak dapat menghapus:",
-        imageURL
-      );
-      return;
-    }
-    filePath = decodeURIComponent(filePath.split("?")[0]);
-    if (filePath) {
-      console.log(
-        `Mencoba menghapus file gambar produk di Storage: ${filePath}`
-      );
-      await bucket.file(filePath).delete();
-      console.log(
-        `Berhasil menghapus file gambar produk dari Storage: ${filePath}`
-      );
-    }
-  } catch (error) {
-    if (error.code === 404 || error.message.includes("No such object")) {
-      console.warn(
-        `File gambar produk tidak ditemukan di Storage (mungkin sudah dihapus atau path salah): ${error.message}`
-      );
-    } else {
-      console.warn(
-        "Gagal menghapus file gambar produk dari Storage:",
-        error.message
-      );
-    }
-  }
+function mapProductList(rows) {
+  return (rows || []).map(mapProduct);
 }
 
 exports.createProduct = async (req, res) => {
@@ -85,17 +65,22 @@ exports.createProduct = async (req, res) => {
   }
 
   try {
-    const userDocRef = firestore.collection("users").doc(uid);
-    const userDoc = await userDocRef.get();
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", uid)
+      .maybeSingle();
 
-    if (!userDoc.exists || userDoc.data().role !== "seller") {
+    if (userError) throw userError;
+
+    if (!userData || userData.role !== "seller") {
       return handleError(res, {
         statusCode: 403,
         message: "Hanya seller yang dapat membuat produk.",
       });
     }
 
-    const shopId = userDoc.data().shopId;
+    const shopId = userData.shop_id;
     if (!shopId) {
       return handleError(res, {
         statusCode: 400,
@@ -104,9 +89,15 @@ exports.createProduct = async (req, res) => {
       });
     }
 
-    const shopDocRef = firestore.collection("shops").doc(shopId);
-    const shopDoc = await shopDocRef.get();
-    if (!shopDoc.exists || shopDoc.data().ownerUID !== uid) {
+    const { data: shopData, error: shopError } = await supabaseAdmin
+      .from("shops")
+      .select("id, user_id")
+      .eq("id", shopId)
+      .maybeSingle();
+
+    if (shopError) throw shopError;
+
+    if (!shopData || shopData.user_id !== uid) {
       return handleError(res, {
         statusCode: 403,
         message:
@@ -115,66 +106,40 @@ exports.createProduct = async (req, res) => {
     }
 
     let productImageURL = null;
-    const bucket = storage.bucket();
 
     if (req.file) {
       const fileExtension = req.file.originalname.split(".").pop();
       const fileName = `product-images/${shopId}/${uuidv4()}.${fileExtension}`;
-      const fileUpload = bucket.file(fileName);
-      const blobStream = fileUpload.createWriteStream({
-        metadata: { contentType: req.file.mimetype },
-      });
-
-      await new Promise((resolve, reject) => {
-        blobStream.on("error", (uploadError) => {
-          console.error("Upload error gambar produk:", uploadError);
-          reject(uploadError);
-        });
-        blobStream.on("finish", async () => {
-          try {
-            await fileUpload.makePublic();
-            productImageURL = fileUpload.publicUrl();
-            resolve();
-          } catch (publicError) {
-            console.error(
-              "Error making product image public or getting URL:",
-              publicError
-            );
-            reject(publicError);
-          }
-        });
-        blobStream.end(req.file.buffer);
-      }).catch((uploadError) => {
-        return handleError(res, {
-          statusCode: 500,
-          message: `Gagal mengunggah gambar produk: ${uploadError.message}`,
-        });
-      });
-      if (res.headersSent) return;
+      productImageURL = await uploadImage(
+        "product-images",
+        fileName,
+        req.file.buffer,
+        req.file.mimetype
+      );
     }
 
-    const newProductRef = firestore.collection("products").doc();
-    const newProductData = {
-      _id: newProductRef.id,
-      shopId: shopId,
-      ownerUID: uid,
-      name,
-      description,
-      price: parseFloat(price),
-      stock: parseInt(stock),
-      category,
-      productImageURL,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      name_lowercase: name.toLowerCase(),
-    };
+    const { data: newProduct, error: insertError } = await supabaseAdmin
+      .from("products")
+      .insert({
+        shop_id: shopId,
+        owner_uid: uid,
+        name,
+        description,
+        price: parseFloat(price),
+        stock: parseInt(stock),
+        category,
+        product_image_url: productImageURL,
+      })
+      .select()
+      .single();
 
-    await newProductRef.set(newProductData);
+    if (insertError) throw insertError;
+
     return handleSuccess(
       res,
       201,
       "Produk berhasil ditambahkan.",
-      newProductData
+      mapProduct(newProduct)
     );
   } catch (error) {
     console.error("Error creating product:", error);
@@ -195,75 +160,62 @@ exports.getAllProducts = async (req, res) => {
       nameCaseInsensitive = "true",
     } = req.query;
 
-    let productsQuery = firestore.collection("products");
-    let isSearchingById = false;
-    let allProductsData = [];
-
+    const pageNum = parseInt(page, 10) || 1;
+    const limitNum = parseInt(limit, 10) || 10;
+    const offset = (pageNum - 1) * limitNum;
     const isNameSearchCaseInsensitive = nameCaseInsensitive === "true";
 
+    let query = supabaseAdmin
+      .from("products")
+      .select("*", { count: "exact" });
+
+    let isSearchingById = false;
+
     if (searchById) {
-      productsQuery = productsQuery.where("_id", "==", searchById);
+      query = query.eq("id", searchById);
       isSearchingById = true;
     } else {
       if (category) {
-        productsQuery = productsQuery.where("category", "==", category);
+        query = query.eq("category", category);
       }
-      if (sortBy && sortBy !== "name") {
-        productsQuery = productsQuery.orderBy(sortBy, order);
-      } else if (!sortBy) {
-        productsQuery = productsQuery.orderBy("createdAt", "desc");
-      }
-    }
 
-    const pageNum = parseInt(page, 10);
-    const limitNum = parseInt(limit, 10);
-    const offset = (pageNum - 1) * limitNum;
-
-    let products = [];
-    let totalProducts = 0;
-
-    if (isSearchingById) {
-      const productSnapshot = await productsQuery.get();
-      if (!productSnapshot.empty) {
-        products = productSnapshot.docs.map((doc) => doc.data());
-        totalProducts = products.length;
-      }
-    } else {
-      const allMatchingDocsSnapshot = await productsQuery.get();
-      allProductsData = allMatchingDocsSnapshot.docs.map((doc) => doc.data());
       if (searchByName) {
-        const searchTerm = isNameSearchCaseInsensitive
-          ? searchByName.toLowerCase()
-          : searchByName;
-        allProductsData = allProductsData.filter((product) => {
-          if (!product.name) return false;
-          const productName = isNameSearchCaseInsensitive
-            ? product.name.toLowerCase()
-            : product.name;
-          return productName.includes(searchTerm);
-        });
+        query = query.ilike("name", `%${searchByName}%`);
       }
 
-      if (sortBy === "name") {
-        allProductsData.sort((a, b) => {
-          const nameA = isNameSearchCaseInsensitive
-            ? (a.name || "").toLowerCase()
-            : a.name || "";
-          const nameB = isNameSearchCaseInsensitive
-            ? (b.name || "").toLowerCase()
-            : b.name || "";
-          if (order === "asc") {
-            return nameA.localeCompare(nameB);
-          } else {
-            return nameB.localeCompare(nameA);
-          }
-        });
+      if (sortBy && sortBy !== "name") {
+        const orderColumn =
+          sortBy === "price" ? "price" : "created_at";
+        query = query.order(orderColumn, { ascending: order === "asc" });
+      } else if (!sortBy) {
+        query = query.order("created_at", { ascending: false });
       }
-
-      totalProducts = allProductsData.length;
-      products = allProductsData.slice(offset, offset + limitNum);
     }
 
+    query = query.range(offset, offset + limitNum - 1);
+
+    const { data, count, error } = await query;
+
+    if (error) throw error;
+
+    let products = mapProductList(data);
+
+    // Sortir nama case-insensitive dilakukan di aplikasi (seperti sebelumnya)
+    if (!isSearchingById && sortBy === "name") {
+      products.sort((a, b) => {
+        const nameA = isNameSearchCaseInsensitive
+          ? (a.name || "").toLowerCase()
+          : a.name || "";
+        const nameB = isNameSearchCaseInsensitive
+          ? (b.name || "").toLowerCase()
+          : b.name || "";
+        return order === "asc"
+          ? nameA.localeCompare(nameB)
+          : nameB.localeCompare(nameA);
+      });
+    }
+
+    const totalProducts = isSearchingById ? products.length : count || 0;
     const totalPages = Math.ceil(totalProducts / limitNum);
 
     if (products.length === 0) {
@@ -287,21 +239,6 @@ exports.getAllProducts = async (req, res) => {
     });
   } catch (error) {
     console.error("Error getting all products:", error);
-    if (
-      error.message &&
-      error.message.includes("INVALID_ARGUMENT") &&
-      (error.message.includes("orderBy") ||
-        error.message.includes("inequality"))
-    ) {
-      return handleError(
-        res,
-        {
-          statusCode: 400,
-          message: `Kombinasi filter dan urutan tidak valid di Firestore. Error: ${error.message}`,
-        },
-        "Gagal mengambil daftar produk."
-      );
-    }
     return handleError(res, error, "Gagal mengambil daftar produk.");
   }
 };
@@ -317,23 +254,30 @@ exports.getMyProducts = async (req, res) => {
   }
 
   try {
-    const userDoc = await firestore.collection("users").doc(uid).get();
-    if (!userDoc.exists || !userDoc.data().shopId) {
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from("profiles")
+      .select("shop_id")
+      .eq("id", uid)
+      .maybeSingle();
+
+    if (userError) throw userError;
+
+    if (!userData?.shop_id) {
       return handleError(res, {
         statusCode: 404,
         message: "Toko seller tidak ditemukan.",
       });
     }
-    const shopId = userDoc.data().shopId;
 
-    const productsQuery = firestore
-      .collection("products")
-      .where("shopId", "==", shopId)
-      .orderBy("createdAt", "desc");
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("shop_id", userData.shop_id)
+      .order("created_at", { ascending: false });
 
-    const snapshot = await productsQuery.get();
+    if (error) throw error;
 
-    if (snapshot.empty) {
+    if (!data || data.length === 0) {
       return handleSuccess(
         res,
         200,
@@ -342,12 +286,11 @@ exports.getMyProducts = async (req, res) => {
       );
     }
 
-    const products = snapshot.docs.map((doc) => doc.data());
     return handleSuccess(
       res,
       200,
       "Daftar produk Anda berhasil diambil.",
-      products
+      mapProductList(data)
     );
   } catch (error) {
     console.error("Error getting my products:", error);
@@ -366,10 +309,15 @@ exports.getProductById = async (req, res) => {
   }
 
   try {
-    const productDocRef = firestore.collection("products").doc(productId);
-    const doc = await productDocRef.get();
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .maybeSingle();
 
-    if (!doc.exists) {
+    if (error) throw error;
+
+    if (!data) {
       return handleError(res, {
         statusCode: 404,
         message: "Produk tidak ditemukan.",
@@ -380,7 +328,7 @@ exports.getProductById = async (req, res) => {
       res,
       200,
       "Detail produk berhasil diambil.",
-      doc.data()
+      mapProduct(data)
     );
   } catch (error) {
     console.error("Error getting product by ID:", error);
@@ -409,18 +357,22 @@ exports.updateProduct = async (req, res) => {
   }
 
   try {
-    const productDocRef = firestore.collection("products").doc(productId);
-    const productDoc = await productDocRef.get();
+    const { data: currentProductData, error: fetchError } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .maybeSingle();
 
-    if (!productDoc.exists) {
+    if (fetchError) throw fetchError;
+
+    if (!currentProductData) {
       return handleError(res, {
         statusCode: 404,
         message: "Produk tidak ditemukan untuk diperbarui.",
       });
     }
 
-    const currentProductData = productDoc.data();
-    if (currentProductData.ownerUID !== uid) {
+    if (currentProductData.owner_uid !== uid) {
       return handleError(res, {
         statusCode: 403,
         message: "Anda tidak berhak memperbarui produk ini.",
@@ -428,105 +380,61 @@ exports.updateProduct = async (req, res) => {
     }
 
     const fieldsToUpdate = {};
-    const bucket = storage.bucket();
 
     if (req.file) {
-      if (currentProductData.productImageURL) {
-        await deleteProductImageFromStorage(
-          currentProductData.productImageURL,
-          bucket
+      if (currentProductData.product_image_url) {
+        const oldPath = extractPathFromPublicUrl(
+          currentProductData.product_image_url,
+          "product-images"
         );
+        if (oldPath) await deleteFile("product-images", oldPath);
       }
       const fileExtension = req.file.originalname.split(".").pop();
-      const fileName = `product-images/${
-        currentProductData.shopId
-      }/${uuidv4()}.${fileExtension}`;
-      const fileUpload = bucket.file(fileName);
-      const blobStream = fileUpload.createWriteStream({
-        metadata: { contentType: req.file.mimetype },
-      });
-
-      let newProductImageURL;
-      await new Promise((resolve, reject) => {
-        blobStream.on("error", reject);
-        blobStream.on("finish", async () => {
-          try {
-            await fileUpload.makePublic();
-            newProductImageURL = fileUpload.publicUrl();
-            resolve();
-          } catch (publicError) {
-            reject(publicError);
-          }
-        });
-        blobStream.end(req.file.buffer);
-      }).catch((uploadError) => {
-        console.error("Upload error gambar produk baru:", uploadError);
-        return handleError(res, {
-          statusCode: 500,
-          message: `Gagal mengunggah gambar produk baru: ${uploadError.message}`,
-        });
-      });
-      if (res.headersSent) return;
-      fieldsToUpdate.productImageURL = newProductImageURL;
-    } else if (removeProductImage === "true" || removeProductImage === true) {
-      if (currentProductData.productImageURL) {
-        await deleteProductImageFromStorage(
-          currentProductData.productImageURL,
-          bucket
+      const fileName = `product-images/${currentProductData.shop_id}/${uuidv4()}.${fileExtension}`;
+      fieldsToUpdate.product_image_url = await uploadImage(
+        "product-images",
+        fileName,
+        req.file.buffer,
+        req.file.mimetype
+      );
+    } else if (removeProductImage === "true") {
+      if (currentProductData.product_image_url) {
+        const oldPath = extractPathFromPublicUrl(
+          currentProductData.product_image_url,
+          "product-images"
         );
+        if (oldPath) await deleteFile("product-images", oldPath);
       }
-      fieldsToUpdate.productImageURL = null;
+      fieldsToUpdate.product_image_url = null;
     }
 
-    if (name !== undefined) {
-      const trimmedName = name.trim();
-      if (trimmedName === "") {
-        return handleError(res, {
-          statusCode: 400,
-          message: "Nama produk tidak boleh kosong.",
-        });
-      }
-      if (trimmedName !== currentProductData.name) {
-        fieldsToUpdate.name = trimmedName;
-        fieldsToUpdate.name_lowercase = trimmedName.toLowerCase();
-      }
+    if (name && name.trim() !== "") {
+      fieldsToUpdate.name = name.trim();
     }
-
-    if (
-      description !== undefined &&
-      description.trim() !== currentProductData.description
-    ) {
+    if (description && description.trim() !== "") {
       fieldsToUpdate.description = description.trim();
     }
-    if (price !== undefined) {
-      const newPrice = parseFloat(price);
-      if (isNaN(newPrice) || newPrice <= 0)
+    if (price !== undefined && price !== "") {
+      const parsedPrice = parseFloat(price);
+      if (isNaN(parsedPrice) || parsedPrice <= 0) {
         return handleError(res, {
           statusCode: 400,
           message: "Harga harus berupa angka positif.",
         });
-      if (newPrice !== currentProductData.price)
-        fieldsToUpdate.price = newPrice;
+      }
+      fieldsToUpdate.price = parsedPrice;
     }
-    if (stock !== undefined) {
-      const newStock = parseInt(stock);
-      if (isNaN(newStock) || newStock < 0)
+    if (stock !== undefined && stock !== "") {
+      const parsedStock = parseInt(stock);
+      if (isNaN(parsedStock) || parsedStock < 0) {
         return handleError(res, {
           statusCode: 400,
           message: "Stok harus berupa angka non-negatif.",
         });
-      if (newStock !== currentProductData.stock)
-        fieldsToUpdate.stock = newStock;
+      }
+      fieldsToUpdate.stock = parsedStock;
     }
-    if (
-      category !== undefined &&
-      category.trim() !== currentProductData.category
-    ) {
-      if (category.trim() === "")
-        return handleError(res, {
-          statusCode: 400,
-          message: "Kategori produk tidak boleh kosong.",
-        });
+    if (category && category.trim() !== "") {
       fieldsToUpdate.category = category.trim();
     }
 
@@ -538,15 +446,20 @@ exports.updateProduct = async (req, res) => {
       });
     }
 
-    fieldsToUpdate.updatedAt = new Date().toISOString();
-    await productDocRef.update(fieldsToUpdate);
+    const { data: updatedProduct, error: updateError } = await supabaseAdmin
+      .from("products")
+      .update(fieldsToUpdate)
+      .eq("id", productId)
+      .select()
+      .single();
 
-    const updatedProductDoc = await productDocRef.get();
+    if (updateError) throw updateError;
+
     return handleSuccess(
       res,
       200,
       "Produk berhasil diperbarui.",
-      updatedProductDoc.data()
+      mapProduct(updatedProduct)
     );
   } catch (error) {
     console.error("Error updating product:", error);
@@ -573,30 +486,41 @@ exports.deleteProduct = async (req, res) => {
   }
 
   try {
-    const productDocRef = firestore.collection("products").doc(productId);
-    const productDoc = await productDocRef.get();
+    const { data: productData, error: fetchError } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .maybeSingle();
 
-    if (!productDoc.exists) {
+    if (fetchError) throw fetchError;
+
+    if (!productData) {
       return handleError(res, {
         statusCode: 404,
         message: "Produk tidak ditemukan untuk dihapus.",
       });
     }
 
-    const productData = productDoc.data();
-    if (productData.ownerUID !== uid) {
+    if (productData.owner_uid !== uid) {
       return handleError(res, {
         statusCode: 403,
         message: "Anda tidak berhak menghapus produk ini.",
       });
     }
 
-    if (productData.productImageURL) {
-      const bucket = storage.bucket();
-      await deleteProductImageFromStorage(productData.productImageURL, bucket);
+    if (productData.product_image_url) {
+      const imagePath = extractPathFromPublicUrl(
+        productData.product_image_url,
+        "product-images"
+      );
+      if (imagePath) await deleteFile("product-images", imagePath);
     }
 
-    await productDocRef.delete();
+    const { error: deleteError } = await supabaseAdmin
+      .from("products")
+      .delete()
+      .eq("id", productId);
+    if (deleteError) throw deleteError;
 
     return handleSuccess(res, 200, "Produk berhasil dihapus.");
   } catch (error) {
@@ -627,27 +551,22 @@ exports.getProductRecommendations = async (req, res) => {
       numMinSumOfRatings = 4;
     }
 
-    let recommendationsQuery = firestore.collection("products");
-
-    recommendationsQuery = recommendationsQuery.where(
-      "sumOfRatings",
-      ">=",
-      numMinSumOfRatings
-    );
-
-    recommendationsQuery = recommendationsQuery
-      .orderBy("sumOfRatings", "desc")
-      .orderBy("ratingCount", "asc")
+    const { data, error } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .gte("sum_of_ratings", numMinSumOfRatings)
+      .order("sum_of_ratings", { ascending: false })
+      .order("total_ratings", { ascending: true })
       .limit(numLimit);
 
-    const snapshot = await recommendationsQuery.get();
+    if (error) throw error;
 
     const queryParamsForResponse = {
       limit: numLimit,
       minSumOfRatings: numMinSumOfRatings,
     };
 
-    if (snapshot.empty) {
+    if (!data || data.length === 0) {
       return handleSuccess(
         res,
         200,
@@ -659,7 +578,7 @@ exports.getProductRecommendations = async (req, res) => {
       );
     }
 
-    const recommendedProducts = snapshot.docs.map((doc) => doc.data());
+    const recommendedProducts = mapProductList(data);
 
     return handleSuccess(res, 200, "Produk rekomendasi berhasil diambil.", {
       recommendations: recommendedProducts,
@@ -668,19 +587,6 @@ exports.getProductRecommendations = async (req, res) => {
     });
   } catch (error) {
     console.error("Error getting product recommendations:", error);
-    if (
-      error.code === "FAILED_PRECONDITION" &&
-      error.message.includes("index")
-    ) {
-      return handleError(
-        res,
-        {
-          statusCode: 500,
-          message: `Query memerlukan indeks komposit di Firestore. Detail: ${error.message}. Silakan buat indeks yang diperlukan melalui Firebase Console.`,
-        },
-        "Gagal mengambil rekomendasi produk karena konfigurasi database (memerlukan indeks)."
-      );
-    }
     return handleError(res, error, "Gagal mengambil rekomendasi produk.");
   }
 };

@@ -1,83 +1,24 @@
-const { firestore, admin } = require("../config/firebaseConfig");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
 
+/**
+ * Simpan notifikasi in-app ke database.
+ * (Push native FCM tidak dipakai lagi — Firebase sudah tidak aktif.
+ *  Notifikasi muncul realtime via Supabase Realtime di frontend.)
+ */
 exports.sendNotification = async (notificationPayload) => {
   const { userId, title, body, data } = notificationPayload;
 
   try {
-    const userDocRef = firestore.collection("users").doc(userId);
-    const userDoc = await userDocRef.get();
-    if (
-      !userDoc.exists ||
-      !userDoc.data().fcmTokens ||
-      userDoc.data().fcmTokens.length === 0
-    ) {
-      console.log(
-        `Tidak ada token FCM untuk pengguna ${userId}, notifikasi push dilewati.`
-      );
-      return;
-    }
-    const fcmTokens = userDoc.data().fcmTokens;
-
-    const notificationRef = firestore.collection("notifications").doc();
-    await notificationRef.set({
-      notificationId: notificationRef.id,
-      userId,
+    const { error } = await supabaseAdmin.from("notifications").insert({
+      user_id: userId,
       title,
       body,
       data: data || {},
-      isRead: false,
-      createdAt: new Date().toISOString(),
     });
 
-    const message = {
-      tokens: fcmTokens,
-      notification: {
-        title,
-        body,
-      },
-      data: data || {},
-      android: {
-        notification: {
-          sound: "default",
-        },
-      },
-      apns: {
-        payload: {
-          aps: {
-            sound: "default",
-          },
-        },
-      },
-    };
-
-    console.log(
-      `Mengirim notifikasi ke ${fcmTokens.length} token untuk pengguna ${userId}.`
-    );
-    const response = await admin.messaging().sendEachForTokens(message);
-
-    const tokensToRemove = [];
-    response.responses.forEach((result, index) => {
-      if (!result.success) {
-        const error = result.error;
-        if (
-          error.code === "messaging/registration-token-not-registered" ||
-          error.code === "messaging/invalid-registration-token"
-        ) {
-          const invalidToken = fcmTokens[index];
-          console.log(`Token FCM tidak valid ditemukan: ${invalidToken}`);
-          tokensToRemove.push(invalidToken);
-        }
-      }
-    });
-
-    if (tokensToRemove.length > 0) {
-      console.log(
-        `Menghapus ${tokensToRemove.length} token FCM yang tidak valid untuk pengguna ${userId}.`
-      );
-      await userDocRef.update({
-        fcmTokens: admin.firestore.FieldValue.arrayRemove(...tokensToRemove),
-      });
+    if (error) {
+      console.error(`Gagal menyimpan notifikasi untuk pengguna ${userId}:`, error.message);
     }
   } catch (error) {
     console.error(`Gagal mengirim notifikasi untuk pengguna ${userId}:`, error);
@@ -88,14 +29,26 @@ exports.getUserNotifications = async (req, res) => {
   const userId = req.user?.uid;
 
   try {
-    const snapshot = await firestore
-      .collection("notifications")
-      .where("userId", "==", userId)
-      .orderBy("createdAt", "desc")
-      .limit(30)
-      .get();
+    const { data, error } = await supabaseAdmin
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(30);
 
-    const notifications = snapshot.docs.map((doc) => doc.data());
+    if (error) throw error;
+
+    // Shape JSON sama seperti sebelumnya (Firestore style)
+    const notifications = (data || []).map((n) => ({
+      notificationId: n.id,
+      userId: n.user_id,
+      title: n.title,
+      body: n.body,
+      data: n.data || {},
+      isRead: n.is_read,
+      createdAt: n.created_at,
+    }));
+
     return handleSuccess(
       res,
       200,
@@ -120,17 +73,28 @@ exports.markNotificationAsRead = async (req, res) => {
   }
 
   try {
-    const notifRef = firestore.collection("notifications").doc(notificationId);
-    const notifDoc = await notifRef.get();
+    const { data: notif, error: fetchError } = await supabaseAdmin
+      .from("notifications")
+      .select("id, user_id")
+      .eq("id", notificationId)
+      .maybeSingle();
 
-    if (!notifDoc.exists || notifDoc.data().userId !== userId) {
+    if (fetchError) throw fetchError;
+
+    if (!notif || notif.user_id !== userId) {
       return handleError(res, {
         statusCode: 404,
         message: "Notifikasi tidak ditemukan atau bukan milik Anda.",
       });
     }
 
-    await notifRef.update({ isRead: true });
+    const { error: updateError } = await supabaseAdmin
+      .from("notifications")
+      .update({ is_read: true })
+      .eq("id", notificationId);
+
+    if (updateError) throw updateError;
+
     return handleSuccess(res, 200, "Notifikasi ditandai sudah dibaca.");
   } catch (error) {
     console.error("Error marking notification as read:", error);

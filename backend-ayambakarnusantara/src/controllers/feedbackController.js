@@ -1,4 +1,4 @@
-const { firestore } = require("../config/firebaseConfig");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
 
 exports.createFeedback = async (req, res) => {
@@ -20,18 +20,29 @@ exports.createFeedback = async (req, res) => {
   }
 
   try {
-    const newFeedbackRef = firestore.collection("feedbacks").doc();
-    const newFeedbackData = {
-      feedbackId: newFeedbackRef.id,
-      name: name,
-      email: email,
-      subject: subject || "Tanpa Subjek",
-      message: message,
-      status: "new",
-      createdAt: new Date().toISOString(),
-    };
+    const { data, error } = await supabaseAdmin
+      .from("feedback")
+      .insert({
+        name,
+        email,
+        subject: subject || "Tanpa Subjek",
+        message,
+        status: "new",
+      })
+      .select()
+      .single();
 
-    await newFeedbackRef.set(newFeedbackData);
+    if (error) throw error;
+
+    const newFeedbackData = {
+      feedbackId: data.id,
+      name: data.name,
+      email: data.email,
+      subject: data.subject,
+      message: data.message,
+      status: data.status,
+      createdAt: data.created_at,
+    };
 
     return handleSuccess(
       res,

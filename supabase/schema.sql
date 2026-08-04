@@ -17,6 +17,7 @@ create table if not exists public.profiles (
   address text,
   photo_url text,
   shop_id uuid, -- FK sirkular ke shops, ditambah setelah tabel shops dibuat
+  fcm_tokens jsonb not null default '[]'::jsonb, -- token push (cadangan)
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -50,6 +51,7 @@ alter table public.profiles
 create table if not exists public.products (
   id uuid primary key default gen_random_uuid(),
   shop_id uuid not null references public.shops(id) on delete cascade,
+  owner_uid uuid, -- pemilik produk (denormalisasi dari shops.user_id, pola lama)
   name text not null,
   description text,
   price numeric(12,2) not null check (price >= 0),

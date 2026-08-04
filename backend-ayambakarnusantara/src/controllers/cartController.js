@@ -1,6 +1,45 @@
-const { firestore } = require("../config/firebaseConfig");
+const { supabaseAdmin } = require("../config/supabaseConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
-const { FieldValue } = require("firebase-admin/firestore");
+
+function emptyCart(userId) {
+  return {
+    userId,
+    items: [],
+    totalPrice: 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function mapCart(row, userId) {
+  if (!row) return emptyCart(userId);
+  const items = Array.isArray(row.items) ? row.items : [];
+  return {
+    userId: row.user_id,
+    items,
+    totalPrice: items.reduce((t, i) => t + (Number(i.subtotal) || 0), 0),
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function getCartRow(userId) {
+  const { data, error } = await supabaseAdmin
+    .from("carts")
+    .select("user_id, items, created_at, updated_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function saveCart(userId, items) {
+  const { error } = await supabaseAdmin.from("carts").upsert(
+    { user_id: userId, items },
+    { onConflict: "user_id" }
+  );
+  if (error) throw error;
+}
 
 exports.addItemToCart = async (req, res) => {
   const userId = req.user?.uid;
@@ -29,17 +68,21 @@ exports.addItemToCart = async (req, res) => {
   }
 
   try {
-    const productRef = firestore.collection("products").doc(productId);
-    const productDoc = await productRef.get();
+    const { data: productData, error: productError } = await supabaseAdmin
+      .from("products")
+      .select("*")
+      .eq("id", productId)
+      .maybeSingle();
 
-    if (!productDoc.exists) {
+    if (productError) throw productError;
+
+    if (!productData) {
       return handleError(res, {
         statusCode: 404,
         message: "Produk tidak ditemukan.",
       });
     }
 
-    const productData = productDoc.data();
     if (productData.stock < numQuantity) {
       return handleError(res, {
         statusCode: 400,
@@ -47,29 +90,12 @@ exports.addItemToCart = async (req, res) => {
       });
     }
 
-    const cartRef = firestore.collection("carts").doc(userId);
-    const cartDoc = await cartRef.get();
-
-    let cartData;
-    let itemIndex = -1;
-
-    if (!cartDoc.exists) {
-      cartData = {
-        userId: userId,
-        items: [],
-        totalPrice: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
-    } else {
-      cartData = cartDoc.data();
-      itemIndex = cartData.items.findIndex(
-        (item) => item.productId === productId
-      );
-    }
+    const cartRow = await getCartRow(userId);
+    const items = cartRow?.items ? [...cartRow.items] : [];
+    const itemIndex = items.findIndex((item) => item.productId === productId);
 
     if (itemIndex > -1) {
-      const existingItem = cartData.items[itemIndex];
+      const existingItem = items[itemIndex];
       const newQuantityForItem = existingItem.quantity + numQuantity;
 
       if (productData.stock < newQuantityForItem) {
@@ -81,30 +107,25 @@ exports.addItemToCart = async (req, res) => {
       existingItem.quantity = newQuantityForItem;
       existingItem.subtotal = existingItem.price * existingItem.quantity;
     } else {
-      cartData.items.push({
-        productId: productId,
-        shopId: productData.shopId,
+      items.push({
+        productId,
+        shopId: productData.shop_id,
         name: productData.name,
-        price: productData.price,
+        price: Number(productData.price),
         quantity: numQuantity,
-        productImageURL: productData.productImageURL || null,
-        subtotal: productData.price * numQuantity,
+        productImageURL: productData.product_image_url || null,
+        subtotal: Number(productData.price) * numQuantity,
       });
     }
 
-    cartData.totalPrice = cartData.items.reduce(
-      (total, item) => total + item.subtotal,
-      0
-    );
-    cartData.updatedAt = new Date().toISOString();
+    await saveCart(userId, items);
 
-    await cartRef.set(cartData, { merge: true });
-
+    const saved = await getCartRow(userId);
     return handleSuccess(
       res,
       200,
       "Produk berhasil ditambahkan ke keranjang.",
-      cartData
+      mapCart(saved, userId)
     );
   } catch (error) {
     console.error("Error adding item to cart:", error);
@@ -123,26 +144,17 @@ exports.getCart = async (req, res) => {
   }
 
   try {
-    const cartRef = firestore.collection("carts").doc(userId);
-    const cartDoc = await cartRef.get();
+    const cartRow = await getCartRow(userId);
 
-    if (
-      !cartDoc.exists ||
-      !cartDoc.data().items ||
-      cartDoc.data().items.length === 0
-    ) {
-      return handleSuccess(res, 200, "Keranjang Anda kosong.", {
-        userId: userId,
-        items: [],
-        totalPrice: 0,
-      });
+    if (!cartRow || !Array.isArray(cartRow.items) || cartRow.items.length === 0) {
+      return handleSuccess(res, 200, "Keranjang Anda kosong.", emptyCart(userId));
     }
 
     return handleSuccess(
       res,
       200,
       "Data keranjang berhasil diambil.",
-      cartDoc.data()
+      mapCart(cartRow, userId)
     );
   } catch (error) {
     console.error("Error getting cart:", error);
@@ -178,20 +190,17 @@ exports.updateItemQuantity = async (req, res) => {
   }
 
   try {
-    const cartRef = firestore.collection("carts").doc(userId);
-    const cartDoc = await cartRef.get();
+    const cartRow = await getCartRow(userId);
 
-    if (!cartDoc.exists) {
+    if (!cartRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Keranjang tidak ditemukan.",
       });
     }
 
-    let cartData = cartDoc.data();
-    const itemIndex = cartData.items.findIndex(
-      (item) => item.productId === productId
-    );
+    const items = [...cartRow.items];
+    const itemIndex = items.findIndex((item) => item.productId === productId);
 
     if (itemIndex === -1) {
       return handleError(res, {
@@ -201,21 +210,25 @@ exports.updateItemQuantity = async (req, res) => {
     }
 
     if (numNewQuantity === 0) {
-      cartData.items.splice(itemIndex, 1);
+      items.splice(itemIndex, 1);
     } else {
-      const productRef = firestore.collection("products").doc(productId);
-      const productDoc = await productRef.get();
+      const { data: productData, error: productError } = await supabaseAdmin
+        .from("products")
+        .select("stock")
+        .eq("id", productId)
+        .maybeSingle();
 
-      if (!productDoc.exists) {
-        cartData.items.splice(itemIndex, 1);
-        await cartRef.set(cartData);
+      if (productError) throw productError;
+
+      if (!productData) {
+        items.splice(itemIndex, 1);
+        await saveCart(userId, items);
         return handleError(res, {
           statusCode: 404,
           message: "Produk asli tidak ditemukan, item dihapus dari keranjang.",
         });
       }
 
-      const productData = productDoc.data();
       if (productData.stock < numNewQuantity) {
         return handleError(res, {
           statusCode: 400,
@@ -223,23 +236,19 @@ exports.updateItemQuantity = async (req, res) => {
         });
       }
 
-      const itemToUpdate = cartData.items[itemIndex];
+      const itemToUpdate = items[itemIndex];
       itemToUpdate.quantity = numNewQuantity;
       itemToUpdate.subtotal = itemToUpdate.price * numNewQuantity;
     }
 
-    cartData.totalPrice = cartData.items.reduce(
-      (total, item) => total + item.subtotal,
-      0
-    );
-    cartData.updatedAt = new Date().toISOString();
+    await saveCart(userId, items);
 
-    await cartRef.set(cartData);
+    const saved = await getCartRow(userId);
     return handleSuccess(
       res,
       200,
       "Kuantitas produk di keranjang berhasil diperbarui.",
-      cartData
+      mapCart(saved, userId)
     );
   } catch (error) {
     console.error("Error updating item quantity:", error);
@@ -265,41 +274,34 @@ exports.removeItemFromCart = async (req, res) => {
   }
 
   try {
-    const cartRef = firestore.collection("carts").doc(userId);
-    const cartDoc = await cartRef.get();
+    const cartRow = await getCartRow(userId);
 
-    if (!cartDoc.exists) {
+    if (!cartRow) {
       return handleError(res, {
         statusCode: 404,
         message: "Keranjang tidak ditemukan.",
       });
     }
 
-    let cartData = cartDoc.data();
-    const initialItemCount = cartData.items.length;
-    cartData.items = cartData.items.filter(
-      (item) => item.productId !== productId
-    );
+    const items = [...cartRow.items];
+    const initialItemCount = items.length;
+    const filtered = items.filter((item) => item.productId !== productId);
 
-    if (cartData.items.length === initialItemCount) {
+    if (filtered.length === initialItemCount) {
       return handleError(res, {
         statusCode: 404,
         message: "Produk tidak ditemukan di dalam keranjang untuk dihapus.",
       });
     }
 
-    cartData.totalPrice = cartData.items.reduce(
-      (total, item) => total + item.subtotal,
-      0
-    );
-    cartData.updatedAt = new Date().toISOString();
+    await saveCart(userId, filtered);
 
-    await cartRef.set(cartData);
+    const saved = await getCartRow(userId);
     return handleSuccess(
       res,
       200,
       "Produk berhasil dihapus dari keranjang.",
-      cartData
+      mapCart(saved, userId)
     );
   } catch (error) {
     console.error("Error removing item from cart:", error);
@@ -318,30 +320,19 @@ exports.clearCart = async (req, res) => {
   }
 
   try {
-    const cartRef = firestore.collection("carts").doc(userId);
+    const cartRow = await getCartRow(userId);
+    const createdAt =
+      cartRow?.created_at || new Date().toISOString();
 
-    const emptyCartData = {
-      userId: userId,
+    await saveCart(userId, []);
+
+    return handleSuccess(res, 200, "Keranjang berhasil dikosongkan.", {
+      userId,
       items: [],
       totalPrice: 0,
+      createdAt,
       updatedAt: new Date().toISOString(),
-    };
-
-    const cartDoc = await cartRef.get();
-    if (cartDoc.exists) {
-      emptyCartData.createdAt =
-        cartDoc.data().createdAt || new Date().toISOString();
-      await cartRef.set(emptyCartData);
-    } else {
-      emptyCartData.createdAt = new Date().toISOString();
-    }
-
-    return handleSuccess(
-      res,
-      200,
-      "Keranjang berhasil dikosongkan.",
-      emptyCartData
-    );
+    });
   } catch (error) {
     console.error("Error clearing cart:", error);
     return handleError(res, error, "Gagal mengosongkan keranjang.");
