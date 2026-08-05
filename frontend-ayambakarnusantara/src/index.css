@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #0d6efd;
+  --color-primary: #c07722;
   --color-secondary: #6c757d;
   --color-success: #198754;
   --color-danger: #dc3545;
@@ -33,6 +33,15 @@
     padding: 0;
     min-height: 100vh;
   }
+}
+
+:root {
+  /* Dari App.css original — dipakai hero-section (margin-top negatif),
+     hero-content (padding-top), banner, dan komponen lain */
+  --banner-height: 40px;
+  --navbar-height: 70px;
+  /* Nilai Bootstrap 5.3 — dipakai beberapa component class */
+  --bs-border-radius: 0.375rem;
 }
 
 /* ===== CSS variables (dari komponen legacy) ===== */
@@ -1494,12 +1503,12 @@
 
 .main-navbar.navbar-transparent-effect .navbar-brand-desktop .navbar-brand-text,
 .main-navbar.navbar-transparent-effect .nav-links-desktop .nav-link-custom {
-  @apply text-white! [text-shadow:1px_1px_2px_rgba(0,0,0,0.7)];
+  @apply text-white;
 }
 .main-navbar.navbar-transparent-effect
   .nav-links-desktop
-  .nav-link-custom:hover {
-  @apply text-[#ffc633]!;
+  .nav-link-custom.active {
+  @apply text-brand font-semibold;
 }
 
 .main-navbar.navbar-transparent-effect
@@ -1590,22 +1599,22 @@
 }
 
 .main-navbar.navbar-solid {
-  @apply bg-body-bg! shadow-[0_2px_4px_rgba(0,0,0,0.1)]!;
+  @apply bg-[#212529] shadow-md;
 }
 
 .main-navbar.navbar-solid .navbar-brand-desktop .navbar-brand-text,
 .main-navbar.navbar-solid .nav-links-desktop .nav-link-custom {
-  @apply text-black! no-underline!;
+  @apply text-white;
 }
 .main-navbar.navbar-solid .nav-links-desktop .nav-link-custom:hover {
-  @apply text-[#a5671e]!;
+  @apply text-brand;
 }
 
 .main-navbar.navbar-solid .nav-actions-desktop .nav-link-icon-custom svg {
-  @apply text-black! [filter:none]!;
+  @apply text-white;
 }
 .main-navbar.navbar-solid .nav-actions-desktop .nav-link-icon-custom:hover svg {
-  @apply text-[#a5671e]!;
+  @apply text-brand;
 }
 
 .main-navbar.navbar-solid
@@ -1641,10 +1650,10 @@
 }
 
 .main-navbar.navbar-solid .nav-actions-desktop .login-link-custom {
-  @apply text-black! no-underline;
+  @apply text-white no-underline;
 }
 .main-navbar.navbar-solid .nav-actions-desktop .login-link-custom:hover {
-  @apply text-[#a5671e]!;
+  @apply text-brand;
 }
 
 .main-navbar.navbar-solid .nav-actions-desktop .register-button-custom {
@@ -1670,7 +1679,7 @@
 }
 
 .main-navbar.navbar-solid .nav-links-desktop .nav-link-custom.active {
-  @apply text-[#a5671e]! font-bold;
+  @apply text-brand font-semibold;
 }
 
 .main-navbar.navbar-transparent-effect

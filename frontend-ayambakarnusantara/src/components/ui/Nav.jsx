@@ -39,10 +39,10 @@ const Link = ({
       ? "border border-transparent rounded-t-[0.375rem] mb-[-1px] hover:border-line hover:bg-[#f8f9fa] " +
         (active ? "!text-[#495057] bg-white border-line border-b-white" : "text-primary")
       : variant === "pills"
-      ? "rounded-[0.375rem] " + (active ? "bg-primary text-white" : "text-primary hover:bg-[#e9ecef]")
+      ? "rounded-[0.375rem] " + (active ? "bg-primary text-white" : "text-[#495057] hover:bg-[#e9ecef]")
       : active
       ? "text-primary"
-      : "text-primary hover:text-[#0a58ca]",
+      : "text-primary hover:text-[#a56317]",
     disabled ? "text-[#6c757d] pointer-events-none" : "",
     className,
   ]

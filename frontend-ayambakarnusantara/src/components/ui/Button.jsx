@@ -2,7 +2,7 @@ import React from "react";
 
 const VARIANTS = {
   primary:
-    "bg-primary border-primary text-white hover:bg-[#0b5ed7] hover:border-[#0a58ca] active:bg-[#0a58ca] active:border-[#0a53be] focus-visible:ring-[rgba(49,132,253,0.5)]",
+    "bg-primary border-primary text-white hover:bg-[#a56317] hover:border-[#a56317] active:bg-[#a56317] active:border-[#944e0d] focus-visible:ring-[rgba(192,119,34,0.5)]",
   secondary:
     "bg-secondary border-secondary text-white hover:bg-[#5c636a] hover:border-[#565e64] active:bg-[#565e64] active:border-[#51585e] focus-visible:ring-[rgba(130,138,145,0.5)]",
   success:
@@ -15,9 +15,9 @@ const VARIANTS = {
   light:
     "bg-light border-light text-black hover:bg-[#f9fafb] hover:border-[#f9fafb] active:bg-[#f9fafb] active:border-[#f9fafb] focus-visible:ring-[rgba(211,212,213,0.5)]",
   dark: "bg-dark border-dark text-white hover:bg-[#424649] hover:border-[#373b3e] active:bg-[#4d5154] active:border-[#373b3e] focus-visible:ring-[rgba(66,70,73,0.5)]",
-  link: "text-primary underline hover:text-[#0a58ca] bg-transparent border-transparent",
+  link: "text-primary underline hover:text-[#a56317] bg-transparent border-transparent",
   "outline-primary":
-    "text-primary border-primary bg-transparent hover:bg-primary hover:border-primary hover:text-white focus-visible:ring-[rgba(49,132,253,0.5)]",
+    "text-primary border-primary bg-transparent hover:bg-primary hover:border-primary hover:text-white focus-visible:ring-[rgba(192,119,34,0.5)]",
   "outline-secondary":
     "text-secondary border-secondary bg-transparent hover:bg-secondary hover:border-secondary hover:text-white focus-visible:ring-[rgba(130,138,145,0.5)]",
   "outline-success":

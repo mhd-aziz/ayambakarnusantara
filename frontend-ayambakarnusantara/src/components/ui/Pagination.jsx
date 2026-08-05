@@ -22,7 +22,7 @@ const pageLink = (label) => ({ className = "", children, ...rest }) => (
   <a
     href="#"
     onClick={(e) => e.preventDefault()}
-    className={`page-link relative block px-3 py-2 ml-[-1px] border border-line text-primary bg-white no-underline hover:z-[3] hover:bg-[#e9ecef] hover:border-line hover:text-[#0a58ca] [.active>&]:z-[3] [.active>&]:bg-primary [.active>&]:border-primary [.active>&]:text-white [.disabled>&]:pointer-events-none [.disabled>&]:bg-white [.disabled>&]:text-[#6c757d] ${className}`}
+    className={`page-link relative block px-3 py-2 ml-[-1px] border border-line text-primary bg-white no-underline hover:z-[3] hover:bg-[#e9ecef] hover:border-line hover:text-[#a56317] [.active>&]:z-[3] [.active>&]:bg-primary [.active>&]:border-primary [.active>&]:text-white [.disabled>&]:pointer-events-none [.disabled>&]:bg-white [.disabled>&]:text-[#6c757d] ${className}`}
     {...rest}
   >
     {children || label}

@@ -56,7 +56,7 @@ const Text = ({ as: Tag = "p", className = "", children, ...rest }) => (
   </Tag>
 );
 const Link = ({ className = "", children, ...rest }) => (
-  <a className={`text-primary no-underline hover:text-[#0a58ca] ${className}`} {...rest}>
+  <a className={`text-primary no-underline hover:text-[#a56317] ${className}`} {...rest}>
     {children}
   </a>
 );

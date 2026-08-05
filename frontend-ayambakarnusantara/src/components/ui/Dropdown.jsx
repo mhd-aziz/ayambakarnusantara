@@ -29,7 +29,7 @@ const Toggle = ({ id, variant = "primary", className = "", children, ...rest }) 
       type="button"
       aria-expanded={open}
       onClick={() => setOpen(!open)}
-      className={`inline-block text-center whitespace-nowrap align-middle select-none border border-solid font-normal leading-[1.5] px-3 py-[0.375rem] text-base rounded-[0.375rem] transition-colors duration-150 cursor-pointer bg-primary border-primary text-white hover:bg-[#0b5ed7] hover:border-[#0a58ca] ${className}`}
+      className={`inline-block text-center whitespace-nowrap align-middle select-none border border-solid font-normal leading-[1.5] px-3 py-[0.375rem] text-base rounded-[0.375rem] transition-colors duration-150 cursor-pointer bg-primary border-primary text-white hover:bg-[#a56317] hover:border-[#a56317] ${className}`}
       {...rest}
     >
       {children}

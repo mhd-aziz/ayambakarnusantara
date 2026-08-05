@@ -272,9 +272,9 @@ function HomePage() {
               Rp {product.price.toLocaleString("id-ID")}
             </p>
             <Button
-              variant="outline-secondary"
+              variant="primary"
               size="sm"
-              className="w-full btn-detail"
+              className="w-full btn-detail btn-brand"
               as={Link}
               to={`/menu/${product._id}`}
             >
@@ -379,7 +379,7 @@ function HomePage() {
                 to="/menu"
                 variant="primary"
                 size="lg"
-                className="hero-cta-button"
+                className="hero-cta-button btn-brand"
               >
                 Pesan Sekarang!
               </Button>

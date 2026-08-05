@@ -407,9 +407,9 @@ function MenuPage() {
                         </p>
                         <div className="button-group">
                           <Button
-                            variant="outline-secondary"
+                            variant="primary"
                             size="sm"
-                            className="btn-detail"
+                            className="btn-detail btn-brand"
                             as={Link}
                             to={`/menu/${product._id}`}
                           >
@@ -420,7 +420,7 @@ function MenuPage() {
                               product.stock > 0 ? "primary" : "secondary"
                             }
                             size="sm"
-                            className="btn-add-to-cart"
+                            className={`btn-add-to-cart ${product.stock > 0 ? 'btn-brand' : ''}`}
                             disabled={product.stock === 0 || isCartLoading}
                             onClick={() => handleAddToCart(product)}
                           >

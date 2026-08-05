@@ -462,7 +462,7 @@ function OrderDetailPage({ onOpenChatbot }) {
           <Button
             onClick={() => fetchOrderDetails(true)}
             variant="primary"
-            className="me-2"
+            className="me-2 btn-brand"
           >
             Coba Lagi
           </Button>
@@ -480,7 +480,7 @@ function OrderDetailPage({ onOpenChatbot }) {
         <Alert variant="warning">
           Pesanan tidak ditemukan atau gagal dimuat.
         </Alert>
-        <Button as={Link} to="/pesanan" variant="primary">
+        <Button as={Link} to="/pesanan" variant="primary" className="btn-brand">
           Kembali ke Daftar Pesanan
         </Button>
       </Container>
