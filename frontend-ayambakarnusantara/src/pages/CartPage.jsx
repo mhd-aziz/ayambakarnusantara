@@ -26,7 +26,6 @@ import {
   CartX,
   CheckCircleFill,
 } from "react-bootstrap-icons";
-import "../css/CartPage.css";
 import { handleProductSmallImageError as handleImageError } from "../utils/imageFallback";
 
 function CartPage() {
@@ -201,7 +200,7 @@ function CartPage() {
     return (
       <Container className="text-center py-5 cart-loading-container">
         <Spinner animation="border" variant="primary" />
-        <p className="mt-3 lead">Memuat Keranjang Anda...</p>
+        <p className="mt-3 text-lg">Memuat Keranjang Anda...</p>
       </Container>
     );
   }
@@ -258,7 +257,7 @@ function CartPage() {
           variant="success"
           onClose={() => setOrderSuccessMessage("")}
           dismissible
-          className="position-fixed top-0 start-50 translate-middle-x mt-3 z-index-toast"
+          className="fixed top-0 left-1/2 -translate-x-1/2 mt-3 z-index-toast"
           style={{ zIndex: 1055 }}
         >
           <CheckCircleFill className="me-2" />
@@ -271,9 +270,9 @@ function CartPage() {
           variant="light"
           className="text-center py-5 cart-empty-alert shadow-sm"
         >
-          <CartX size={60} className="mb-3 text-primary-emphasis" />
-          <h3 className="text-primary-emphasis">Keranjang Anda Kosong</h3>
-          <p className="lead text-muted">
+          <CartX size={60} className="mb-3 text-primary" />
+          <h3 className="text-primary">Keranjang Anda Kosong</h3>
+          <p className="text-lg text-muted">
             Sepertinya Anda belum menambahkan produk apapun ke keranjang.
           </p>
           <Button
@@ -288,8 +287,8 @@ function CartPage() {
         </Alert>
       ) : (
         <Row>
-          <Col lg={8} className="cart-items-column mb-4 mb-lg-0">
-            <div className="d-flex justify-content-between align-items-center mb-3">
+          <Col lg={8} className="cart-items-column mb-4 lg:mb-0">
+            <div className="flex justify-between items-center mb-3">
               <h4 className="mb-0">
                 Produk di Keranjang (
                 {cart.items.reduce((acc, item) => acc + item.quantity, 0)})
@@ -313,7 +312,7 @@ function CartPage() {
             <ListGroup variant="flush" className="cart-item-list">
               {cart.items.map((item) => (
                 <ListGroup.Item key={item.productId} className="cart-item">
-                  <Row className="align-items-center gy-2">
+                  <Row className="items-center gap-y-2">
                     <Col xs={3} sm={2} className="text-center">
                       <Image
                         src={
@@ -330,7 +329,7 @@ function CartPage() {
                     <Col xs={9} sm={4} className="cart-item-details">
                       <Link
                         to={`/menu/${item.productId}`}
-                        className="cart-item-name text-decoration-none fw-semibold"
+                        className="cart-item-name no-underline font-semibold"
                       >
                         {item.name}
                       </Link>
@@ -338,20 +337,20 @@ function CartPage() {
                         <div className="cart-item-shop">
                           <Link
                             to={`/toko/${item.shopId}`}
-                            className="small text-muted text-decoration-none"
+                            className="text-sm text-muted no-underline"
                           >
                             Toko: {item.shopName || "Kunjungi Toko"}
                           </Link>
                         </div>
                       )}
-                      <div className="cart-item-price-single d-sm-none small text-muted">
+                      <div className="cart-item-price-single sm:hidden text-sm text-muted">
                         Rp {item.price.toLocaleString("id-ID")} / item
                       </div>
                     </Col>
                     <Col
                       xs={7}
                       sm={3}
-                      className="mt-2 mt-sm-0 cart-item-quantity"
+                      className="mt-2 sm:mt-0 cart-item-quantity"
                     >
                       <InputGroup size="sm" className="quantity-input-group">
                         <Button
@@ -397,16 +396,16 @@ function CartPage() {
                     <Col
                       xs={3}
                       sm={2}
-                      className="text-end cart-item-subtotal mt-2 mt-sm-0"
+                      className="text-end cart-item-subtotal mt-2 sm:mt-0"
                     >
-                      <span className="fw-bold">
+                      <span className="font-bold">
                         Rp {item.subtotal.toLocaleString("id-ID")}
                       </span>
                     </Col>
                     <Col
                       xs={2}
                       sm={1}
-                      className="text-end cart-item-remove mt-2 mt-sm-0"
+                      className="text-end cart-item-remove mt-2 sm:mt-0"
                     >
                       <Button
                         variant="link"
@@ -429,13 +428,13 @@ function CartPage() {
           </Col>
 
           <Col lg={4} className="cart-summary-column">
-            <Card className="shadow-sm summary-card sticky-top">
+            <Card className="shadow-sm summary-card sticky top-0">
               <Card.Body>
                 <Card.Title as="h3" className="mb-3 summary-title">
                   Ringkasan Pesanan
                 </Card.Title>
                 <ListGroup variant="flush" className="mb-3">
-                  <ListGroup.Item className="d-flex justify-content-between px-0 summary-item">
+                  <ListGroup.Item className="flex justify-between px-0 summary-item">
                     <span>
                       Subtotal (
                       {cart.items.reduce((acc, item) => acc + item.quantity, 0)}{" "}
@@ -443,7 +442,7 @@ function CartPage() {
                     </span>
                     <span>Rp {cart.totalPrice.toLocaleString("id-ID")}</span>
                   </ListGroup.Item>
-                  <ListGroup.Item className="d-flex justify-content-between px-0 fw-bold fs-5 summary-total">
+                  <ListGroup.Item className="flex justify-between px-0 font-bold text-xl summary-total">
                     <span>Total</span>
                     <span>Rp {cart.totalPrice.toLocaleString("id-ID")}</span>
                   </ListGroup.Item>
@@ -451,7 +450,7 @@ function CartPage() {
 
                 <Form>
                   <Form.Group className="mb-3" controlId="paymentMethodCart">
-                    <Form.Label className="fw-semibold">
+                    <Form.Label className="font-semibold">
                       Metode Pembayaran
                     </Form.Label>
                     <Form.Select
@@ -476,7 +475,7 @@ function CartPage() {
                     </Form.Select>
                   </Form.Group>
                   <Form.Group className="mb-3" controlId="orderNotesCart">
-                    <Form.Label className="fw-semibold">
+                    <Form.Label className="font-semibold">
                       Catatan Tambahan (Opsional)
                     </Form.Label>
                     <Form.Control
@@ -499,7 +498,7 @@ function CartPage() {
 
                 <Button
                   variant="primary"
-                  className="w-100 mt-3 btn-brand btn-checkout"
+                  className="w-full mt-3 btn-brand btn-checkout"
                   size="lg"
                   onClick={handleConfirmOrder}
                   disabled={

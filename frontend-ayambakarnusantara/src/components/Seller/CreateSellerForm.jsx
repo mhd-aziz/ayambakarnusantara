@@ -90,7 +90,7 @@ function CreateSellerForm({ onShopCreated }) {
           variant="danger"
           onClose={() => setError("")}
           dismissible
-          className="d-flex align-items-center"
+          className="flex items-center"
         >
           <XCircleFill className="me-2" /> {error}
         </Alert>
@@ -100,14 +100,14 @@ function CreateSellerForm({ onShopCreated }) {
           variant="success"
           onClose={() => setSuccess("")}
           dismissible
-          className="d-flex align-items-center"
+          className="flex items-center"
         >
           <CheckCircleFill className="me-2" /> {success}
         </Alert>
       )}
 
       <Form.Group as={Row} className="mb-3" controlId="shopDescription">
-        <Form.Label column sm={3} className="text-sm-end">
+        <Form.Label column sm={3} className="sm:text-end">
           <CardText className="me-2" style={{ color: ICON_COLOR }} /> Deskripsi
           Toko
         </Form.Label>
@@ -128,7 +128,7 @@ function CreateSellerForm({ onShopCreated }) {
       </Form.Group>
 
       <Form.Group as={Row} className="mb-3" controlId="bannerImageInput">
-        <Form.Label column sm={3} className="text-sm-end">
+        <Form.Label column sm={3} className="sm:text-end">
           <CardImage className="me-2" style={{ color: ICON_COLOR }} /> Banner
           Toko
         </Form.Label>
@@ -157,7 +157,7 @@ function CreateSellerForm({ onShopCreated }) {
       </Form.Group>
 
       <Row className="mt-4">
-        <Col sm={{ span: 9, offset: 3 }} className="d-grid">
+        <Col sm={{ span: 9, offset: 3 }} className="grid">
           <Button
             variant="primary"
             type="submit"

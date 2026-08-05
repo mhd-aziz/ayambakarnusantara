@@ -24,7 +24,7 @@ import { getMyShopStatistics } from "../../services/ShopService";
 const StatCard = ({ title, value, description, icon, isLoading }) => (
   <Col md={6} lg={3} className="mb-4">
     <Card
-      className="h-100 shadow-sm text-center"
+      className="h-full shadow-sm text-center"
       style={{
         borderTop: "4px solid var(--brand-primary, #C07722)",
       }}
@@ -39,15 +39,15 @@ const StatCard = ({ title, value, description, icon, isLoading }) => (
         >
           {icon}
         </div>
-        <Card.Title as="h6" className="text-muted text-uppercase">
+        <Card.Title as="h6" className="text-muted uppercase">
           {title}
         </Card.Title>
         {isLoading ? (
           <Spinner animation="border" size="sm" />
         ) : (
-          <Card.Text className="fs-4 fw-bold">{value}</Card.Text>
+          <Card.Text className="text-2xl font-bold">{value}</Card.Text>
         )}
-        <Card.Text className="small text-muted">{description}</Card.Text>
+        <Card.Text className="text-sm text-muted">{description}</Card.Text>
       </Card.Body>
     </Card>
   </Col>
@@ -91,7 +91,7 @@ function SellerDashboardOverview() {
   if (userRole === "customer" || (userRole === "seller" && !hasShop)) {
     return (
       <Container>
-        <Row className="justify-content-center">
+        <Row className="justify-center">
           <Col md={10} lg={8}>
             {userRole === "customer" && (
               <Alert variant="info" className="mb-4 text-center">
@@ -117,9 +117,9 @@ function SellerDashboardOverview() {
 
   return (
     <div>
-      <div className="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+      <div className="flex justify-between items-center mb-4 flex-wrap">
         <h3 className="mb-0">Dashboard Toko</h3>
-        <Form.Group as={Row} className="align-items-center gx-2 gy-2">
+        <Form.Group as={Row} className="items-center gap-x-2 gap-y-2">
           <Form.Label column xs="auto">
             Periode:
           </Form.Label>
@@ -144,7 +144,7 @@ function SellerDashboardOverview() {
           variant="danger"
           onClose={() => setStatsError("")}
           dismissible
-          className="d-flex align-items-center"
+          className="flex items-center"
         >
           <ExclamationTriangleFill className="me-2" /> {statsError}
           <Button

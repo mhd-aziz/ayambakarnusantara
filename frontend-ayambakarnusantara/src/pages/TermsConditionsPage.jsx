@@ -9,11 +9,10 @@ import {
 } from "../components/ui";
 import { Link } from "react-router-dom";
 import { FileEarmarkText, ShieldLock } from "react-bootstrap-icons";
-import "../css/TermsPage.css";
 
 const Section = ({ title, children }) => (
   <div className="mb-4">
-    <h2 className="h5 mt-4 fw-bold section-title">{title}</h2>
+    <h2 className="h5 mt-4 font-bold section-title">{title}</h2>
     <div className="ps-3">{children}</div>
   </div>
 );
@@ -27,8 +26,8 @@ function TermsConditionsPage() {
 
   return (
     <div className="terms-page-container">
-      <Container className="my-4 my-md-5">
-        <Row className="justify-content-center">
+      <Container className="my-4 md:my-5">
+        <Row className="justify-center">
           <Col md={10} lg={9}>
             <Breadcrumb
               listProps={{ className: "bg-transparent p-0 mb-3" }}
@@ -48,12 +47,12 @@ function TermsConditionsPage() {
                   style={{ color: "var(--brand-primary)" }}
                 />
                 <h1 className="h2 mb-0">Syarat & Ketentuan Penggunaan</h1>
-                <p className="text-muted mb-0 small mt-2">
+                <p className="text-muted mb-0 text-sm mt-2">
                   Terakhir diperbarui: {lastUpdatedDate}
                 </p>
               </Card.Header>
-              <Card.Body className="p-4 p-md-5">
-                <p className="lead text-center mb-5">
+              <Card.Body className="p-4 md:p-5">
+                <p className="text-lg text-center mb-5">
                   Selamat datang di <strong>Ayam Bakar Nusantara</strong>. Harap
                   baca Syarat dan Ketentuan Penggunaan ("Ketentuan") ini dengan
                   saksama sebelum menggunakan platform kami. Dengan menggunakan
@@ -226,7 +225,7 @@ function TermsConditionsPage() {
                   </p>
                 </Section>
               </Card.Body>
-              <Card.Footer className="text-center text-muted small p-3">
+              <Card.Footer className="text-center text-muted text-sm p-3">
                 <ShieldLock
                   className="me-2"
                   style={{ color: "var(--brand-primary)" }}

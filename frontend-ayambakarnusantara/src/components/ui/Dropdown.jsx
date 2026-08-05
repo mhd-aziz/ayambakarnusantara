@@ -54,9 +54,7 @@ const Item = ({ active = false, disabled = false, className = "", children, ...r
   <button
     type="button"
     disabled={disabled}
-    className={`block w-full text-left px-3 py-1 clear-both text-base no-underline whitespace-nowrap bg-transparent border-0 cursor-pointer ${
-      active ? "text-white bg-primary" : "text-dark hover:bg-[#e9ecef]"
-    } ${disabled ? "text-[#6c757d] pointer-events-none" : ""} ${className}`}
+    className={`block w-full text-left px-3 py-1 clear-both text-base no-underline whitespace-nowrap bg-transparent border-0 cursor-pointer ${ active ? "text-white bg-primary" : "text-dark hover:bg-[#e9ecef]" } ${disabled ? "text-[#6c757d] pointer-events-none" : ""} ${className}`}
     {...rest}
   >
     {children}

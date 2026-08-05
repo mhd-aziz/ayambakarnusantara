@@ -3,16 +3,15 @@ import React from "react";
 import { Container, Row, Col, Button, Image } from "../components/ui";
 import { Link } from "react-router-dom";
 import { HouseDoorFill, ArrowLeftCircleFill } from "react-bootstrap-icons";
-import "../css/NotFoundPage.css";
 const imageUrl = "/images/404-not-found.png";
 
 function NotFoundPage() {
   return (
     <Container
       fluid
-      className="d-flex align-items-center justify-content-center vh-100 not-found-page-container text-center"
+      className="flex items-center justify-center h-screen not-found-page-container text-center"
     >
-      <Row className="justify-content-center">
+      <Row className="justify-center">
         <Col md={8} lg={6}>
           <Image
             src={imageUrl}

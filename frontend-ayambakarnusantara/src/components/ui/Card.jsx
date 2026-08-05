@@ -19,9 +19,7 @@ function Card({
 }) {
   return (
     <div
-      className={`bg-white border border-[rgba(0,0,0,0.125)] rounded-[0.375rem] ${
-        border ? BORDERS[border] || "" : ""
-      } ${className}`}
+      className={`bg-white border border-[rgba(0,0,0,0.125)] rounded-[0.375rem] ${ border ? BORDERS[border] || "" : "" } ${className}`}
       {...rest}
     >
       {children}
@@ -72,9 +70,7 @@ const Footer = ({ className = "", children, ...rest }) => (
 );
 const Img = ({ variant = "top", className = "", children, ...rest }) => (
   <div
-    className={`w-full ${
-      variant === "top" ? "rounded-t-[calc(0.375rem-1px)]" : ""
-    } ${className}`}
+    className={`w-full ${ variant === "top" ? "rounded-t-[calc(0.375rem-1px)]" : "" } ${className}`}
     {...rest}
   >
     {children}

@@ -45,7 +45,7 @@ function Alert({
 }
 
 const Heading = ({ as: Tag = "h4", className = "", children, ...rest }) => (
-  <Tag className={`mb-1 font-weight-500 ${className}`} {...rest}>
+  <Tag className={`mb-1 font-medium ${className}`} {...rest}>
     {children}
   </Tag>
 );

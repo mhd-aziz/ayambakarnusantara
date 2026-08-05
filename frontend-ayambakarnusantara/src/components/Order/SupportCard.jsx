@@ -12,14 +12,14 @@ function SupportCard({ onOpenChatbot }) {
         Bantuan
       </Card.Header>
       <Card.Body>
-        <p className="small">
+        <p className="text-sm">
           Jika ada masalah dengan pesanan Anda, silakan hubungi layanan
           pelanggan kami.
         </p>
         <Button
           variant="outline-secondary"
           size="sm"
-          className="w-100"
+          className="w-full"
           onClick={onOpenChatbot}
         >
           Hubungi Dukungan

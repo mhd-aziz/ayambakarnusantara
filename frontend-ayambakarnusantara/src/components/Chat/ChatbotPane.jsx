@@ -11,7 +11,6 @@ import {
 import { SendFill } from "react-bootstrap-icons";
 import { useAuth } from "../../context/AuthContext";
 import * as ChatService from "../../services/ChatService";
-import "../../css/GlobalChat.css";
 
 const MessageBubble = ({ message, isSender, onSuggestionClick }) => {
   const messageDateObject = message.timestamp
@@ -28,12 +27,9 @@ const MessageBubble = ({ message, isSender, onSuggestionClick }) => {
     <div className={`message-bubble-row ${isSender ? "sender" : "receiver"}`}>
       <div className={`message-bubble ${isSender ? "sender" : "receiver"}`}>
         {message.text && message.text.trim() !== "" && (
-          <div
-            dangerouslySetInnerHTML={{
-              __html: message.text.replace(/\n/g, "<br />"),
-            }}
-            className="message-text mb-1"
-          ></div>
+          <div className="message-text mb-1 whitespace-pre-wrap break-words">
+            {message.text}
+          </div>
         )}
         {message.imageUrl && (
           <BootstrapImage
@@ -323,7 +319,7 @@ function ChatbotPane() {
 
   return (
     <>
-      <Card.Body className="global-chat-body messages-area d-flex flex-column">
+      <Card.Body className="global-chat-body messages-area flex flex-col">
         {isLoadingHistory && (
           <div className="text-center py-5">
             <Spinner animation="border" variant="primary" />
@@ -333,7 +329,7 @@ function ChatbotPane() {
         {error &&
           !isLoadingHistory &&
           !messages.some((msg) => msg.isError && msg.text === error) && (
-            <Alert variant="danger" className="m-2 small p-2 text-center">
+            <Alert variant="danger" className="m-2 text-sm p-2 text-center">
               {error}
             </Alert>
           )}
@@ -349,7 +345,7 @@ function ChatbotPane() {
         {isSending &&
           messages.length > 0 &&
           messages[messages.length - 1]?.senderUID === currentUser?.uid && (
-            <div className="d-flex justify-content-start mt-2 ms-2">
+            <div className="flex justify-start mt-2 ms-2">
               <Spinner animation="grow" size="sm" variant="secondary" />
             </div>
           )}

@@ -33,11 +33,7 @@ function Tab({ eventKey, title, active, onSelect, disabled }) {
       role="tab"
       disabled={disabled}
       onClick={() => !disabled && onSelect && onSelect(eventKey)}
-      className={`px-3 py-2 mb-[-1px] border border-transparent rounded-t-[0.375rem] no-underline cursor-pointer bg-transparent ${
-        active
-          ? "text-[#495057] bg-white border-line border-b-white"
-          : "text-primary hover:border-line hover:bg-[#f8f9fa]"
-      }`}
+      className={`px-3 py-2 mb-[-1px] border border-transparent rounded-t-[0.375rem] no-underline cursor-pointer bg-transparent ${ active ? "text-[#495057] bg-white border-line border-b-white" : "text-primary hover:border-line hover:bg-[#f8f9fa]" }`}
     >
       {title}
     </button>

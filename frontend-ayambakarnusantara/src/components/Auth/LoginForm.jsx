@@ -4,7 +4,6 @@ import { Link } from "react-router-dom";
 import { loginUser } from "../../services/AuthService";
 import { useAuth } from "../../context/AuthContext";
 import { Envelope, Lock, Eye, EyeSlash } from "react-bootstrap-icons";
-import "../../css/AuthForms.css";
 
 const ICON_COLOR = "#C07722";
 
@@ -66,13 +65,13 @@ function LoginForm() {
   };
 
   return (
-    <Card border="light" className="p-2 p-sm-3 shadow-sm">
+    <Card border="light" className="p-2 sm:p-3 shadow-sm">
       <Card.Body>
-        <h3 className="text-center mb-4 fw-bold" style={{ color: ICON_COLOR }}>
+        <h3 className="text-center mb-4 font-bold" style={{ color: ICON_COLOR }}>
           Selamat Datang!
         </h3>
         {error && (
-          <Alert variant="danger" className="text-center small py-2">
+          <Alert variant="danger" className="text-center text-sm py-2">
             {error}
           </Alert>
         )}
@@ -126,7 +125,7 @@ function LoginForm() {
             </InputGroup>
           </Form.Group>
 
-          <div className="d-flex justify-content-end mb-3">
+          <div className="flex justify-end mb-3">
             <Link
               to="/forgot-password"
               className="link-brand"
@@ -136,7 +135,7 @@ function LoginForm() {
             </Link>
           </div>
 
-          <Button type="submit" disabled={loading} className="w-100 btn-brand">
+          <Button type="submit" disabled={loading} className="w-full btn-brand">
             {loading ? (
               <>
                 <span

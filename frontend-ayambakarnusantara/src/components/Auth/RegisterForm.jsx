@@ -12,7 +12,6 @@ import {
   Telephone,
   House,
 } from "react-bootstrap-icons";
-import "../../css/AuthForms.css";
 
 const ICON_COLOR = "#C07722";
 
@@ -90,18 +89,18 @@ function RegisterForm() {
   };
 
   return (
-    <Card border="light" className="p-2 p-sm-3 shadow-sm">
+    <Card border="light" className="p-2 sm:p-3 shadow-sm">
       <Card.Body>
-        <h3 className="text-center mb-4 fw-bold" style={{ color: ICON_COLOR }}>
+        <h3 className="text-center mb-4 font-bold" style={{ color: ICON_COLOR }}>
           Buat Akun Baru
         </h3>
         {error && (
-          <Alert variant="danger" className="text-center small py-2">
+          <Alert variant="danger" className="text-center text-sm py-2">
             {error}
           </Alert>
         )}
         {success && !error && (
-          <Alert variant="success" className="text-center small py-2">
+          <Alert variant="success" className="text-center text-sm py-2">
             {success}
           </Alert>
         )}
@@ -218,7 +217,7 @@ function RegisterForm() {
           <Button
             type="submit"
             disabled={loading || (success && !error)}
-            className="w-100 btn-brand"
+            className="w-full btn-brand"
           >
             {loading ? (
               <>

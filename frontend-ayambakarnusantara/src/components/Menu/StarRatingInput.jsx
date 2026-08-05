@@ -4,7 +4,7 @@ import { Star, StarFill } from "react-bootstrap-icons";
 const StarRatingInput = ({ rating, setRating, size = 24 }) => {
   return (
     <div
-      className="d-inline-block"
+      className="inline-block"
       style={{ color: "#ffc107", cursor: "pointer" }}
     >
       {[...Array(5)].map((_, index) => {

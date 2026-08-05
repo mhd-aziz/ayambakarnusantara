@@ -16,9 +16,7 @@ const Item = ({
   ...rest
 }) => (
   <Tag
-    className={`flex items-center text-base ${
-      active ? "text-[#6c757d]" : ""
-    } [&:not(:first-child)]:before:content-['/'] [&:not(:first-child)]:before:mx-2 [&:not(:first-child)]:before:text-[#6c757d] ${className}`}
+    className={`flex items-center text-base ${ active ? "text-[#6c757d]" : "" } [&:not(:first-child)]:before:content-['/'] [&:not(:first-child)]:before:mx-2 [&:not(:first-child)]:before:text-[#6c757d] ${className}`}
     {...rest}
   >
     {children}

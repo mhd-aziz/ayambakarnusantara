@@ -16,7 +16,7 @@ function ShopDetailsCard({ shopDetails, orderItems, handleImageError }) {
           Detail Toko
         </Card.Header>
         <Card.Body>
-          <p className="text-muted small">Detail toko tidak tersedia.</p>
+          <p className="text-muted text-sm">Detail toko tidak tersedia.</p>
         </Card.Body>
       </Card>
     );
@@ -50,19 +50,19 @@ function ShopDetailsCard({ shopDetails, orderItems, handleImageError }) {
         />
         <h5>{shopDetails.shopName}</h5>
         {shopDetails.shopAddress && (
-          <p className="mb-1 small">
+          <p className="mb-1 text-sm">
             <GeoAltFill className="me-1" /> {shopDetails.shopAddress}
           </p>
         )}
         {shopDetails.description && (
-          <p className="text-muted small mb-2">{shopDetails.description}</p>
+          <p className="text-muted text-sm mb-2">{shopDetails.description}</p>
         )}
         {shopId && (
           <Button
             as={Link}
             to={`/toko/${shopId}`}
             size="sm"
-            className="w-100 btn-brand"
+            className="w-full btn-brand"
           >
             Kunjungi Toko
           </Button>

@@ -15,7 +15,6 @@ import { useAuth } from "../context/AuthContext";
 import { getUserOrders } from "../services/OrderService";
 import { createMidtransTransaction } from "../services/PaymentService";
 import { BasketFill, CreditCard } from "react-bootstrap-icons";
-import "../css/OrderPage.css";
 
 function OrderPage() {
   const { isLoggedIn } = useAuth();
@@ -200,12 +199,12 @@ function OrderPage() {
                 className="mb-3 shadow-sm rounded border order-list-item"
               >
                 <Row
-                  className="align-items-center gy-2"
+                  className="items-center gap-y-2"
                   onClick={() => navigate(`/pesanan/${order.orderId}`)}
                   style={{ cursor: "pointer" }}
                 >
                   <Col md={3} sm={12} xs={12}>
-                    <strong className="d-block">Order ID:</strong>
+                    <strong className="block">Order ID:</strong>
                     <span
                       className="order-id-text"
                       style={{ wordBreak: "break-all" }}
@@ -213,20 +212,20 @@ function OrderPage() {
                       #{order.orderId || "N/A"}
                     </span>
                   </Col>
-                  <Col md={2} sm={6} xs={6} className="mt-2 mt-md-0">
-                    <strong className="d-block">Tanggal:</strong>
+                  <Col md={2} sm={6} xs={6} className="mt-2 md:mt-0">
+                    <strong className="block">Tanggal:</strong>
                     {new Date(order.createdAt).toLocaleDateString("id-ID", {
                       day: "2-digit",
                       month: "short",
                       year: "numeric",
                     })}
                   </Col>
-                  <Col md={2} sm={6} xs={6} className="mt-2 mt-md-0">
-                    <strong className="d-block">Total:</strong>
+                  <Col md={2} sm={6} xs={6} className="mt-2 md:mt-0">
+                    <strong className="block">Total:</strong>
                     Rp {order.totalPrice.toLocaleString("id-ID")}
                   </Col>
-                  <Col md={2} sm={6} xs={12} className="mt-2 mt-md-0">
-                    <strong className="d-block">Pembayaran:</strong>
+                  <Col md={2} sm={6} xs={12} className="mt-2 md:mt-0">
+                    <strong className="block">Pembayaran:</strong>
                     {order.paymentDetails?.method
                       ? order.paymentDetails.method.replace(/_/g, " ")
                       : "N/A"}
@@ -235,7 +234,7 @@ function OrderPage() {
                     md={3}
                     sm={6}
                     xs={12}
-                    className="text-md-end mt-2 mt-md-0"
+                    className="text-md-end mt-2 md:mt-0"
                   >
                     <Badge
                       bg={getStatusBadgeVariant(order.orderStatus)}
@@ -262,7 +261,7 @@ function OrderPage() {
                     </small>
                   </Col>
                 </Row>
-                <div className="text-end mt-3 d-flex justify-content-end gap-2">
+                <div className="text-end mt-3 flex justify-end gap-2">
                   <Button
                     variant="outline-secondary"
                     size="sm"

@@ -17,7 +17,6 @@ import {
   Bell,
   BellFill,
 } from "react-bootstrap-icons";
-import "../../css/Navbar.css";
 import logoImage from "../../assets/logo.jpg";
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
@@ -146,11 +145,9 @@ function NavigationBar({ isAuthModalOpen }) {
       onToggle={() => setExpanded(!expanded)}
       expand="xl"
       sticky="top"
-      className={`main-navbar ${
-        isNavbarSolid ? "navbar-solid" : "navbar-transparent-effect"
-      }`}
+      className={`main-navbar ${ isNavbarSolid ? "navbar-solid" : "navbar-transparent-effect" }`}
     >
-      <Container className="align-items-center navbar-content-wrapper d-flex justify-content-between justify-content-xl-start">
+      <Container className="items-center navbar-content-wrapper flex justify-between xl:justify-start">
         <Navbar.Toggle
           aria-controls="basic-navbar-nav"
           className="navbar-toggler-mobile"
@@ -158,19 +155,19 @@ function NavigationBar({ isAuthModalOpen }) {
         <Navbar.Brand
           as={NavLink}
           to="/"
-          className="navbar-brand-desktop d-none d-xl-flex align-items-center"
+          className="navbar-brand-desktop hidden xl:flex items-center"
         >
           <img
             src={logoImage}
             width="40"
             height="40"
-            className="d-inline-block align-top me-2"
+            className="inline-block align-top me-2"
             alt="Ayam Bakar Nusantara Logo"
           />
           <span className="navbar-brand-text">Ayam Bakar Nusantara</span>
         </Navbar.Brand>
 
-        <div className="mobile-icons-group d-flex align-items-center d-xl-none">
+        <div className="mobile-icons-group flex items-center xl:hidden">
           {isLoggedIn && (
             <Nav.Link
               as={NavLink}
@@ -184,7 +181,7 @@ function NavigationBar({ isAuthModalOpen }) {
           <Nav.Link
             as={NavLink}
             to="/keranjang"
-            className="nav-link-icon-mobile p-1 me-1 position-relative"
+            className="nav-link-icon-mobile p-1 me-1 relative"
             title="Keranjang"
           >
             <Cart size={22} />
@@ -192,7 +189,7 @@ function NavigationBar({ isAuthModalOpen }) {
               <Badge
                 pill
                 bg="danger"
-                className="position-absolute top-0 start-100 translate-middle-x"
+                className="absolute top-0 left-full -translate-x-1/2"
                 style={{ fontSize: "0.6em", padding: "0.3em 0.5em" }}
               >
                 {cartItemCount}
@@ -203,7 +200,7 @@ function NavigationBar({ isAuthModalOpen }) {
             <Nav.Link
               as={NavLink}
               to="/notifikasi"
-              className="nav-link-icon-mobile p-1 me-1 position-relative"
+              className="nav-link-icon-mobile p-1 me-1 relative"
               title="Notifikasi"
             >
               {unreadCount > 0 ? <BellFill size={22} /> : <Bell size={22} />}
@@ -211,7 +208,7 @@ function NavigationBar({ isAuthModalOpen }) {
                 <Badge
                   pill
                   bg="danger"
-                  className="position-absolute top-0 start-100 translate-middle-x"
+                  className="absolute top-0 left-full -translate-x-1/2"
                   style={{ fontSize: "0.6em", padding: "0.3em 0.5em" }}
                 >
                   {unreadCount > 9 ? "9+" : unreadCount}
@@ -242,9 +239,9 @@ function NavigationBar({ isAuthModalOpen }) {
 
         <Navbar.Collapse
           id="basic-navbar-nav"
-          className="justify-content-xl-end"
+          className="xl:justify-end"
         >
-          <Nav className="nav-links-desktop ms-xl-4 me-xl-auto">
+          <Nav className="nav-links-desktop xl:ms-4 xl:me-auto">
             <Nav.Link as={NavLink} to="/" className="nav-link-custom" end>
               Beranda
             </Nav.Link>
@@ -261,7 +258,7 @@ function NavigationBar({ isAuthModalOpen }) {
             )}
           </Nav>
           <Form
-            className="search-form-desktop d-flex"
+            className="search-form-desktop flex"
             onSubmit={handleSearchSubmit}
           >
             <InputGroup className="search-input-group-custom">
@@ -284,12 +281,12 @@ function NavigationBar({ isAuthModalOpen }) {
             </InputGroup>
           </Form>
 
-          <Nav className="nav-actions-desktop align-items-center">
+          <Nav className="nav-actions-desktop items-center">
             {isLoggedIn && (
               <Nav.Link
                 as={NavLink}
                 to="/toko-saya"
-                className="nav-link-icon-custom d-none d-xl-flex me-2"
+                className="nav-link-icon-custom hidden xl:flex me-2"
                 title="Toko Saya"
               >
                 <ShopWindow size={24} />
@@ -298,7 +295,7 @@ function NavigationBar({ isAuthModalOpen }) {
             <Nav.Link
               as={NavLink}
               to="/keranjang"
-              className="nav-link-icon-custom d-none d-xl-flex me-2 position-relative"
+              className="nav-link-icon-custom hidden xl:flex me-2 relative"
               title="Keranjang"
             >
               <Cart size={24} />
@@ -306,7 +303,7 @@ function NavigationBar({ isAuthModalOpen }) {
                 <Badge
                   pill
                   bg="danger"
-                  className="position-absolute top-0 start-100 translate-middle-y"
+                  className="absolute top-0 left-full -translate-y-1/2"
                   style={{
                     fontSize: "0.65em",
                     padding: "0.35em 0.6em",
@@ -322,10 +319,10 @@ function NavigationBar({ isAuthModalOpen }) {
               <Nav.Link
                 as={NavLink}
                 to="/notifikasi"
-                className="nav-link-icon-custom d-none d-xl-flex me-2"
+                className="nav-link-icon-custom hidden xl:flex me-2"
                 title="Notifikasi"
               >
-                <div className="position-relative">
+                <div className="relative">
                   {unreadCount > 0 ? (
                     <BellFill size={24} />
                   ) : (
@@ -335,7 +332,7 @@ function NavigationBar({ isAuthModalOpen }) {
                     <Badge
                       pill
                       bg="danger"
-                      className="position-absolute top-0 start-100 translate-middle"
+                      className="absolute top-0 left-full -translate-x-1/2 -translate-y-1/2"
                       style={{ fontSize: "0.6em", padding: "0.3em 0.5em" }}
                     >
                       {unreadCount > 9 ? "9+" : unreadCount}
@@ -350,7 +347,7 @@ function NavigationBar({ isAuthModalOpen }) {
                 <Nav.Link
                   as={NavLink}
                   to="/profile"
-                  className="nav-link-icon-custom d-none d-xl-flex me-2"
+                  className="nav-link-icon-custom hidden xl:flex me-2"
                   title={user ? user.displayName || user.email : "Profil"}
                 >
                   <PersonCircle size={24} />
@@ -359,7 +356,7 @@ function NavigationBar({ isAuthModalOpen }) {
                   variant="outline-custom"
                   onClick={handleLogout}
                   size="sm"
-                  className="logout-button-custom d-none d-xl-block"
+                  className="logout-button-custom hidden xl:block"
                 >
                   Logout
                 </Button>
@@ -367,7 +364,7 @@ function NavigationBar({ isAuthModalOpen }) {
                   variant="danger"
                   onClick={handleLogout}
                   size="sm"
-                  className="w-100 mt-2 d-xl-none logout-button-mobile-dropdown"
+                  className="w-full mt-2 xl:hidden logout-button-mobile-dropdown"
                 >
                   Logout
                 </Button>
@@ -377,7 +374,7 @@ function NavigationBar({ isAuthModalOpen }) {
                 <Nav.Link
                   as={NavLink}
                   to="/login"
-                  className="nav-link-custom login-link-custom d-none d-xl-block"
+                  className="nav-link-custom login-link-custom hidden xl:block"
                 >
                   Login
                 </Nav.Link>
@@ -386,21 +383,21 @@ function NavigationBar({ isAuthModalOpen }) {
                   to="/register"
                   variant="primary-custom"
                   size="sm"
-                  className="register-button-custom d-none d-xl-block"
+                  className="register-button-custom hidden xl:block"
                 >
                   Register
                 </Button>
                 <Nav.Link
                   as={NavLink}
                   to="/login"
-                  className="btn btn-outline-light btn-sm w-100 mb-2 mt-2 d-xl-none"
+                  className="btn btn-outline-light btn-sm w-full mb-2 mt-2 xl:hidden"
                 >
                   Login
                 </Nav.Link>
                 <Nav.Link
                   as={NavLink}
                   to="/register"
-                  className="btn btn-light btn-sm w-100 d-xl-none"
+                  className="btn btn-light btn-sm w-full xl:hidden"
                 >
                   Register
                 </Nav.Link>

@@ -295,8 +295,8 @@ function ProductForm({
                 </Form.Control.Feedback>
               </Form.Group>
             </Col>
-            <Col md={4} className="d-flex flex-column align-items-center">
-              <Form.Label className="mb-2 w-100 text-center">
+            <Col md={4} className="flex flex-col items-center">
+              <Form.Label className="mb-2 w-full text-center">
                 <ImageIcon className="me-2" style={{ color: ICON_COLOR }} />
                 Gambar Produk
               </Form.Label>
@@ -317,7 +317,7 @@ function ProductForm({
               />
               <Form.Control.Feedback
                 type="invalid"
-                className="d-block text-center"
+                className="block text-center"
               >
                 {formErrors.productImage}
               </Form.Control.Feedback>

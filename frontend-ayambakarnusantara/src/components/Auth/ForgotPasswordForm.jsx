@@ -3,7 +3,6 @@ import { Form, Button, Alert, Card, InputGroup } from "../ui";
 import { Link } from "react-router-dom";
 import { Envelope } from "react-bootstrap-icons";
 import { forgotPassword as forgotPasswordService } from "../../services/AuthService";
-import "../../css/AuthForms.css";
 
 const ICON_COLOR = "#C07722";
 
@@ -47,9 +46,9 @@ function ForgotPasswordForm() {
   };
 
   return (
-    <Card border="light" className="p-2 p-sm-3 shadow-sm">
+    <Card border="light" className="p-2 sm:p-3 shadow-sm">
       <Card.Body>
-        <h3 className="text-center mb-3 fw-bold" style={{ color: ICON_COLOR }}>
+        <h3 className="text-center mb-3 font-bold" style={{ color: ICON_COLOR }}>
           Lupa Password?
         </h3>
         <p
@@ -61,12 +60,12 @@ function ForgotPasswordForm() {
         </p>
 
         {message && !error && (
-          <Alert variant="success" className="text-center small py-2">
+          <Alert variant="success" className="text-center text-sm py-2">
             {message}
           </Alert>
         )}
         {error && (
-          <Alert variant="danger" className="text-center small py-2">
+          <Alert variant="danger" className="text-center text-sm py-2">
             {error}
           </Alert>
         )}
@@ -96,7 +95,7 @@ function ForgotPasswordForm() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-100 fw-semibold py-2 mt-3 btn-brand"
+              className="w-full font-semibold py-2 mt-3 btn-brand"
             >
               {loading ? (
                 <>

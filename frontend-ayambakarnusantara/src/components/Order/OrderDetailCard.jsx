@@ -41,7 +41,7 @@ function OrderDetailCard({
     <Card className="shadow-sm mb-4">
       <Card.Header
         as="h5"
-        className="d-flex justify-content-between align-items-center"
+        className="flex justify-between items-center"
       >
         Detail Pesanan
         <Badge bg={getStatusBadgeVariant(orderDetails.orderStatus)} pill>
@@ -171,14 +171,14 @@ function OrderDetailCard({
               <Col sm={4}>
                 <strong>Total Pembayaran:</strong>
               </Col>
-              <Col sm={8} className="fw-bold fs-5 text-primary">
+              <Col sm={8} className="font-bold text-xl text-primary">
                 Rp {orderDetails.totalPrice?.toLocaleString("id-ID") || "0"}
               </Col>
             </Row>
           </ListGroup.Item>
         </ListGroup>
       </Card.Body>
-      <Card.Footer className="text-end d-flex justify-content-end flex-wrap gap-2">
+      <Card.Footer className="text-end flex justify-end flex-wrap gap-2">
         {canCancelOrder && (
           <Button
             variant="danger"

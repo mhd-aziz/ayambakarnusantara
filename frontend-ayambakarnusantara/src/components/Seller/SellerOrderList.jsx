@@ -6,7 +6,6 @@ import {
   CardChecklist,
   ImageFill,
 } from "react-bootstrap-icons";
-import "../../css/SellerOrderList.css";
 
 function SellerOrderList({
   orders,
@@ -80,9 +79,9 @@ function SellerOrderList({
               key={order.orderId}
               className="mb-3 shadow-sm rounded border order-list-item"
             >
-              <Row className="align-items-center gy-3">
+              <Row className="items-center gap-y-4">
                 <Col lg={2} md={4} sm={6}>
-                  <strong className="d-block">Order ID:</strong>
+                  <strong className="block">Order ID:</strong>
                   <span
                     className="text-muted order-id-text"
                     title={order.orderId}
@@ -91,11 +90,11 @@ function SellerOrderList({
                   </span>
                 </Col>
                 <Col lg={2} md={4} sm={6}>
-                  <strong className="d-block">Metode:</strong>
+                  <strong className="block">Metode:</strong>
                   {formatPaymentMethod(order.paymentDetails?.method)}
                 </Col>
                 <Col lg={2} md={4} sm={6}>
-                  <strong className="d-block">Pembayaran:</strong>
+                  <strong className="block">Pembayaran:</strong>
                   <Badge
                     bg={paymentStatusInfo.variant}
                     className="payment-status-badge"
@@ -104,7 +103,7 @@ function SellerOrderList({
                   </Badge>
                 </Col>
                 <Col lg={2} md={4} sm={6}>
-                  <strong className="d-block">Status Pesanan:</strong>
+                  <strong className="block">Status Pesanan:</strong>
                   <Badge
                     bg={getStatusBadgeVariant(order.orderStatus)}
                     className="order-status-badge"
@@ -113,14 +112,14 @@ function SellerOrderList({
                   </Badge>
                 </Col>
                 <Col lg={2} md={4} sm={6}>
-                  <strong className="d-block">Total:</strong>
+                  <strong className="block">Total:</strong>
                   Rp {order.totalPrice.toLocaleString("id-ID")}
                 </Col>
                 <Col
                   lg={2}
                   md={4}
                   sm={6}
-                  className="text-md-end order-actions d-flex flex-wrap justify-content-start justify-content-sm-end gap-1"
+                  className="text-md-end order-actions flex flex-wrap justify-start justify-content-sm-end gap-1"
                 >
                   <Button
                     variant="outline-info"

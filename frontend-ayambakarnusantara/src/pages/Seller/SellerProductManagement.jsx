@@ -23,7 +23,6 @@ import {
   updateProduct,
   deleteProduct,
 } from "../../services/MenuService";
-import "../../css/SellerProductManagement.css";
 
 function SellerProductManagement() {
   const outletContext = useOutletContext();
@@ -177,7 +176,7 @@ function SellerProductManagement() {
 
   if (!outletContext) {
     return (
-      <Container className="d-flex justify-content-center align-items-center vh-100">
+      <Container className="flex justify-center items-center h-screen">
         <Spinner animation="border" style={{ color: "var(--brand-primary)" }} />
       </Container>
     );
@@ -191,7 +190,7 @@ function SellerProductManagement() {
           Anda perlu memiliki toko untuk mengelola produk.
         </Alert>
         {(userRole === "customer" || (userRole === "seller" && !hasShop)) && (
-          <Row className="justify-content-center mt-4">
+          <Row className="justify-center mt-4">
             <Col md={10} lg={8}>
               <CreateSellerForm
                 onShopCreated={() => {
@@ -208,7 +207,7 @@ function SellerProductManagement() {
 
   return (
     <div className="seller-page-content product-management-page">
-      <div className="d-flex justify-content-between align-items-center mb-4 pb-2">
+      <div className="flex justify-between items-center mb-4 pb-2">
         <h3 className="mb-0">Kelola Produk Toko: {shopData?.shopName}</h3>
         <Button
           variant="primary"

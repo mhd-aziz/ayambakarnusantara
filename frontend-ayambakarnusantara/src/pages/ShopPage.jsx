@@ -13,7 +13,6 @@ import {
 } from "../components/ui";
 import { Link } from "react-router-dom";
 import { getAllShops } from "../services/ShopService";
-import "../css/ShopPage.css";
 import { handleShopImageError } from "../utils/imageFallback";
 import {
   ExclamationTriangleFill,
@@ -158,11 +157,11 @@ function ShopPage() {
   }
 
   return (
-    <Container fluid className="py-4 px-md-4 shop-page-container-fluid">
+    <Container fluid className="py-4 md:px-4 shop-page-container-fluid">
       <Container>
-        <div className="page-header-wrapper mb-4 mb-md-5">
-          <Row className="align-items-center justify-content-between">
-            <Col xs={12} md="auto" className="mb-3 mb-md-0">
+        <div className="page-header-wrapper mb-4 md:mb-5">
+          <Row className="items-center justify-between">
+            <Col xs={12} md="auto" className="mb-3 md:mb-0">
               <h1 className="h2 mb-1" style={{ color: "var(--brand-primary)" }}>
                 Temukan Toko Ayam Bakar Nusantara
               </h1>
@@ -200,14 +199,14 @@ function ShopPage() {
                 color: "var(--brand-primary)",
               }}
             />
-            <p className="mt-3 lead" style={{ color: "var(--brand-primary)" }}>
+            <p className="mt-3 text-lg" style={{ color: "var(--brand-primary)" }}>
               Memuat daftar toko...
             </p>
           </div>
         )}
 
         {error && !isLoading && (
-          <Alert variant="danger" className="text-center lead py-4 shadow-sm">
+          <Alert variant="danger" className="text-center text-lg py-4 shadow-sm">
             <Alert.Heading as="h3">
               <ExclamationTriangleFill className="me-2" />
               Oops! Terjadi Kesalahan
@@ -216,7 +215,7 @@ function ShopPage() {
             <Button
               variant="outline-danger"
               onClick={() => fetchShops(1)}
-              className="fw-semibold"
+              className="font-semibold"
             >
               <ArrowClockwise className="me-2" />
               Coba Lagi
@@ -227,10 +226,10 @@ function ShopPage() {
         {!isLoading && !error && shops.length === 0 && (
           <Alert
             variant="light"
-            className="text-center lead py-5 shadow-sm border"
+            className="text-center text-lg py-5 shadow-sm border"
           >
             <Alert.Heading as="h3" className="text-muted">
-              <Shop className="me-2 fs-1" />
+              <Shop className="me-2 text-4xl" />
             </Alert.Heading>
             <p className="text-muted mb-0">
               {searchTerm
@@ -247,11 +246,11 @@ function ShopPage() {
 
         {!isLoading && !error && shops.length > 0 && (
           <>
-            <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+            <Row xs={1} sm={2} md={3} lg={4} className="gap-6">
               {shops.map((shop) => {
                 return (
-                  <Col key={shop.shopId} className="d-flex align-items-stretch">
-                    <Card className="w-100 shop-card">
+                  <Col key={shop.shopId} className="flex items-stretch">
+                    <Card className="w-full shop-card">
                       <div className="shop-card-img-wrapper">
                         <Card.Img
                           variant="top"
@@ -266,21 +265,21 @@ function ShopPage() {
                           onError={(e) => handleShopImageError(e)}
                         />
                       </div>
-                      <Card.Body className="d-flex flex-column p-3">
+                      <Card.Body className="flex flex-col p-3">
                         <Card.Title className="shop-card-title h5">
                           {shop.shopName}
                         </Card.Title>
 
-                        <Card.Text className="shop-card-description mb-2 small text-muted">
+                        <Card.Text className="shop-card-description mb-2 text-sm text-muted">
                           {shop.description || "Tidak ada deskripsi."}
                         </Card.Text>
 
-                        <Card.Text className="shop-card-address mb-2 small text-muted">
+                        <Card.Text className="shop-card-address mb-2 text-sm text-muted">
                           <GeoAltFill className="me-1" />
                           {shop.shopAddress || "Alamat tidak tersedia."}
                         </Card.Text>
 
-                        <Card.Text className="shop-card-owner mb-2 small">
+                        <Card.Text className="shop-card-owner mb-2 text-sm">
                           <small className="text-muted">
                             Pemilik: {shop.ownerName || "Tidak diketahui"}
                           </small>
@@ -302,7 +301,7 @@ function ShopPage() {
             </Row>
 
             {totalPages > 1 && (
-              <div className="d-flex justify-content-center mt-5">
+              <div className="flex justify-center mt-5">
                 <Pagination className="shop-pagination">
                   {paginationItems}
                 </Pagination>

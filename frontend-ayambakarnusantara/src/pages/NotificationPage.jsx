@@ -20,7 +20,6 @@ import {
   ArrowClockwise,
   CheckCircleFill,
 } from "react-bootstrap-icons";
-import "../css/NotificationPage.css";
 
 const timeSince = (date) => {
   if (!date) return "";
@@ -197,25 +196,21 @@ function NotificationPage({ onNavigateToChat }) {
               key={notif.notificationId}
               action
               onClick={() => handleNotificationClick(notif)}
-              className={`d-flex justify-content-between align-items-start p-3 ${
-                !notif.isRead ? "bg-light" : ""
-              }`}
+              className={`flex justify-between items-start p-3 ${ !notif.isRead ? "bg-light" : "" }`}
             >
-              <div className="d-flex align-items-center notification-content">
+              <div className="flex items-center notification-content">
                 <CheckCircleFill
                   size={20}
-                  className={`me-3 icon-status ${
-                    !notif.isRead ? "icon-unread" : "icon-read"
-                  }`}
+                  className={`me-3 icon-status ${ !notif.isRead ? "icon-unread" : "icon-read" }`}
                 />
-                <div className="w-100">
+                <div className="w-full">
                   <div className="notification-title">{notif.title}</div>
                   <span className="notification-body">
                     {formatNotificationBody(notif.body)}
                   </span>
                 </div>
               </div>
-              <div className="d-flex flex-column align-items-end ms-2">
+              <div className="flex flex-col items-end ms-2">
                 {!notif.isRead && (
                   <Badge bg="primary" pill className="mb-2">
                     Baru
@@ -235,14 +230,14 @@ function NotificationPage({ onNavigateToChat }) {
   return (
     <div className="notification-page">
       <Container as="main" className="container-md">
-        <div className="page-header d-flex justify-content-between align-items-center mb-4">
+        <div className="page-header flex justify-between items-center mb-4">
           <h1 className="page-title mb-0">Notifikasi</h1>
           <Button
             variant="outline-secondary"
             size="sm"
             onClick={fetchNotifications}
             disabled={loading}
-            className="d-flex align-items-center"
+            className="flex items-center"
           >
             {loading ? (
               <Spinner

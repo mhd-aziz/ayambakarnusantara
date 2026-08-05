@@ -161,11 +161,11 @@ function ProfilePage() {
     return (
       <Container
         fluid
-        className="d-flex flex-column justify-content-center align-items-center"
+        className="flex flex-col justify-center items-center"
         style={{ minHeight: "calc(100vh - 120px)" }}
       >
         {authUser && (
-          <p className="mb-3 fs-5" style={{ color: ICON_COLOR }}>
+          <p className="mb-3 text-xl" style={{ color: ICON_COLOR }}>
             Memuat profil untuk {authUser.displayName || authUser.email}...
           </p>
         )}
@@ -174,7 +174,7 @@ function ProfilePage() {
           role="status"
           style={{ width: "3rem", height: "3rem", color: ICON_COLOR }}
         >
-          <span className="visually-hidden">Memuat data profil...</span>
+          <span className="sr-only">Memuat data profil...</span>
         </Spinner>
       </Container>
     );
@@ -184,7 +184,7 @@ function ProfilePage() {
     return (
       <Container className="mt-5 text-center">
         <Alert variant="danger" className="py-4 shadow-sm">
-          <Alert.Heading className="d-flex align-items-center justify-content-center">
+          <Alert.Heading className="flex items-center justify-center">
             <ExclamationCircleFill size={24} className="me-2" /> Oops! Terjadi
             Kesalahan
           </Alert.Heading>
@@ -201,7 +201,7 @@ function ProfilePage() {
     return (
       <Container className="mt-5 text-center">
         <Alert variant="warning" className="py-4 shadow-sm">
-          <Alert.Heading className="d-flex align-items-center justify-content-center">
+          <Alert.Heading className="flex items-center justify-center">
             <InfoCircleFill size={24} className="me-2" /> Data Profil Tidak
             Tersedia
           </Alert.Heading>
@@ -242,16 +242,16 @@ function ProfilePage() {
         <Card className="shadow-lg border-0">
           <Card.Header
             as="h2"
-            className="d-flex justify-content-between align-items-center text-white p-4"
+            className="flex justify-between items-center text-white p-4"
             style={{ background: ICON_COLOR }}
           >
             <span style={{ fontWeight: 500 }}>Profil Saya</span>
             {!isEditing && (
-              <div className="d-flex gap-2">
+              <div className="flex gap-2">
                 <Button
                   variant="light"
                   onClick={() => setIsEditing(true)}
-                  className="d-flex align-items-center"
+                  className="flex items-center"
                   size="sm"
                 >
                   <PencilSquare className="me-2" /> Edit Profil
@@ -260,14 +260,14 @@ function ProfilePage() {
                   variant="outline-light"
                   size="sm"
                   onClick={handleShowDeleteModal}
-                  className="d-flex align-items-center"
+                  className="flex items-center"
                 >
                   <TrashFill className="me-2" /> Hapus Akun
                 </Button>
               </div>
             )}
           </Card.Header>
-          <Card.Body className="p-4 p-md-5">
+          <Card.Body className="p-4 md:p-5">
             {isEditing ? (
               <EditProfileForm
                 currentProfile={profileData}
@@ -275,8 +275,8 @@ function ProfilePage() {
                 onCancel={() => setIsEditing(false)}
               />
             ) : (
-              <Row className="align-items-center">
-                <Col md={4} lg={3} className="text-center mb-4 mb-md-0">
+              <Row className="items-center">
+                <Col md={4} lg={3} className="text-center mb-4 md:mb-0">
                   <Image
                     src={
                       profileData.photoURL ||
@@ -307,11 +307,11 @@ function ProfilePage() {
                   </p>
                 </Col>
                 <Col md={8} lg={9}>
-                  <h4 className="mb-4 text-secondary border-bottom pb-2">
+                  <h4 className="mb-4 text-secondary border-b pb-2">
                     Informasi Akun
                   </h4>
                   <ListGroup variant="flush">
-                    <ListGroup.Item className="px-0 py-3 d-flex justify-content-between align-items-start">
+                    <ListGroup.Item className="px-0 py-3 flex justify-between items-start">
                       <div>
                         <GeoAltFill
                           className="me-2"
@@ -320,11 +320,11 @@ function ProfilePage() {
                         />
                         <strong className="text-dark">Alamat</strong>
                       </div>
-                      <span className="text-muted text-sm-end">
+                      <span className="text-muted sm:text-end">
                         {profileData.address || "-"}
                       </span>
                     </ListGroup.Item>
-                    <ListGroup.Item className="px-0 py-3 d-flex justify-content-between align-items-start">
+                    <ListGroup.Item className="px-0 py-3 flex justify-between items-start">
                       <div>
                         <TelephoneFill
                           className="me-2"
@@ -333,11 +333,11 @@ function ProfilePage() {
                         />
                         <strong className="text-dark">Nomor Telepon</strong>
                       </div>
-                      <span className="text-muted text-sm-end">
+                      <span className="text-muted sm:text-end">
                         {profileData.phoneNumber || "-"}
                       </span>
                     </ListGroup.Item>
-                    <ListGroup.Item className="px-0 py-3 d-flex justify-content-between align-items-start">
+                    <ListGroup.Item className="px-0 py-3 flex justify-between items-start">
                       <div>
                         <CalendarDateFill
                           className="me-2"
@@ -346,7 +346,7 @@ function ProfilePage() {
                         />
                         <strong className="text-dark">Bergabung Sejak</strong>
                       </div>
-                      <span className="text-muted text-sm-end">
+                      <span className="text-muted sm:text-end">
                         {profileData.createdAt
                           ? new Date(profileData.createdAt).toLocaleDateString(
                               "id-ID",
@@ -359,7 +359,7 @@ function ProfilePage() {
                           : "-"}
                       </span>
                     </ListGroup.Item>
-                    <ListGroup.Item className="px-0 py-3 d-flex justify-content-between align-items-start">
+                    <ListGroup.Item className="px-0 py-3 flex justify-between items-start">
                       <div>
                         <ClockHistory
                           className="me-2"
@@ -370,7 +370,7 @@ function ProfilePage() {
                           Terakhir Diperbarui
                         </strong>
                       </div>
-                      <span className="text-muted text-sm-end">
+                      <span className="text-muted sm:text-end">
                         {profileData.updatedAt
                           ? new Date(profileData.updatedAt).toLocaleDateString(
                               "id-ID",

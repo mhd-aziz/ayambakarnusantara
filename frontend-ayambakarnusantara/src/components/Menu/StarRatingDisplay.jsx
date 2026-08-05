@@ -7,7 +7,7 @@ const StarRatingDisplay = ({ rating, size = 16 }) => {
   const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
 
   return (
-    <div className="d-inline-block" style={{ color: "#ffc107" }}>
+    <div className="inline-block" style={{ color: "#ffc107" }}>
       {[...Array(fullStars)].map((_, i) => (
         <StarFill key={`full-${i}`} size={size} className="me-1" />
       ))}

@@ -22,7 +22,7 @@ function OrderItemsList({
         {items?.map((item) => (
           <ListGroup.Item
             key={item.productId}
-            className="d-flex align-items-center"
+            className="flex items-center"
           >
             <Image
               src={
@@ -41,7 +41,7 @@ function OrderItemsList({
                 borderRadius: "0.25rem",
               }}
             />
-            <div className="flex-grow-1">
+            <div className="grow">
               <h6 className="mb-0">{item.name}</h6>
               <small className="text-muted">
                 {item.quantity} x Rp {item.price.toLocaleString("id-ID")}
@@ -61,7 +61,7 @@ function OrderItemsList({
                 )}
               </small>
             </div>
-            <div className="text-end fw-semibold me-3">
+            <div className="text-end font-semibold me-3">
               Rp {item.subtotal.toLocaleString("id-ID")}
             </div>
             {orderStatus === "COMPLETED" && (

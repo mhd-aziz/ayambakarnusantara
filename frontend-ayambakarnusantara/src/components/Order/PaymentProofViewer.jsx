@@ -74,13 +74,13 @@ function PaymentProofViewer({ orderId, paymentDetails }) {
           Bukti Pembayaran
         </Card.Header>
         <Card.Body>
-          <p className="small text-muted">
+          <p className="text-sm text-muted">
             Pembayaran untuk pesanan ini telah dikonfirmasi oleh penjual. Anda
             dapat melihat catatan atau bukti yang diunggah.
           </p>
           <Button
             variant="outline-primary"
-            className="w-100 btn-brand"
+            className="w-full btn-brand"
             onClick={handleShowModal}
           >
             Lihat Bukti Pembayaran
@@ -122,7 +122,7 @@ function PaymentProofViewer({ orderId, paymentDetails }) {
                   <Card.Header as="h6">Catatan dari Penjual</Card.Header>
                   <Card.Body>
                     <blockquote className="blockquote mb-0">
-                      <p className="small fst-italic">
+                      <p className="text-sm italic">
                         "{proofsData.confirmationNotes}"
                       </p>
                     </blockquote>

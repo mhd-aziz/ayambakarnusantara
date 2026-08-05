@@ -23,9 +23,7 @@ import {
 } from "react-bootstrap-icons";
 import { getShopDetailById } from "../services/ShopService";
 import { useAuth } from "../context/AuthContext";
-import "../css/ShopDetailPage.css";
 import { handleShopImageError, handleProductImageError, handleAvatarError as handleOwnerAvatarError, FALLBACK_PRODUCT_IMAGE } from "../utils/imageFallback";
-import "../css/ShopPage.css";
 
 function ShopDetailPage({ onInitiateChat }) {
   const { shopId } = useParams();
@@ -126,7 +124,7 @@ function ShopDetailPage({ onInitiateChat }) {
               color: "var(--brand-primary)",
             }}
           />
-          <p className="mt-3 lead" style={{ color: "var(--brand-primary)" }}>
+          <p className="mt-3 text-lg" style={{ color: "var(--brand-primary)" }}>
             Memuat detail toko...
           </p>
         </Container>
@@ -138,7 +136,7 @@ function ShopDetailPage({ onInitiateChat }) {
     return (
       <Container fluid className="py-5 shop-detail-page-container-fluid">
         <Container>
-          <Alert variant="danger" className="text-center lead py-4 shadow-sm">
+          <Alert variant="danger" className="text-center text-lg py-4 shadow-sm">
             <Alert.Heading as="h3">
               <ExclamationTriangleFill className="me-2" />
               Oops! Gagal Memuat Data Toko
@@ -148,7 +146,7 @@ function ShopDetailPage({ onInitiateChat }) {
               as={Link}
               to="/toko"
               variant="outline-primary"
-              className="fw-semibold me-2"
+              className="font-semibold me-2"
             >
               <ArrowLeft className="me-1" />
               Kembali ke Daftar Toko
@@ -156,7 +154,7 @@ function ShopDetailPage({ onInitiateChat }) {
             <Button
               onClick={fetchShopDetails}
               variant="primary"
-              className="fw-semibold"
+              className="font-semibold"
             >
               <ArrowClockwise className="me-2" />
               Coba Lagi
@@ -171,7 +169,7 @@ function ShopDetailPage({ onInitiateChat }) {
     return (
       <Container fluid className="py-5 shop-detail-page-container-fluid">
         <Container>
-          <Alert variant="warning" className="text-center lead py-4 shadow-sm">
+          <Alert variant="warning" className="text-center text-lg py-4 shadow-sm">
             <Alert.Heading as="h3">
               <ShopIcon className="me-2" />
               Toko Tidak Ditemukan
@@ -183,7 +181,7 @@ function ShopDetailPage({ onInitiateChat }) {
               as={Link}
               to="/toko"
               variant="outline-primary"
-              className="fw-semibold"
+              className="font-semibold"
             >
               <ArrowLeft className="me-1" />
               Kembali ke Daftar Toko
@@ -201,7 +199,7 @@ function ShopDetailPage({ onInitiateChat }) {
     currentUser?.uid !== ownerInfo.uid;
 
   return (
-    <Container fluid className="py-4 px-lg-5 shop-detail-page-container-fluid">
+    <Container fluid className="py-4 lg:px-5 shop-detail-page-container-fluid">
       <Container>
         <Breadcrumb
           listProps={{ className: "bg-transparent px-0 py-2 mb-3" }}
@@ -239,10 +237,10 @@ function ShopDetailPage({ onInitiateChat }) {
               />
             </div>
           )}
-          <Card.Body className="p-md-4 p-3">
+          <Card.Body className="md:p-4 p-3">
             <Row>
               <Col md={8} className="shop-info-section">
-                <div className="d-flex flex-wrap align-items-center justify-content-between mb-3">
+                <div className="flex flex-wrap items-center justify-between mb-3">
                   <h1 className="shop-title h2 mb-2 me-3">
                     {shopInfo.shopName}
                   </h1>
@@ -271,7 +269,7 @@ function ShopDetailPage({ onInitiateChat }) {
                   )}
                 </div>
 
-                <p className="shop-description lead text-muted mb-3">
+                <p className="shop-description text-lg text-muted mb-3">
                   {shopInfo.description || "Deskripsi toko tidak tersedia."}
                 </p>
                 {shopInfo.shopAddress && (
@@ -280,7 +278,7 @@ function ShopDetailPage({ onInitiateChat }) {
                     {shopInfo.shopAddress}
                   </p>
                 )}
-                <p className="shop-timestamps text-muted small">
+                <p className="shop-timestamps text-muted text-sm">
                   Bergabung pada:{" "}
                   {new Date(shopInfo.createdAt).toLocaleDateString("id-ID", {
                     year: "numeric",
@@ -290,7 +288,7 @@ function ShopDetailPage({ onInitiateChat }) {
                 </p>
               </Col>
               {ownerInfo && (
-                <Col md={4} className="owner-info-sidebar mt-4 mt-md-0 ps-md-4">
+                <Col md={4} className="owner-info-sidebar mt-4 md:mt-0 md:ps-4">
                   <Card className="owner-info-card border-0 bg-light shadow-sm">
                     <Card.Body className="text-center p-3">
                       <h5 className="card-title mb-3 text-muted">
@@ -340,13 +338,13 @@ function ShopDetailPage({ onInitiateChat }) {
           )}
 
           {!isLoadingShop && !errorShop && shopProducts.length > 0 ? (
-            <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+            <Row xs={1} sm={2} md={3} lg={4} className="gap-6">
               {shopProducts.map((product) => (
                 <Col
                   key={product.productId}
-                  className="d-flex align-items-stretch"
+                  className="flex items-stretch"
                 >
-                  <Card className="w-100 h-100 product-list-card shop-card shadow-sm">
+                  <Card className="w-full h-full product-list-card shop-card shadow-sm">
                     <div className="shop-card-img-wrapper">
                       <Card.Img
                         variant="top"
@@ -356,20 +354,20 @@ function ShopDetailPage({ onInitiateChat }) {
                         alt={product.name}
                       />
                     </div>
-                    <Card.Body className="d-flex flex-column p-3">
+                    <Card.Body className="flex flex-col p-3">
                       {product.category && (
                         <Badge
                           pill
                           bg="light"
                           text="dark"
-                          className="mb-2 product-category-badge align-self-start shadow-sm"
+                          className="mb-2 product-category-badge self-start shadow-sm"
                         >
                           {product.category}
                         </Badge>
                       )}
                       <Card.Title
                         as="h5"
-                        className="product-list-card-title shop-card-title flex-grow-1"
+                        className="product-list-card-title shop-card-title grow"
                       >
                         {product.name}
                       </Card.Title>
@@ -380,17 +378,17 @@ function ShopDetailPage({ onInitiateChat }) {
                         >
                           Rp {product.price.toLocaleString("id-ID")}
                         </p>
-                        <p className="text-muted small mb-2">
+                        <p className="text-muted text-sm mb-2">
                           Stok:{" "}
                           {product.stock > 0 ? (
                             product.stock
                           ) : (
-                            <span className="text-danger fw-bold">Habis</span>
+                            <span className="text-danger font-bold">Habis</span>
                           )}
                         </p>
                         <Button
                           variant="primary"
-                          className="btn-brand w-100 mt-1"
+                          className="btn-brand w-full mt-1"
                           as={Link}
                           to={`/menu/${product.productId}`}
                           disabled={product.stock === 0}
@@ -408,7 +406,7 @@ function ShopDetailPage({ onInitiateChat }) {
             !errorShop && (
               <Alert variant="info" className="text-center shadow-sm py-4">
                 <BoxSeam size={30} className="mb-2 text-muted" />
-                <p className="mb-0 lead">
+                <p className="mb-0 text-lg">
                   Toko ini belum memiliki menu yang diunggah.
                 </p>
               </Alert>

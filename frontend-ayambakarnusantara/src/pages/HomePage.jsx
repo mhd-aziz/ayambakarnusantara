@@ -24,8 +24,6 @@ import {
   CheckCircleFill,
   ExclamationTriangleFill,
 } from "react-bootstrap-icons";
-import "../css/HomePage.css";
-import "../css/MenuPage.css";
 import { FALLBACK_AVATAR_IMAGE, FALLBACK_PRODUCT_IMAGE, handleProductImageError as handleImageError, handleAvatarError } from "../utils/imageFallback";
 
 const heroBackgroundImageUrl = "/images/hero-background.jpg";
@@ -36,7 +34,7 @@ const StarRatingDisplay = ({ rating, size = 16 }) => {
   const emptyStars = 5 - fullStars - (halfStar ? 1 : 0);
 
   return (
-    <div className="d-inline-block" style={{ color: "#ffc107" }}>
+    <div className="inline-block" style={{ color: "#ffc107" }}>
       {[...Array(fullStars)].map((_, i) => (
         <StarFill key={`full-${i}`} size={size} className="me-1" />
       ))}
@@ -51,12 +49,12 @@ const StarRatingDisplay = ({ rating, size = 16 }) => {
 const RatingCard = ({ rating }) => {
   return (
     <div className="rating-card-wrapper">
-      <Card className="w-100 h-100 text-center p-3 testimonial-card shadow-sm">
+      <Card className="w-full h-full text-center p-3 testimonial-card shadow-sm">
         <Card.Img
           variant="top"
           src={rating.userPhotoURL || FALLBACK_AVATAR_IMAGE}
           alt={rating.userDisplayName || "Pengguna"}
-          className="rounded-circle mx-auto mb-3"
+          className="rounded-full mx-auto mb-3"
           style={{
             width: "80px",
             height: "80px",
@@ -65,15 +63,15 @@ const RatingCard = ({ rating }) => {
           }}
           onError={handleAvatarError}
         />
-        <Card.Body className="d-flex flex-column">
+        <Card.Body className="flex flex-col">
           <Card.Title as="h5" className="h6 mb-1">
             {rating.userDisplayName || "Pengguna Anonim"}
           </Card.Title>
           <div className="mb-2">
             <StarRatingDisplay rating={rating.ratingValue} size={18} />
           </div>
-          <blockquote className="blockquote mb-0 flex-grow-1 d-flex align-items-center justify-content-center">
-            <p className="small fst-italic mb-0">
+          <blockquote className="blockquote mb-0 grow flex items-center justify-center">
+            <p className="text-sm italic mb-0">
               "
               {rating.reviewText ||
                 "Pengguna ini tidak memberikan ulasan teks."}
@@ -232,8 +230,8 @@ function HomePage() {
   };
 
   const ProductCard = ({ product, showRating = false }) => (
-    <Col className="d-flex align-items-stretch">
-      <Card className="w-100 product-card">
+    <Col className="flex items-stretch">
+      <Card className="w-full product-card">
         <Card.Img
           variant="top"
           src={
@@ -245,18 +243,18 @@ function HomePage() {
           onError={(e) => handleImageError(e, product.name)}
           alt={product.name}
         />
-        <Card.Body className="d-flex flex-column p-3">
+        <Card.Body className="flex flex-col p-3">
           {product.category && (
             <Badge
               pill
               bg="light"
               text="dark"
-              className="mb-2 badge-category align-self-start"
+              className="mb-2 badge-category self-start"
             >
               {product.category}
             </Badge>
           )}
-          <Card.Title as="h3" className="h6 mb-2 flex-grow-1">
+          <Card.Title as="h3" className="h6 mb-2 grow">
             {product.name}
           </Card.Title>
 
@@ -276,7 +274,7 @@ function HomePage() {
             <Button
               variant="outline-secondary"
               size="sm"
-              className="w-100 btn-detail"
+              className="w-full btn-detail"
               as={Link}
               to={`/menu/${product._id}`}
             >
@@ -303,7 +301,7 @@ function HomePage() {
       return null;
     }
     return (
-      <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+      <Row xs={1} sm={2} md={3} lg={4} className="gap-6">
         {products.map((product) => (
           <ProductCard
             key={product._id}
@@ -332,7 +330,7 @@ function HomePage() {
     return (
       <div className="horizontal-scroll-wrapper">
         <div className="horizontal-scroll-container" ref={ratingsContainerRef}>
-          <div className="d-flex flex-nowrap">
+          <div className="flex flex-nowrap">
             {ratingsData.map((rating) => (
               <RatingCard key={rating.ratingId} rating={rating} />
             ))}
@@ -365,7 +363,7 @@ function HomePage() {
       >
         <div className="hero-overlay"></div>
         <Container className="hero-content text-center">
-          <Row className="justify-content-center">
+          <Row className="justify-center">
             <Col md={10} lg={8}>
               <h1 className="hero-title">AYAM BAKAR NUSANTARA</h1>
               <p className="hero-subtitle">
@@ -447,7 +445,7 @@ function HomePage() {
 
       <div id="hubungi-kami" className="page-section contact-section py-5">
         <Container>
-          <Row className="justify-content-center">
+          <Row className="justify-center">
             <Col md={8} lg={6}>
               <h2 className="text-center mb-4 section-title">
                 <span>Hubungi Kami</span>
@@ -529,7 +527,7 @@ function HomePage() {
                     <Button
                       variant="primary"
                       type="submit"
-                      className="w-100 btn-brand"
+                      className="w-full btn-brand"
                       disabled={isSubmittingFeedback}
                     >
                       {isSubmittingFeedback ? (

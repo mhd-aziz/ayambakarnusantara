@@ -119,7 +119,7 @@ function EditProfileForm({ currentProfile, onProfileUpdated, onCancel }) {
           variant="danger"
           onClose={() => setError("")}
           dismissible
-          className="d-flex align-items-center"
+          className="flex items-center"
         >
           <XCircleFill className="me-2" /> {error}
         </Alert>
@@ -129,7 +129,7 @@ function EditProfileForm({ currentProfile, onProfileUpdated, onCancel }) {
           variant="success"
           onClose={() => setSuccess("")}
           dismissible
-          className="d-flex align-items-center"
+          className="flex items-center"
         >
           <CheckCircleFill className="me-2" /> {success}
         </Alert>
@@ -179,7 +179,7 @@ function EditProfileForm({ currentProfile, onProfileUpdated, onCancel }) {
           {currentProfile.photoURL || imagePreview ? (
             <Form.Group
               controlId="formRemoveProfilePhoto"
-              className="mt-2 text-center d-inline-block ms-2"
+              className="mt-2 text-center inline-block ms-2"
             >
               <Form.Check
                 type="checkbox"
@@ -198,7 +198,7 @@ function EditProfileForm({ currentProfile, onProfileUpdated, onCancel }) {
       </Row>
 
       <Form.Group as={Row} className="mb-3" controlId="formDisplayName">
-        <Form.Label column sm={3} className="text-sm-end">
+        <Form.Label column sm={3} className="sm:text-end">
           <PersonFill className="me-2" style={{ color: ICON_COLOR }} /> Nama
           Tampilan
         </Form.Label>
@@ -215,7 +215,7 @@ function EditProfileForm({ currentProfile, onProfileUpdated, onCancel }) {
       </Form.Group>
 
       <Form.Group as={Row} className="mb-3" controlId="formPhoneNumber">
-        <Form.Label column sm={3} className="text-sm-end">
+        <Form.Label column sm={3} className="sm:text-end">
           <TelephoneFill className="me-2" style={{ color: ICON_COLOR }} /> Nomor
           Telepon
         </Form.Label>
@@ -231,7 +231,7 @@ function EditProfileForm({ currentProfile, onProfileUpdated, onCancel }) {
       </Form.Group>
 
       <Form.Group as={Row} className="mb-3" controlId="formAddress">
-        <Form.Label column sm={3} className="text-sm-end">
+        <Form.Label column sm={3} className="sm:text-end">
           <GeoAltFill className="me-2" style={{ color: ICON_COLOR }} /> Alamat
         </Form.Label>
         <Col sm={9}>
@@ -249,7 +249,7 @@ function EditProfileForm({ currentProfile, onProfileUpdated, onCancel }) {
       <Row className="mt-4">
         <Col
           sm={{ span: 9, offset: 3 }}
-          className="d-flex justify-content-start gap-2"
+          className="flex justify-start gap-2"
         >
           {" "}
           {onCancel && (

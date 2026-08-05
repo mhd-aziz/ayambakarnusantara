@@ -33,7 +33,6 @@ import SupportCard from "../components/Order/SupportCard";
 import CancelOrderModal from "../components/Order/CancelOrderModal";
 import RatingModal from "../components/Order/RatingModal";
 import PaymentProofViewer from "../components/Order/PaymentProofViewer";
-import "../css/OrderDetailPage.css";
 import { handleProductSmallImageError as handleImageError } from "../utils/imageFallback";
 
 function OrderDetailPage({ onOpenChatbot }) {
@@ -447,7 +446,7 @@ function OrderDetailPage({ onOpenChatbot }) {
             color: "var(--brand-primary)",
           }}
         />
-        <p className="mt-3 lead" style={{ color: "var(--brand-primary)" }}>
+        <p className="mt-3 text-lg" style={{ color: "var(--brand-primary)" }}>
           Memuat Detail Pesanan...
         </p>
       </Container>
@@ -509,7 +508,7 @@ function OrderDetailPage({ onOpenChatbot }) {
           variant="success"
           onClose={() => setCancelSuccessMessage("")}
           dismissible
-          className="position-fixed top-0 start-50 translate-middle-x mt-3 z-index-toast"
+          className="fixed top-0 left-1/2 -translate-x-1/2 mt-3 z-index-toast"
           style={{ zIndex: 1055 }}
         >
           <CheckCircleFill className="me-2" />

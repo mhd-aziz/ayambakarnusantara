@@ -26,7 +26,6 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import * as ChatService from "../../services/ChatService";
 import ChatbotPane from "./ChatbotPane";
-import "../../css/GlobalChat.css";
 
 const MAPS_API_KEY = import.meta.env.VITE_MAPS_API_KEY || "YOUR_Maps_API_KEY";
 
@@ -110,7 +109,7 @@ const ConversationItem = ({
       active={isActive}
       className="conversation-item"
     >
-      <div className="d-flex align-items-center">
+      <div className="flex items-center">
         <Image
           src={
             photoURL ||
@@ -121,19 +120,19 @@ const ConversationItem = ({
           roundedCircle
           width="40"
           height="40"
-          className="me-3 conversation-avatar flex-shrink-0"
+          className="me-3 conversation-avatar shrink-0"
           alt={`Avatar ${displayName}`}
         />
-        <div className="conversation-info flex-grow-1">
-          <div className="d-flex justify-content-between align-items-start">
-            <strong className="conversation-name text-truncate">
+        <div className="conversation-info grow">
+          <div className="flex justify-between items-start">
+            <strong className="conversation-name truncate">
               {displayName}
             </strong>
             <small className="text-muted conversation-timestamp ms-2">
               {lastMessageTimestamp}
             </small>
           </div>
-          <small className="text-muted conversation-last-message text-truncate d-block">
+          <small className="text-muted conversation-last-message truncate block">
             {conversation.lastMessage?.senderUID === currentUserUID && "Anda: "}
             {lastMessageDisplay}
           </small>
@@ -154,10 +153,6 @@ const MessageBubble = ({ message, isSender }) => {
         })
       : "";
 
-  const messageTextHtml = message.text
-    ? message.text.replace(/\n/g, "<br />")
-    : "";
-
   const renderLocation = () => {
     if (!message.location) return null;
     const { latitude, longitude } = message.location;
@@ -173,7 +168,7 @@ const MessageBubble = ({ message, isSender }) => {
         >
           <GeoAltFill className="me-2" />
           <span>Lokasi dibagikan</span>
-          <small className="d-block">Klik untuk membuka di Maps</small>
+          <small className="block">Klik untuk membuka di Maps</small>
         </a>
       );
     }
@@ -204,10 +199,9 @@ const MessageBubble = ({ message, isSender }) => {
     <div className={`message-bubble-row ${isSender ? "sender" : "receiver"}`}>
       <div className={`message-bubble ${isSender ? "sender" : "receiver"}`}>
         {message.text && message.text.trim() !== "" && (
-          <div
-            dangerouslySetInnerHTML={{ __html: messageTextHtml }}
-            className="message-text mb-1"
-          ></div>
+          <div className="message-text mb-1 whitespace-pre-wrap break-words">
+            {message.text}
+          </div>
         )}
         {message.imageUrl && (
           <Image
@@ -714,16 +708,12 @@ function GlobalChat({
         <div className="global-chat-main-content">
           {showConversationListPanel && (
             <div
-              className={`conversation-list-panel ${
-                selectedConversation && isMobileView
-                  ? "minimized-on-mobile"
-                  : ""
-              }`}
+              className={`conversation-list-panel ${ selectedConversation && isMobileView ? "minimized-on-mobile" : "" }`}
             >
               {isInitiatingChat || isLoadingConversations ? (
                 <div className="text-center py-5">
                   <Spinner animation="border" size="sm" />
-                  <p className="mb-0 mt-2 small">
+                  <p className="mb-0 mt-2 text-sm">
                     {isInitiatingChat
                       ? "Memulai chat..."
                       : "Memuat percakapan..."}
@@ -747,7 +737,7 @@ function GlobalChat({
               ) : (
                 !errorConversations &&
                 !errorInitiating && (
-                  <p className="text-center text-muted p-3 small">
+                  <p className="text-center text-muted p-3 text-sm">
                     Belum ada percakapan dengan penjual.
                   </p>
                 )
@@ -756,11 +746,7 @@ function GlobalChat({
           )}
           {showMessagePanel && (
             <div
-              className={`message-panel ${
-                isMobileView && !showConversationListPanel
-                  ? "active-mobile-full"
-                  : ""
-              }`}
+              className={`message-panel ${ isMobileView && !showConversationListPanel ? "active-mobile-full" : "" }`}
             >
               {chatMode === "seller" ? (
                 selectedConversation ? (
@@ -769,7 +755,7 @@ function GlobalChat({
                       {errorMessages && (
                         <Alert
                           variant="warning"
-                          className="small p-2 text-center"
+                          className="text-sm p-2 text-center"
                           onClose={() => setErrorMessages("")}
                           dismissible
                         >
@@ -826,14 +812,14 @@ function GlobalChat({
                       {errorSending && (
                         <Alert
                           variant="danger"
-                          className="small p-1 mb-1 text-center"
+                          className="text-sm p-1 mb-1 text-center"
                           onClose={() => setErrorSending("")}
                           dismissible
                         >
                           {errorSending}
                         </Alert>
                       )}
-                      <Form onSubmit={handleSendMessage} className="w-100">
+                      <Form onSubmit={handleSendMessage} className="w-full">
                         <InputGroup>
                           <Button
                             variant="light"

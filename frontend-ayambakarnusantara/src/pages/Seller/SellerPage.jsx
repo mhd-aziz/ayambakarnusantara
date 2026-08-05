@@ -130,7 +130,7 @@ function SellerPage() {
     return (
       <Container
         fluid
-        className="d-flex flex-column justify-content-center align-items-center vh-100"
+        className="flex flex-col justify-center items-center h-screen"
       >
         <Spinner
           animation="border"
@@ -172,9 +172,9 @@ function SellerPage() {
   if (userRole) {
     return (
       <Container className="seller-page-container mt-4 mb-5">
-        <Row className="g-0">
+        <Row className="gap-0">
           {" "}
-          <Col md={4} lg={3} className="seller-sidebar-col p-0 border-end">
+          <Col md={4} lg={3} className="seller-sidebar-col p-0 border-e">
             {" "}
             <SellerSidebar shopName={shopData?.shopName} />
           </Col>
@@ -198,7 +198,7 @@ function SellerPage() {
   return (
     <Container
       fluid
-      className="d-flex justify-content-center align-items-center vh-100"
+      className="flex justify-center items-center h-screen"
     >
       <Spinner animation="border" style={{ color: "var(--brand-primary)" }} />
       <p className="ms-2" style={{ color: "var(--brand-primary)" }}>

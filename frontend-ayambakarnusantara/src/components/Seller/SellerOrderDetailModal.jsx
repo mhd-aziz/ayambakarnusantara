@@ -174,7 +174,7 @@ function SellerOrderDetailModal({
                           )}`
                         }
                         alt={item.name}
-                        className="img-fluid rounded"
+                        className="max-w-full h-auto rounded"
                         style={{
                           maxWidth: "50px",
                           maxHeight: "50px",

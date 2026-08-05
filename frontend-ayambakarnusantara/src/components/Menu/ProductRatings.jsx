@@ -2,7 +2,6 @@ import React from "react";
 import { Row, Col, Image, Spinner, Alert, Button, Card } from "../ui";
 import { PencilFill, TrashFill } from "react-bootstrap-icons";
 import StarRatingDisplay from "./StarRatingDisplay";
-import "../../css/ProductRatings.css";
 
 const ProductRatings = ({
   ratingsData,
@@ -38,11 +37,11 @@ const ProductRatings = ({
         <Col
           md={6}
           key={rating.ratingId}
-          className="mb-4 d-flex align-items-stretch"
+          className="mb-4 flex items-stretch"
         >
-          <Card className="review-card w-100" bg="white">
-            <Card.Body className="d-flex flex-column">
-              <div className="d-flex align-items-start mb-3">
+          <Card className="review-card w-full" bg="white">
+            <Card.Body className="flex flex-col">
+              <div className="flex items-start mb-3">
                 <Image
                   src={
                     rating.userPhotoURL ||
@@ -55,8 +54,8 @@ const ProductRatings = ({
                   height="45"
                   className="me-3"
                 />
-                <div className="flex-grow-1">
-                  <strong className="review-author-name d-block">
+                <div className="grow">
+                  <strong className="review-author-name block">
                     {rating.userDisplayName}
                   </strong>
                   <small className="review-date">
@@ -69,12 +68,12 @@ const ProductRatings = ({
                 <StarRatingDisplay rating={rating.ratingValue} size={16} />
               </div>
 
-              <p className="review-text mb-0 flex-grow-1">
+              <p className="review-text mb-0 grow">
                 {rating.reviewText || "Tidak ada ulasan teks."}
               </p>
 
               {currentUser?.uid === rating.userId && (
-                <div className="mt-3 text-end border-top pt-2">
+                <div className="mt-3 text-end border-t pt-2">
                   <Button
                     variant="outline-secondary"
                     size="sm"

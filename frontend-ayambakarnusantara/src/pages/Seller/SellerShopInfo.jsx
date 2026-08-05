@@ -29,7 +29,6 @@ import {
 } from "react-bootstrap-icons";
 import CreateSellerForm from "../../components/Seller/CreateSellerForm";
 import { updateMyShop, deleteMyShop } from "../../services/ShopService";
-import "../../css/SellerShopInfo.css";
 import { handleShopImageError as handleImageError } from "../../utils/imageFallback";
 const ICON_COLOR = "#C07722";
 
@@ -161,7 +160,7 @@ function SellerShopInfo() {
 
   if (!outletContext) {
     return (
-      <Container className="d-flex justify-content-center align-items-center vh-100">
+      <Container className="flex justify-center items-center h-screen">
         <Spinner animation="border" style={{ color: "var(--brand-primary)" }} />
       </Container>
     );
@@ -173,7 +172,7 @@ function SellerShopInfo() {
   ) {
     return (
       <Container className="seller-page-content">
-        <Row className="justify-content-center">
+        <Row className="justify-center">
           <Col md={10} lg={8}>
             {userRole === "customer" && (
               <Alert variant="info" className="mb-4 text-center shadow-sm">
@@ -224,10 +223,10 @@ function SellerShopInfo() {
         <Form onSubmit={handleUpdateSubmit} className="seller-form">
           <Form.Group
             as={Row}
-            className="mb-3 align-items-center"
+            className="mb-3 items-center"
             controlId="editShopName"
           >
-            <Form.Label column sm={3} className="text-sm-end">
+            <Form.Label column sm={3} className="sm:text-end">
               <ShopNameIcon className="me-2" style={{ color: ICON_COLOR }} />
               Nama Toko
             </Form.Label>
@@ -242,7 +241,7 @@ function SellerShopInfo() {
             </Col>
           </Form.Group>
           <Form.Group as={Row} className="mb-3" controlId="editShopDescription">
-            <Form.Label column sm={3} className="text-sm-end">
+            <Form.Label column sm={3} className="sm:text-end">
               <DescriptionIcon className="me-2" style={{ color: ICON_COLOR }} />
               Deskripsi
             </Form.Label>
@@ -258,7 +257,7 @@ function SellerShopInfo() {
             </Col>
           </Form.Group>
           <Form.Group as={Row} className="mb-3" controlId="editShopAddress">
-            <Form.Label column sm={3} className="text-sm-end">
+            <Form.Label column sm={3} className="sm:text-end">
               <AddressIcon className="me-2" style={{ color: ICON_COLOR }} />
               Alamat Toko
             </Form.Label>
@@ -277,7 +276,7 @@ function SellerShopInfo() {
             </Col>
           </Form.Group>
           <Form.Group as={Row} className="mb-3" controlId="editBannerImage">
-            <Form.Label column sm={3} className="text-sm-end">
+            <Form.Label column sm={3} className="sm:text-end">
               <BannerIcon className="me-2" style={{ color: ICON_COLOR }} />
               Banner Toko
             </Form.Label>
@@ -315,7 +314,7 @@ function SellerShopInfo() {
           <Row className="mt-4">
             <Col
               sm={{ span: 9, offset: 3 }}
-              className="d-flex justify-content-start gap-2"
+              className="flex justify-start gap-2"
             >
               <Button
                 variant="outline-secondary"
@@ -426,7 +425,7 @@ function SellerShopInfo() {
                   </Card.Text>
 
                   <ListGroup variant="flush" className="seller-info-list">
-                    <ListGroup.Item className="px-0 d-flex align-items-start">
+                    <ListGroup.Item className="px-0 flex items-start">
                       <AddressIcon
                         size={20}
                         className="me-3 mt-1"
@@ -439,7 +438,7 @@ function SellerShopInfo() {
                         </p>
                       </div>
                     </ListGroup.Item>
-                    <ListGroup.Item className="px-0 d-flex align-items-start">
+                    <ListGroup.Item className="px-0 flex items-start">
                       <CalendarCheck
                         size={20}
                         className="me-3 mt-1"
@@ -460,7 +459,7 @@ function SellerShopInfo() {
                         </p>
                       </div>
                     </ListGroup.Item>
-                    <ListGroup.Item className="px-0 d-flex align-items-start">
+                    <ListGroup.Item className="px-0 flex items-start">
                       <ClockHistory
                         size={20}
                         className="me-3 mt-1"
@@ -484,8 +483,8 @@ function SellerShopInfo() {
                   </ListGroup>
                 </Col>
 
-                <Col lg={4} className="mt-4 mt-lg-0">
-                  <Card bg="light" className="h-100">
+                <Col lg={4} className="mt-4 lg:mt-0">
+                  <Card bg="light" className="h-full">
                     <Card.Body className="text-center">
                       <h6 className="text-muted">PEMILIK TOKO</h6>
                       <Image
@@ -505,10 +504,10 @@ function SellerShopInfo() {
                         }}
                         className="mb-2"
                       />
-                      <p className="fw-bold mb-0 mt-2">
+                      <p className="font-bold mb-0 mt-2">
                         {currentUserProfile?.displayName || "Tidak Diketahui"}
                       </p>
-                      <p className="text-muted small">
+                      <p className="text-muted text-sm">
                         {currentUserProfile?.email}
                       </p>
                     </Card.Body>

@@ -164,18 +164,18 @@ function App() {
     return (
       <Container
         fluid
-        className="d-flex justify-content-center align-items-center"
+        className="flex justify-center items-center"
         style={{ height: "100vh" }}
       >
         <Spinner animation="border" role="status">
-          <span className="visually-hidden">Memuat...</span>
+          <span className="sr-only">Memuat...</span>
         </Spinner>
       </Container>
     );
   }
 
   return (
-    <div className="d-flex flex-column min-vh-100 app-container">
+    <div className="flex flex-col min-h-screen app-container">
       <ScrollToAnchor />
       {!isLoggedIn && showTopBanner && (
         <Alert
@@ -193,7 +193,7 @@ function App() {
         </Alert>
       )}
       <NavigationBar isAuthModalOpen={isAuthModalOpen} />
-      <Container fluid className="page-content-container p-0 flex-grow-1">
+      <Container fluid className="page-content-container p-0 grow">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/login" element={<HomePage />} />

@@ -41,10 +41,7 @@ import {
   ArrowLeft,
   Shop,
 } from "react-bootstrap-icons";
-import "../css/DetailMenuPage.css";
 import { handleProductImageError, handleProductSmallImageError as handleImageError } from "../utils/imageFallback";
-import "../css/ShopDetailPage.css";
-import "../css/ShopPage.css";
 
 const RelatedProducts = ({ products, isLoading, error }) => {
   const handleProductImageError = (e, productName) => {
@@ -78,10 +75,10 @@ const RelatedProducts = ({ products, isLoading, error }) => {
   }
 
   return (
-    <Row xs={1} sm={2} md={2} lg={4} className="g-4">
+    <Row xs={1} sm={2} md={2} lg={4} className="gap-6">
       {products.map((product) => (
-        <Col key={product._id} className="d-flex align-items-stretch">
-          <Card className="w-100 h-100 product-list-card shop-card shadow-sm">
+        <Col key={product._id} className="flex items-stretch">
+          <Card className="w-full h-full product-list-card shop-card shadow-sm">
             <div className="shop-card-img-wrapper">
               <Card.Img
                 variant="top"
@@ -96,20 +93,20 @@ const RelatedProducts = ({ products, isLoading, error }) => {
                 alt={product.name}
               />
             </div>
-            <Card.Body className="d-flex flex-column p-3">
+            <Card.Body className="flex flex-col p-3">
               {product.category && (
                 <Badge
                   pill
                   bg="light"
                   text="dark"
-                  className="mb-2 product-category-badge align-self-start shadow-sm"
+                  className="mb-2 product-category-badge self-start shadow-sm"
                 >
                   {product.category}
                 </Badge>
               )}
               <Card.Title
                 as="h5"
-                className="product-list-card-title shop-card-title flex-grow-1"
+                className="product-list-card-title shop-card-title grow"
               >
                 {product.name}
               </Card.Title>
@@ -122,7 +119,7 @@ const RelatedProducts = ({ products, isLoading, error }) => {
                 </p>
                 <Button
                   variant="primary"
-                  className="btn-brand w-100 mt-1"
+                  className="btn-brand w-full mt-1"
                   as={Link}
                   to={`/menu/${product._id}`}
                 >
@@ -393,7 +390,7 @@ function DetailMenuPage() {
             }}
           />
           <p
-            className="mt-3 lead"
+            className="mt-3 text-lg"
             style={{ color: "var(--brand-primary, #c0392b)" }}
           >
             Memuat detail produk...
@@ -407,7 +404,7 @@ function DetailMenuPage() {
     return (
       <Container fluid className="py-5 detail-menu-page-container-fluid">
         <Container>
-          <Alert variant="danger" className="text-center lead py-4 shadow-sm">
+          <Alert variant="danger" className="text-center text-lg py-4 shadow-sm">
             <Alert.Heading as="h3">
               <ExclamationTriangleFill className="me-2" /> Gagal Memuat Data
             </Alert.Heading>
@@ -416,7 +413,7 @@ function DetailMenuPage() {
               as={Link}
               to="/menu"
               variant="outline-primary"
-              className="fw-semibold"
+              className="font-semibold"
             >
               <ArrowLeftCircleFill className="me-2" /> Kembali ke Menu
             </Button>
@@ -430,7 +427,7 @@ function DetailMenuPage() {
     return (
       <Container fluid className="py-5 detail-menu-page-container-fluid">
         <Container>
-          <Alert variant="warning" className="text-center lead py-4 shadow-sm">
+          <Alert variant="warning" className="text-center text-lg py-4 shadow-sm">
             <Alert.Heading as="h3">
               <Search className="me-2" /> Produk Tidak Ditemukan
             </Alert.Heading>
@@ -439,7 +436,7 @@ function DetailMenuPage() {
               as={Link}
               to="/menu"
               variant="outline-primary"
-              className="fw-semibold"
+              className="font-semibold"
             >
               <ArrowLeftCircleFill className="me-2" /> Kembali ke Menu
             </Button>
@@ -450,14 +447,14 @@ function DetailMenuPage() {
   }
 
   return (
-    <Container fluid className="py-4 px-lg-5 detail-menu-page-container-fluid">
+    <Container fluid className="py-4 lg:px-5 detail-menu-page-container-fluid">
       <Container>
         {addToCartSuccessMessage && (
           <Alert
             variant="success"
             onClose={() => setAddToCartSuccessMessage("")}
             dismissible
-            className="position-fixed top-0 start-50 translate-middle-x mt-3 z-index-toast shadow-lg"
+            className="fixed top-0 left-1/2 -translate-x-1/2 mt-3 z-index-toast shadow-lg"
             style={{ zIndex: 1055 }}
           >
             <CheckCircleFill className="me-2" />
@@ -476,7 +473,7 @@ function DetailMenuPage() {
         <Card className="border-0 shadow-sm detail-menu-card-wrapper mb-4">
           <Card.Body>
             <Row className="detail-menu-card">
-              <Col lg={6} md={5} className="mb-4 mb-md-0 detail-menu-image-col">
+              <Col lg={6} md={5} className="mb-4 md:mb-0 detail-menu-image-col">
                 <Image
                   src={
                     menuItem.productImageURL ||
@@ -490,7 +487,7 @@ function DetailMenuPage() {
                   fluid
                 />
               </Col>
-              <Col lg={6} md={7} className="detail-menu-info-col ps-md-4">
+              <Col lg={6} md={7} className="detail-menu-info-col md:ps-4">
                 <Badge
                   bg="light"
                   text="dark"
@@ -505,7 +502,7 @@ function DetailMenuPage() {
                     ({menuItem.ratingCount || 0} ulasan)
                   </span>
                 </div>
-                <p className="detail-menu-description lead text-muted mb-3">
+                <p className="detail-menu-description text-lg text-muted mb-3">
                   {menuItem.description || "Deskripsi produk tidak tersedia."}
                 </p>
                 {shopInfo && (
@@ -516,7 +513,7 @@ function DetailMenuPage() {
                     </span>
                     <Link
                       to={`/toko/${menuItem.shopId}`}
-                      className="fw-bold link-dark text-decoration-none"
+                      className="font-bold link-dark no-underline"
                     >
                       {shopInfo.shopName}
                     </Link>
@@ -545,18 +542,18 @@ function DetailMenuPage() {
                   )}
                 </div>
                 <div
-                  className="detail-menu-price h3 mb-3 fw-bold"
+                  className="detail-menu-price h3 mb-3 font-bold"
                   style={{ color: "var(--brand-primary, #c0392b)" }}
                 >
                   Rp {menuItem.price.toLocaleString("id-ID")}
                 </div>
                 {menuItem.stock > 0 && (
                   <>
-                    <Row className="align-items-center mb-3 gx-2">
+                    <Row className="items-center mb-3 gap-x-2">
                       <Col xs="auto">
                         <Form.Label
                           htmlFor="quantity-input"
-                          className="mb-0 small text-muted"
+                          className="mb-0 text-sm text-muted"
                         >
                           Jumlah:
                         </Form.Label>
@@ -568,7 +565,7 @@ function DetailMenuPage() {
                         >
                           <Button
                             variant="outline-secondary"
-                            className="rounded-start"
+                            className="rounded-s"
                             onClick={() => handleQuantityChange(-1)}
                             disabled={quantity <= 1}
                           >
@@ -579,7 +576,7 @@ function DetailMenuPage() {
                             type="text"
                             value={quantity}
                             readOnly
-                            className="text-center fw-bold border-start-0 border-end-0"
+                            className="text-center font-bold border-s-0 border-e-0"
                             style={{
                               maxWidth: "50px",
                               backgroundColor: "#fff",
@@ -587,7 +584,7 @@ function DetailMenuPage() {
                           />
                           <Button
                             variant="outline-secondary"
-                            className="rounded-end"
+                            className="rounded-e"
                             onClick={() => handleQuantityChange(1)}
                             disabled={quantity >= menuItem.stock}
                           >
@@ -596,8 +593,8 @@ function DetailMenuPage() {
                         </InputGroup>
                       </Col>
                     </Row>
-                    <Row className="mt-4 actions-row gx-2">
-                      <Col xs={12} sm={6} className="mb-2 mb-sm-0 d-grid">
+                    <Row className="mt-4 actions-row gap-x-2">
+                      <Col xs={12} sm={6} className="mb-2 sm:mb-0 grid">
                         <Button
                           variant="outline-secondary"
                           onClick={() => navigate(-1)}
@@ -606,7 +603,7 @@ function DetailMenuPage() {
                           <ArrowLeft className="me-1" /> Kembali
                         </Button>
                       </Col>
-                      <Col xs={12} sm={6} className="d-grid">
+                      <Col xs={12} sm={6} className="grid">
                         <Button
                           variant="primary"
                           onClick={handleAddToCartClick}

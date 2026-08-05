@@ -3,7 +3,6 @@ import React from "react";
 import { Container, Row, Col, Nav } from "../ui";
 import { Link } from "react-router-dom";
 import logoImage from "../../assets/logo.jpg";
-import "../../css/Footer.css";
 
 function Footer({ onOpenChatbot }) {
   const currentYear = new Date().getFullYear();
@@ -14,22 +13,22 @@ function Footer({ onOpenChatbot }) {
       data-bs-theme="dark"
     >
       <Container>
-        <Row className="gy-4">
-          <Col lg={4} md={6} className="text-center text-md-start">
+        <Row className="gap-y-6">
+          <Col lg={4} md={6} className="text-center md:text-start">
             <Link
               to="/"
-              className="footer-brand d-flex align-items-center justify-content-center justify-content-md-start mb-3"
+              className="footer-brand flex items-center justify-center md:justify-start mb-3"
             >
               <img
                 src={logoImage}
                 width="45"
                 height="45"
-                className="d-inline-block align-top me-2"
+                className="inline-block align-top me-2"
                 alt="Ayam Bakar Nusantara Logo"
               />
               <span className="footer-brand-text">Ayam Bakar Nusantara</span>
             </Link>
-            <p className="footer-description small">
+            <p className="footer-description text-sm">
               Nikmati kelezatan Ayam Bakar Nusantara dengan resep autentik
               turun-temurun. Kualitas terbaik, rasa tak terlupakan.
             </p>
@@ -37,7 +36,7 @@ function Footer({ onOpenChatbot }) {
 
           <Col lg={4} md={3} xs={6}>
             <h5 className="footer-heading">Navigasi</h5>
-            <Nav className="flex-column footer-nav">
+            <Nav className="flex-col footer-nav">
               <Nav.Link as={Link} to="/" className="footer-link">
                 Beranda
               </Nav.Link>
@@ -52,7 +51,7 @@ function Footer({ onOpenChatbot }) {
 
           <Col lg={4} md={3} xs={6}>
             <h5 className="footer-heading">Bantuan & Kebijakan</h5>
-            <Nav className="flex-column footer-nav">
+            <Nav className="flex-col footer-nav">
               <Nav.Link
                 as="button"
                 onClick={onOpenChatbot}

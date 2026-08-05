@@ -8,7 +8,6 @@ import {
   ClipboardCheck,
   InfoCircleFill,
 } from "react-bootstrap-icons";
-import "../../css/SellerSidebar.css";
 
 function SellerSidebar({ shopName }) {
   const location = useLocation();
@@ -36,7 +35,7 @@ function SellerSidebar({ shopName }) {
         <h5 className="mb-0">{shopName || "Toko Saya"}</h5>
       </div>
 
-      <Nav variant="pills" className="flex-column sidebar-nav">
+      <Nav variant="pills" className="flex-col sidebar-nav">
         {navLinks.map((linkItem) => {
           const IconComponent = linkItem.icon;
           return (
@@ -45,9 +44,7 @@ function SellerSidebar({ shopName }) {
                 as={Link}
                 to={linkItem.path}
                 end={linkItem.exact}
-                className={`sidebar-link ${
-                  isActive(linkItem.path, linkItem.exact) ? "active" : ""
-                }`}
+                className={`sidebar-link ${ isActive(linkItem.path, linkItem.exact) ? "active" : "" }`}
               >
                 <IconComponent size={18} />
                 <span>{linkItem.text}</span>

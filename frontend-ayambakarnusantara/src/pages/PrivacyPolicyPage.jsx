@@ -9,10 +9,9 @@ import {
 } from "../components/ui";
 import { Link } from "react-router-dom";
 import { ShieldShaded } from "react-bootstrap-icons";
-import "../css/PrivacyPolicyPage.css";
 const Section = ({ title, children }) => (
   <div className="mb-4">
-    <h2 className="h5 mt-4 fw-bold section-title">{title}</h2>
+    <h2 className="h5 mt-4 font-bold section-title">{title}</h2>
     <div className="ps-3">{children}</div>
   </div>
 );
@@ -26,8 +25,8 @@ function PrivacyPolicyPage() {
 
   return (
     <div className="privacy-page-container">
-      <Container className="my-4 my-md-5">
-        <Row className="justify-content-center">
+      <Container className="my-4 md:my-5">
+        <Row className="justify-center">
           <Col md={10} lg={9}>
             <Breadcrumb
               listProps={{ className: "bg-transparent p-0 mb-3" }}
@@ -47,12 +46,12 @@ function PrivacyPolicyPage() {
                   style={{ color: "var(--brand-primary)" }}
                 />
                 <h1 className="h2 mb-0">Kebijakan Privasi</h1>
-                <p className="text-muted mb-0 small mt-2">
+                <p className="text-muted mb-0 text-sm mt-2">
                   Terakhir diperbarui: {lastUpdatedDate}
                 </p>
               </Card.Header>
-              <Card.Body className="p-4 p-md-5">
-                <p className="lead">
+              <Card.Body className="p-4 md:p-5">
+                <p className="text-lg">
                   Di Ayam Bakar Nusantara, kami menghargai privasi Anda dan
                   berkomitmen untuk melindungi data pribadi Anda. Kebijakan
                   Privasi ini menjelaskan bagaimana kami mengumpulkan,

@@ -17,7 +17,6 @@ import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
 import { CheckCircleFill } from "react-bootstrap-icons";
 import { FALLBACK_PRODUCT_IMAGE, handleProductImageError as handleImageError } from "../utils/imageFallback";
-import "../css/MenuPage.css";
 
 function MenuPage() {
   const [productsData, setProductsData] = useState({
@@ -240,14 +239,14 @@ function MenuPage() {
   }
 
   return (
-    <Container fluid className="py-4 px-md-4 menu-page-container-fluid">
+    <Container fluid className="py-4 md:px-4 menu-page-container-fluid">
       <Container>
         {addToCartSuccessMessage && (
           <Alert
             variant="success"
             onClose={() => setAddToCartSuccessMessage("")}
             dismissible
-            className="position-fixed top-0 start-50 translate-middle-x mt-3 z-index-toast"
+            className="fixed top-0 left-1/2 -translate-x-1/2 mt-3 z-index-toast"
             style={{ zIndex: 1055 }}
           >
             <CheckCircleFill className="me-2" />
@@ -255,8 +254,8 @@ function MenuPage() {
           </Alert>
         )}
         <div className="filters-section-wrapper">
-          <Row className="align-items-center">
-            <Col md={12} lg={5} className="mb-3 mb-lg-0">
+          <Row className="items-center">
+            <Col md={12} lg={5} className="mb-3 lg:mb-0">
               <h1 className="h2 mb-1" style={{ color: "#c0392b" }}>
                 Menu Ayam Bakar Nusantara
               </h1>
@@ -265,10 +264,10 @@ function MenuPage() {
               </p>
             </Col>
             <Col md={12} lg={7}>
-              <Row className="g-2">
+              <Row className="gap-2">
                 <Col xs={12} sm={6}>
-                  <Form.Group controlId="categoryFilter" className="w-100">
-                    <Form.Label className="small visually-hidden">
+                  <Form.Group controlId="categoryFilter" className="w-full">
+                    <Form.Label className="text-sm sr-only">
                       Filter Kategori:
                     </Form.Label>
                     <Form.Select
@@ -285,8 +284,8 @@ function MenuPage() {
                   </Form.Group>
                 </Col>
                 <Col xs={12} sm={6}>
-                  <Form.Group controlId="sortFilter" className="w-100">
-                    <Form.Label className="small visually-hidden">
+                  <Form.Group controlId="sortFilter" className="w-full">
+                    <Form.Label className="text-sm sr-only">
                       Urutkan:
                     </Form.Label>
                     <Form.Select
@@ -316,14 +315,14 @@ function MenuPage() {
               animation="border"
               style={{ width: "3.5rem", height: "3.5rem", color: "#c0392b" }}
             />
-            <p className="mt-3 lead" style={{ color: "#c0392b" }}>
+            <p className="mt-3 text-lg" style={{ color: "#c0392b" }}>
               Memuat menu pilihan Anda...
             </p>
           </div>
         )}
 
         {error && (
-          <Alert variant="danger" className="text-center lead py-4 shadow-sm">
+          <Alert variant="danger" className="text-center text-lg py-4 shadow-sm">
             <Alert.Heading as="h3">
               <i className="bi bi-exclamation-triangle-fill me-2"></i>Oops!
               Terjadi Kesalahan
@@ -332,7 +331,7 @@ function MenuPage() {
             <Button
               variant="outline-danger"
               onClick={fetchProducts}
-              className="fw-semibold"
+              className="font-semibold"
             >
               <i className="bi bi-arrow-clockwise me-2"></i>Coba Lagi
             </Button>
@@ -342,10 +341,10 @@ function MenuPage() {
         {!isLoadingProducts && !error && productsData.products.length === 0 && (
           <Alert
             variant="light"
-            className="text-center lead py-5 shadow-sm border"
+            className="text-center text-lg py-5 shadow-sm border"
           >
             <Alert.Heading as="h3" className="text-muted">
-              <i className="bi bi-egg-fried me-2 fs-1"></i>
+              <i className="bi bi-egg-fried me-2 text-4xl"></i>
             </Alert.Heading>
             <p className="text-muted mb-0">
               Maaf, menu yang Anda cari belum tersedia.
@@ -358,17 +357,17 @@ function MenuPage() {
 
         {!isLoadingProducts && !error && productsData.products.length > 0 && (
           <>
-            <Row xs={1} sm={2} md={3} lg={4} className="g-4">
+            <Row xs={1} sm={2} md={3} lg={4} className="gap-6">
               {productsData.products.map((product) => (
-                <Col key={product._id} className="d-flex align-items-stretch">
-                  <Card className="w-100 product-card">
+                <Col key={product._id} className="flex items-stretch">
+                  <Card className="w-full product-card">
                     <Card.Img
                       variant="top"
                       src={product.productImageURL || FALLBACK_PRODUCT_IMAGE}
                       onError={handleImageError}
                       alt={product.name}
                     />
-                    <Card.Body className="d-flex flex-column p-3">
+                    <Card.Body className="flex flex-col p-3">
                       <div className="mb-2">
                         <Badge
                           pill
@@ -379,7 +378,7 @@ function MenuPage() {
                           {product.category}
                         </Badge>
                         {product.stock === 0 && (
-                          <Badge pill bg="danger" className="fw-normal">
+                          <Badge pill bg="danger" className="font-normal">
                             Habis
                           </Badge>
                         )}
@@ -388,7 +387,7 @@ function MenuPage() {
                             pill
                             bg="warning"
                             text="dark"
-                            className="fw-normal"
+                            className="font-normal"
                           >
                             Stok Terbatas
                           </Badge>
@@ -398,7 +397,7 @@ function MenuPage() {
                         {product.name}
                       </Card.Title>
                       {product.description && (
-                        <Card.Text className="description-text mb-2 flex-grow-0">
+                        <Card.Text className="description-text mb-2 grow-0">
                           {product.description}
                         </Card.Text>
                       )}
@@ -436,11 +435,7 @@ function MenuPage() {
                             ) : (
                               <>
                                 <i
-                                  className={`bi ${
-                                    product.stock > 0
-                                      ? "bi-cart-plus-fill"
-                                      : "bi-slash-circle"
-                                  } me-1`}
+                                  className={`bi ${ product.stock > 0 ? "bi-cart-plus-fill" : "bi-slash-circle" } me-1`}
                                 ></i>
                                 {product.stock > 0 ? "Keranjang" : "Habis"}
                               </>
@@ -455,7 +450,7 @@ function MenuPage() {
             </Row>
 
             {productsData.totalPages > 1 && (
-              <div className="d-flex justify-content-center mt-5">
+              <div className="flex justify-center mt-5">
                 {/* PERUBAHAN: Menambahkan className */}
                 <Pagination className="menu-pagination">
                   {paginationItems}

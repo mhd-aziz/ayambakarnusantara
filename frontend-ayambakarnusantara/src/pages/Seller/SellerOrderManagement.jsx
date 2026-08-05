@@ -30,7 +30,6 @@ import {
   getSellerOrderDetailById,
   updateOrderStatusBySeller,
 } from "../../services/OrderService";
-import "../../css/SellerOrderManagement.css";
 
 const ORDERS_PER_PAGE = 15;
 
@@ -334,7 +333,7 @@ function SellerOrderManagement() {
 
   if (!outletContext) {
     return (
-      <Container className="d-flex justify-content-center align-items-center vh-100">
+      <Container className="flex justify-center items-center h-screen">
         <Spinner animation="border" style={{ color: "var(--brand-primary)" }} />
       </Container>
     );
@@ -348,7 +347,7 @@ function SellerOrderManagement() {
           Anda perlu memiliki toko untuk mengelola pesanan.
         </Alert>
         {(userRole === "customer" || (userRole === "seller" && !hasShop)) && (
-          <Row className="justify-content-center mt-4">
+          <Row className="justify-center mt-4">
             <Col md={10} lg={8} className="seller-form">
               <CreateSellerForm
                 onShopCreated={() => {
@@ -372,7 +371,7 @@ function SellerOrderManagement() {
       </div>
 
       <Form className="mb-3 px-1">
-        <Row className="g-2 align-items-end">
+        <Row className="gap-2 items-end">
           <Col xs={12} md={6} lg={7}>
             <Form.Group controlId="orderSearchSeller">
               <Form.Label visuallyHidden>Cari Pesanan</Form.Label>
@@ -410,11 +409,11 @@ function SellerOrderManagement() {
             <Button
               variant="outline-secondary"
               onClick={handleResetFilters}
-              className="w-100"
+              className="w-full"
               title="Reset Filter"
             >
               <ArrowClockwise />
-              <span className="d-none d-lg-inline ms-1">Reset</span>
+              <span className="hidden lg:inline ms-1">Reset</span>
             </Button>
           </Col>
         </Row>
@@ -482,7 +481,7 @@ function SellerOrderManagement() {
             getAvailableNextStatuses={getAvailableNextStatuses}
           />
           {totalPages > 1 && (
-            <Pagination className="justify-content-center mt-4 order-pagination">
+            <Pagination className="justify-center mt-4 order-pagination">
               <Pagination.First
                 onClick={() => paginate(1)}
                 disabled={currentPage === 1}

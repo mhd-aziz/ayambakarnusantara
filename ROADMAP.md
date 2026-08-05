@@ -33,9 +33,9 @@
 
 | # | Masalah | Lokasi | Dampak | Perbaikan yang disarankan |
 |---|---|---|---|---|
-| 6 | **Stored XSS di chat** | `chatController.sendMessage` (tanpa sanitasi) + `GlobalChat.js`/`ChatbotPane.js` (`dangerouslySetInnerHTML`) | Pengguna bisa mengirim HTML/`<img onerror>` yang jalan di browser pengguna lain | Sanitasi di backend (escape HTML) + jangan pakai `dangerouslySetInnerHTML` (render teks polos, ganti `\n` dengan komponen `<br/>`) |
-| 7 | **Feedback publik tanpa proteksi** | `feedbackController.js` | Spam formulir | Rate limit sederhana (per IP/email) atau minimal validasi honeypot |
-| 8 | **Cookie 24 jam vs ID token 1 jam** | `authController.login` + `authMiddleware` | User "logout" paksa tiap 1 jam (401 → interceptor logout) | Perpendek cookie ke 1 jam, atau tambah refresh-token flow (Firebase session cookie / custom refresh) |
+| 6 | ✅ **SELESAI** — Stored XSS di chat | `GlobalChat.jsx` + `ChatbotPane.jsx` (`dangerouslySetInnerHTML`) | Pengguna bisa kirim HTML/`<img onerror>` yang jalan di browser pengguna lain | Render teks polos (React escape otomatis) + `whitespace-pre-wrap break-words`; `dangerouslySetInnerHTML` dihapus total (Agu 2026) |
+| 7 | ✅ **SELESAI** — Feedback publik tanpa proteksi | `feedbackController.js` + `feedbackRoutes.js` | Spam formulir | Rate limit in-memory per IP (maks 5/10 menit, 429) di `middlewares/rateLimiter.js` (Agu 2026) |
+| 8 | ✅ **TERATASI** — Cookie 24 jam vs ID token 1 jam | `authMiddleware.authenticateToken` | User "logout" paksa tiap 1 jam | Auto-refresh via cookie `authRefreshToken` (7 hari) sudah ada sejak migrasi Supabase — token di-refresh & cookie diperbarui otomatis saat JWT expired |
 
 ## 🟢 Prioritas 4 — Kebersihan & kecil
 
@@ -44,7 +44,7 @@
 | 9 | `Gemini SDK` terpasang tapi tak dipakai | `config/geminiConfig.js` | Chatbot proxy ke Rasa. Pilih salah satu: pakai Gemini (ganti Rasa) atau hapus config |
 | 10 | `getAllRatings` tanpa limit | `ratingController.js` | Beranda memuat SEMUA rating → lambat seiring data tumbuh; tambah limit + pagination |
 | 11 | `useEffect(() => {}, ...)` kosong | `CartPage.js` baris 55 | Sisa refactor, hapus |
-| 12 | `dangerouslySetInnerHTML` di chatbot (parsing markdown) | `ChatbotPane.js` | Parsing gambar Rasa rapuh; lebih baik format respons Rasa distandarkan |
+| 12 | ✅ **SELESAI** — `dangerouslySetInnerHTML` di chatbot (parsing markdown) | `ChatbotPane.js` | Parsing gambar Rasa rapuh; lebih baik format respons Rasa distandarkan | Ikut dibereskan saat fix XSS (#6): teks chatbot dirender polos (React escape), tanpa innerHTML |
 | 13 | URL `localhost:5005` (Rasa) hardcoded | `chatbotController.js` | Pindah ke env `RASA_WEBHOOK_URL` (sudah ada fallback, pastikan .env diisi) |
 
 ---
@@ -76,3 +76,4 @@
 | Tanggal | Perubahan |
 |---|---|
 | 2026-08-04 | Analisis kode menyeluruh; dokumen `MVP`, `IDEA`, `ARCHITECTURE`, `DATA-MODEL`, `API-REFERENCE`, `BUSINESS-FLOW`, `ROADMAP` dibuat |
+| 2026-08-05 | **Migrasi frontend tuntas**: utilitas Bootstrap → Tailwind (`index.css` sebagai satu-satunya sumber styling, `@layer components` + `@layer utilities` internal); folder `src/css/` (24 file) + import per-halaman dihapus; `bootstrap-compat` dihapus total. **Keamanan**: XSS chat ditutup (#6, #12); rate limit feedback (#7); #8 sudah teratasi via auto-refresh. Build & 33/33 test PASS |

@@ -13,9 +13,7 @@ const Navbar = forwardRef(function Navbar(
       <nav
         ref={ref}
         {...rest}
-        className={`navbar relative flex flex-wrap items-center justify-between pt-2 pb-2 ${
-          sticky === "top" ? "sticky top-0" : ""
-        } ${className}`}
+        className={`navbar relative flex flex-wrap items-center justify-between pt-2 pb-2 ${ sticky === "top" ? "sticky top-0" : "" } ${className}`}
       >
         {children}
       </nav>
@@ -52,9 +50,7 @@ Navbar.Collapse = function NavbarCollapse({ id, className = "", children, ...res
     <div
       id={id}
       {...rest}
-      className={`navbar-collapse grow basis-full items-center xl:flex xl:basis-auto ${
-        expanded ? "show" : ""
-      } ${className}`}
+      className={`navbar-collapse grow basis-full items-center xl:flex xl:basis-auto ${ expanded ? "show" : "" } ${className}`}
     >
       {children}
     </div>

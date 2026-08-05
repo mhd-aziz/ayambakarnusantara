@@ -47,14 +47,10 @@ function Modal({
         />
       )}
       <div
-        className={`relative mx-auto my-[1.75rem] pointer-events-none h-full ${
-          centered ? "flex items-center min-h-[calc(100%-3.5rem)]" : ""
-        }`}
+        className={`relative mx-auto my-[1.75rem] pointer-events-none h-full ${ centered ? "flex items-center min-h-[calc(100%-3.5rem)]" : "" }`}
       >
         <div
-          className={`relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding border border-[rgba(0,0,0,0.2)] rounded-[0.5rem] shadow-[0_0.5rem_1rem_rgba(0,0,0,0.15)] outline-none ${
-            SIZES[size] || "max-w-[500px]"
-          } ${dialogClassName} ${scrollable ? "max-h-[calc(100%-3.5rem)] overflow-y-auto" : ""}`}
+          className={`relative flex flex-col w-full pointer-events-auto bg-white bg-clip-padding border border-[rgba(0,0,0,0.2)] rounded-[0.5rem] shadow-[0_0.5rem_1rem_rgba(0,0,0,0.15)] outline-none ${ SIZES[size] || "max-w-[500px]" } ${dialogClassName} ${scrollable ? "max-h-[calc(100%-3.5rem)] overflow-y-auto" : ""}`}
         >
           <div className={contentClassName}>{children}</div>
         </div>
@@ -66,7 +62,7 @@ function Modal({
 
 const Header = ({ closeButton = false, onHide, className = "", children, ...rest }) => (
   <div
-    className={`flex flex-shrink-0 items-center justify-between p-4 border-b border-[#dee2e6] rounded-t-[calc(0.5rem-1px)] ${className}`}
+    className={`flex shrink-0 items-center justify-between p-4 border-b border-[#dee2e6] rounded-t-[calc(0.5rem-1px)] ${className}`}
     {...rest}
   >
     {children}
@@ -94,7 +90,7 @@ const Body = ({ className = "", children, ...rest }) => (
 );
 const Footer = ({ className = "", children, ...rest }) => (
   <div
-    className={`flex flex-shrink-0 flex-wrap items-center justify-end p-3 gap-2 border-t border-[#dee2e6] rounded-b-[calc(0.5rem-1px)] ${className}`}
+    className={`flex shrink-0 flex-wrap items-center justify-end p-3 gap-2 border-t border-[#dee2e6] rounded-b-[calc(0.5rem-1px)] ${className}`}
     {...rest}
   >
     {children}
