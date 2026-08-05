@@ -1,0 +1,11 @@
+.order-list-item .badge {
+  white-space: normal !important;
+  word-break: break-word !important; 
+  text-align: center;
+  line-height: 1.3;
+}
+
+
+.order-list-item .order-actions {
+  min-width: 160px; 
+}

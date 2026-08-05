@@ -1,0 +1,87 @@
+/* src/components/Auth/AuthForms.css */
+:root {
+  --brand-primary-color: #c07722 !important;
+  --brand-primary-hover-color: #a5671e !important;
+  --brand-secondary-color: #ffc633 !important;
+  --brand-text-on-primary: #ffffff !important;
+  --brand-text-color: #333 !important;
+  --brand-icon-color: var(--brand-primary-color) !important;
+}
+
+.btn-brand {
+  background-color: var(--brand-primary-color) !important;
+  border-color: var(--brand-primary-color) !important;
+  color: var(--brand-text-on-primary) !important;
+  font-weight: 600;
+  padding-top: 0.65rem;
+  padding-bottom: 0.65rem;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out,
+    box-shadow 0.15s ease-in-out;
+}
+
+.btn-brand:hover,
+.btn-brand:focus,
+.btn-brand:active {
+  background-color: var(--brand-primary-hover-color) !important;
+  border-color: var(--brand-primary-hover-color) !important;
+  color: var(--brand-text-on-primary) !important;
+  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.45) !important;
+}
+
+.link-brand {
+  color: var(--brand-primary-color) !important;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 0.15s ease-in-out;
+}
+
+.link-brand:hover {
+  color: var(--brand-secondary-color) !important;
+  text-decoration: underline;
+}
+
+.input-group-text-brand {
+  background-color: #f8f9fa !important;
+  border-right: none;
+}
+.input-group .form-control-brand-focus {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.input-group .input-group-text-brand {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.form-control-brand-focus {
+  border-left: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out !important;
+}
+
+.form-control-brand-focus:focus {
+  border-color: var(--brand-secondary-color) !important;
+  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.35) !important;
+}
+
+.btn-toggle-password {
+  border-left-width: 0;
+}
+.btn-toggle-password:focus {
+  border-color: #ced4da !important;
+  box-shadow: 0 0 0 0.25rem rgba(255, 198, 51, 0.35) !important;
+}
+.btn-toggle-password svg {
+  color: var(--brand-icon-color) !important;
+  transition: color 0.15s ease-in-out;
+}
+.btn-toggle-password:hover svg {
+  color: var(--brand-secondary-color);
+}
+.input-group > .btn-toggle-password {
+  border-top-right-radius: var(--bs-border-radius) !important;
+  border-bottom-right-radius: var(--bs-border-radius) !important;
+}
+
+.input-group-text-brand-textarea {
+  align-self: stretch;
+}

@@ -1,0 +1,70 @@
+:root {
+  --brand-primary: #c07722;
+  --brand-secondary: #a56317;
+  --text-dark-custom: #2c3e50;
+  --text-body-custom: #495057;
+  --bg-soft-custom: #f8f9fa;
+  --border-color-custom: #e9ecef;
+}
+
+.privacy-page-container {
+  background-color: transparent !important;
+  padding-bottom: 4rem;
+}
+
+.privacy-card .card-header {
+  background-color: transparent !important;
+  border-bottom: 2px solid var(--border-color-custom);
+}
+
+.privacy-card .card-header .h2,
+.privacy-card .card-header .h3 {
+  color: var(--text-dark-custom);
+  font-weight: 600;
+}
+
+.privacy-card .card-body {
+  line-height: 1.7;
+  color: var(--text-body-custom);
+}
+
+.privacy-card .card-body .lead {
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.privacy-card .section-title {
+  color: var(--text-dark-custom);
+  border-left: 4px solid var(--brand-primary);
+  padding-left: 12px;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.privacy-card ul {
+  padding-left: 1.5rem;
+}
+
+.privacy-card li {
+  margin-bottom: 0.5rem;
+}
+
+.privacy-card .link-brand {
+  color: var(--brand-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.privacy-card .link-brand:hover {
+  color: var(--brand-secondary);
+  text-decoration: underline;
+}
+
+.breadcrumb-custom-privacy .breadcrumb-item a {
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+
+.breadcrumb-custom-privacy .breadcrumb-item a:hover {
+  text-decoration: underline;
+}

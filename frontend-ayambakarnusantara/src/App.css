@@ -1,0 +1,163 @@
+:root {
+  --brand-primary: #c07722 !important;
+  --brand-secondary: #a56317 !important;
+  --banner-height: 40px;
+  --navbar-height: 70px;
+  --brand-primary-color: #c07722 !important;
+  --brand-secondary-color: #a56317 !important;
+  --text-on-brand-primary-color: #ffffff !important;
+  --light-background-chat: #f8f9fa !important;
+  --chat-shadow-color: rgba(0, 0, 0, 0.15);
+  --chat-shadow-hover-color: rgba(0, 0, 0, 0.25);
+  --chat-modal-max-width: 700px;
+  --chat-modal-max-height: 500px;
+  --chat-modal-border-radius: 0.75rem !important;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  background-color: #f3d1a3 !important;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+.small-banner.alert {
+  font-size: 1rem !important;
+  margin-bottom: 0rem !important;
+  padding-top: 0.5rem !important;
+  padding-bottom: 1rem !important;
+  border-radius: 0 !important;
+}
+
+.small-banner .alert-heading {
+  font-size: 0.9rem !important;
+  margin-bottom: 0;
+}
+
+.page-content-container {
+  padding-top: 0px !important;
+}
+
+.global-chat-app-toggle-button {
+  position: fixed !important;
+  bottom: 22px;
+  right: 22px;
+  z-index: 1040 !important;
+  width: var(--chat-toggle-button-size);
+  height: var(--chat-toggle-button-size);
+  border-radius: 50% !important;
+  background-color: var(--brand-primary-color) !important;
+  color: var(--text-on-brand-primary-color) !important;
+  border: none !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  padding: 0;
+  box-shadow: 0 5px 15px var(--chat-shadow-color) !important;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+    box-shadow 0.25s ease-out, background-color 0.2s ease-out;
+  cursor: pointer;
+}
+
+.global-chat-app-toggle-button:hover {
+  transform: scale(1.1) translateY(-2px);
+  box-shadow: 0 7px 18px var(--chat-shadow-hover-color) !important;
+  background-color: var(--brand-secondary-color) !important;
+}
+
+.global-chat-app-toggle-button:focus,
+.global-chat-app-toggle-button:active {
+  outline: none !important;
+  box-shadow: 0 0 0 0.25rem rgba(192, 119, 34, 0.45) !important;
+}
+
+.global-chat-modal-dialog.modal-dialog {
+  position: fixed !important;
+  right: 20px;
+  bottom: 15px;
+  margin: 0 !important;
+  max-width: var(--chat-modal-max-width);
+  width: calc(100% - 30px);
+  z-index: 1055 !important;
+  pointer-events: none;
+}
+
+.modal.show .global-chat-modal-dialog.modal-dialog {
+  pointer-events: auto;
+}
+
+.global-chat-modal-dialog.modal-dialog {
+  position: fixed !important;
+  right: 20px;
+  bottom: 15px;
+  margin: 0 !important;
+  max-width: var(--chat-modal-max-width);
+  width: calc(100% - 30px);
+  z-index: 1055 !important;
+  opacity: 0;
+  transform: translateY(25px) scale(0.98);
+  transition: opacity 1s ease-in-out,
+    transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1) !important;
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.modal.show .global-chat-modal-dialog.modal-dialog {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.global-chat-modal-content {
+  height: 70vh;
+  max-height: var(--chat-modal-max-height);
+  border-radius: var(--chat-modal-border-radius) !important;
+  box-shadow: 0 7px 22px rgba(0, 0, 0, 0.15) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  border: none !important;
+  background-color: var(--light-background-chat) !important;
+  overflow: hidden !important;
+}
+
+.global-chat-modal-body {
+  padding: 0 !important;
+  flex-grow: 1;
+  display: flex !important;
+  overflow: hidden !important;
+}
+
+.global-chat-window-modal-version {
+  width: 100% !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background-color: transparent !important;
+}
+
+@media (max-width: 576px) {
+  .global-chat-modal-dialog.modal-dialog {
+    right: 10px;
+    bottom: 10px;
+    width: calc(100% - 20px);
+    max-width: none;
+  }
+
+  .global-chat-modal-content {
+    height: calc(70vh - 70px);
+    max-height: calc(100vh - 20px);
+    border-radius: 10px !important;
+  }
+
+  .global-chat-app-toggle-button {
+    width: 52px;
+    height: 52px;
+    font-size: 1.3rem;
+    bottom: 15px;
+    right: 15px;
+  }
+}

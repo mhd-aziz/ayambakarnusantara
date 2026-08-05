@@ -1,0 +1,33 @@
+.order-page-container {
+  padding-bottom: 3rem;
+}
+
+.order-page-title {
+  color: #c07722;
+  font-weight: 600;
+  padding-bottom: 0.75rem;
+}
+
+.order-list-item {
+  transition: background-color 0.2s ease-in-out;
+  border-radius: 0.5rem !important;
+}
+.order-list-item:hover {
+  background-color: #f8f9fa;
+}
+
+.order-list-item strong {
+  font-size: 0.9em;
+  color: #6c757d;
+}
+
+.order-list-item .badge {
+  font-size: 0.85em;
+  font-weight: 500;
+}
+
+.order-list-item .order-id-text {
+  font-family: monospace;
+  font-size: 0.9em;
+  color: #343a40;
+}

@@ -1,0 +1,32 @@
+.review-card {
+  border-radius: 0.5rem;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
+  background-color: white !important;
+  height: 100%;
+}
+
+.review-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.review-card .card-body {
+  padding: 1.25rem;
+  background-color: transparent !important;
+}
+
+.review-card .review-author-name {
+  font-weight: 600;
+  color: #343a40;
+}
+
+.review-card .review-date {
+  font-size: 0.8rem;
+  color: #6c757d;
+}
+
+.review-card .review-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #495057;
+}

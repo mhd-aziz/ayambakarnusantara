@@ -1,0 +1,71 @@
+:root {
+  --brand-primary: #c07722;
+  --brand-secondary: #a56317;
+  --text-dark-custom: #2c3e50;
+  --text-body-custom: #495057;
+  --bg-soft-custom: #f8f9fa;
+  --border-color-custom: #e9ecef;
+}
+
+.terms-page-container {
+  background-color: transparent !important;
+  padding-bottom: 4rem;
+}
+
+.terms-card .card-header {
+  background-color: transparent !important;
+  border-bottom: 2px solid var(--border-color-custom);
+}
+
+.terms-card .card-header .h2,
+.terms-card .card-header .h3 {
+  color: var(--text-dark-custom);
+  font-weight: 600;
+}
+
+.terms-card .card-body {
+  line-height: 1.7;
+  color: var(--text-body-custom);
+}
+
+.terms-card .card-body .lead {
+  font-size: 1.1rem;
+  font-weight: 400;
+}
+
+.terms-card .section-title {
+  color: var(--text-dark-custom);
+  border-left: 4px solid var(--brand-primary);
+  padding-left: 12px;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.terms-card ul,
+.terms-card ol {
+  padding-left: 1.5rem;
+}
+
+.terms-card li {
+  margin-bottom: 0.5rem;
+}
+
+.terms-card .link-brand {
+  color: var(--brand-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.terms-card .link-brand:hover {
+  color: var(--brand-secondary);
+  text-decoration: underline;
+}
+
+.breadcrumb-custom-terms .breadcrumb-item a {
+  color: var(--brand-primary);
+  text-decoration: none;
+}
+
+.breadcrumb-custom-terms .breadcrumb-item a:hover {
+  text-decoration: underline;
+}
