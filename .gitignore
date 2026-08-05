@@ -31,5 +31,5 @@ Thumbs.db
 *.swp
 
 # === Supabase (lokal) ===
-supabase/.temp/
-supabase/.branches
+**/supabase/.temp/
+**/supabase/.branches
