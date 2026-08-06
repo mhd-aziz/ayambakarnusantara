@@ -301,6 +301,10 @@ exports.getMidtransTransactionStatus = async (req, res) => {
 
     const currentInternalPaymentStatus = pd.status;
     const currentInternalOrderStatus = orderData.order_status;
+    // Penjaga terminal: order yang sudah lunas ("paid") TIDAK BOLEH
+    // diturunkan statusnya oleh respons pending/deny/expire/cancel
+    // (polling status bisa kembali tidak berurutan setelah pembayaran lunas).
+    const isOrderAlreadyPaid = currentInternalPaymentStatus === "paid";
 
     let needsUpdate = false;
     let newPd = { ...pd };
@@ -309,38 +313,40 @@ exports.getMidtransTransactionStatus = async (req, res) => {
     const { transaction_status, fraud_status, payment_type, transaction_id } =
       paymentGatewayStatusResponse;
 
-    if (transaction_status === "capture") {
-      if (
-        fraud_status === "accept" &&
+    if (!isOrderAlreadyPaid) {
+      if (transaction_status === "capture") {
+        if (
+          fraud_status === "accept" &&
+          currentInternalPaymentStatus !== "paid"
+        ) {
+          newOrderStatus = "PROCESSING";
+          newPd.status = "paid";
+          needsUpdate = true;
+        }
+      } else if (
+        transaction_status === "settlement" &&
         currentInternalPaymentStatus !== "paid"
       ) {
         newOrderStatus = "PROCESSING";
         newPd.status = "paid";
         needsUpdate = true;
+      } else if (
+        transaction_status === "pending" &&
+        currentInternalPaymentStatus !== "pending_gateway_payment"
+      ) {
+        newOrderStatus = "AWAITING_PAYMENT";
+        newPd.status = "pending_gateway_payment";
+        needsUpdate = true;
+      } else if (
+        (transaction_status === "deny" ||
+          transaction_status === "expire" ||
+          transaction_status === "cancel") &&
+        currentInternalOrderStatus !== "PAYMENT_FAILED"
+      ) {
+        newOrderStatus = "PAYMENT_FAILED";
+        newPd.status = transaction_status;
+        needsUpdate = true;
       }
-    } else if (
-      transaction_status === "settlement" &&
-      currentInternalPaymentStatus !== "paid"
-    ) {
-      newOrderStatus = "PROCESSING";
-      newPd.status = "paid";
-      needsUpdate = true;
-    } else if (
-      transaction_status === "pending" &&
-      currentInternalPaymentStatus !== "pending_gateway_payment"
-    ) {
-      newOrderStatus = "AWAITING_PAYMENT";
-      newPd.status = "pending_gateway_payment";
-      needsUpdate = true;
-    } else if (
-      (transaction_status === "deny" ||
-        transaction_status === "expire" ||
-        transaction_status === "cancel") &&
-      currentInternalOrderStatus !== "PAYMENT_FAILED"
-    ) {
-      newOrderStatus = "PAYMENT_FAILED";
-      newPd.status = transaction_status;
-      needsUpdate = true;
     }
 
     if (needsUpdate) {
@@ -754,12 +760,23 @@ exports.handlePaymentNotification = async (req, res) => {
       });
     }
 
-    // 2. Mapping gatewayOrderId (format "<orderId>-<timestamp>") ke orderId internal.
-    //    orderId internal = uuid (mengandung "-"), timestamp = angka tanpa "-",
-    //    jadi potong dari dash terakhir.
-    const dashIdx = gatewayOrderId.lastIndexOf("-");
-    const orderId =
-      dashIdx > 0 ? gatewayOrderId.slice(0, dashIdx) : gatewayOrderId;
+    // 2. Mapping gatewayOrderId -> orderId internal.
+    //    Format gateway: "<orderId>-<timestamp>" (pembayaran pertama) atau
+    //    "<orderId>-RETRY-<timestamp>" (pembayaran ulang). Timestamp selalu
+    //    angka; potong dari belakang: buang "-<angka>", lalu bila sebelumnya
+    //    ada marker "-RETRY", buang juga. Aman karena id internal uuid —
+    //    hanya akhiran yang dipotong, bukan pemenggalan di tengah.
+    const gatewayParts = gatewayOrderId.split("-");
+    if (
+      gatewayParts.length > 1 &&
+      /^\d+$/.test(gatewayParts[gatewayParts.length - 1])
+    ) {
+      gatewayParts.pop(); // buang timestamp
+      if (gatewayParts[gatewayParts.length - 1] === "RETRY") {
+        gatewayParts.pop(); // buang marker retry
+      }
+    }
+    const orderId = gatewayParts.join("-");
 
     const orderData = await getOrderRow(orderId);
     if (!orderData) {
@@ -777,39 +794,45 @@ exports.handlePaymentNotification = async (req, res) => {
 
     // 3. Sinkronkan status (pola sama dengan getMidtransTransactionStatus)
     const currentPaymentStatus = pd.status;
+    // Penjaga terminal: order yang sudah lunas ("paid") TIDAK BOLEH
+    // diturunkan statusnya oleh notifikasi pending/deny/expire/cancel yang
+    // datang telat, duplikat, atau tidak berurutan dari Midtrans.
+    const isOrderAlreadyPaid = currentPaymentStatus === "paid";
     let needsUpdate = false;
     let newPd = { ...pd };
     let newOrderStatus = orderData.order_status;
 
-    if (transaction_status === "capture") {
-      if (fraud_status === "accept" && currentPaymentStatus !== "paid") {
+    if (!isOrderAlreadyPaid) {
+      if (transaction_status === "capture") {
+        if (fraud_status === "accept" && currentPaymentStatus !== "paid") {
+          newOrderStatus = "PROCESSING";
+          newPd.status = "paid";
+          needsUpdate = true;
+        }
+      } else if (
+        transaction_status === "settlement" &&
+        currentPaymentStatus !== "paid"
+      ) {
         newOrderStatus = "PROCESSING";
         newPd.status = "paid";
         needsUpdate = true;
+      } else if (
+        transaction_status === "pending" &&
+        currentPaymentStatus !== "pending_gateway_payment"
+      ) {
+        newOrderStatus = "AWAITING_PAYMENT";
+        newPd.status = "pending_gateway_payment";
+        needsUpdate = true;
+      } else if (
+        (transaction_status === "deny" ||
+          transaction_status === "expire" ||
+          transaction_status === "cancel") &&
+        orderData.order_status !== "PAYMENT_FAILED"
+      ) {
+        newOrderStatus = "PAYMENT_FAILED";
+        newPd.status = transaction_status;
+        needsUpdate = true;
       }
-    } else if (
-      transaction_status === "settlement" &&
-      currentPaymentStatus !== "paid"
-    ) {
-      newOrderStatus = "PROCESSING";
-      newPd.status = "paid";
-      needsUpdate = true;
-    } else if (
-      transaction_status === "pending" &&
-      currentPaymentStatus !== "pending_gateway_payment"
-    ) {
-      newOrderStatus = "AWAITING_PAYMENT";
-      newPd.status = "pending_gateway_payment";
-      needsUpdate = true;
-    } else if (
-      (transaction_status === "deny" ||
-        transaction_status === "expire" ||
-        transaction_status === "cancel") &&
-      orderData.order_status !== "PAYMENT_FAILED"
-    ) {
-      newOrderStatus = "PAYMENT_FAILED";
-      newPd.status = transaction_status;
-      needsUpdate = true;
     }
 
     if (needsUpdate) {
@@ -832,7 +855,7 @@ exports.handlePaymentNotification = async (req, res) => {
               0,
               20
             )} telah diterima. Pesanan sedang diproses penjual.`,
-            data: { orderId, type: "PAYMENT_SUCCESS" },
+            data: { orderId, type: "PAYMENT_CONFIRMED" },
           });
         } catch (notifError) {
           console.error(

@@ -31,9 +31,18 @@ function mapProductList(rows) {
   return (rows || []).map(mapProduct);
 }
 
+// Batas atas input produk — disamakan dengan kapasitas kolom DB
+// (price numeric(12,2) maks 9.999.999.999,99; stock int maks ~2,1 miliar),
+// plus batas bisnis agar nilai ekstrem ditolak dengan 400 yang ramah,
+// bukan error DB mentah berstatus 500.
+const MAX_PRODUCT_PRICE = 9999999999.99;
+const MAX_PRODUCT_STOCK = 999999999;
+const VALID_CATEGORIES = ["Makanan", "Minuman", "Camilan"];
+
 exports.createProduct = async (req, res) => {
   const uid = req.user?.uid;
   const { name, description, price, stock, category } = req.body;
+  const normalizedCategory = String(category || "").trim();
 
   if (!uid) {
     return handleError(res, {
@@ -50,17 +59,38 @@ exports.createProduct = async (req, res) => {
     });
   }
 
-  if (isNaN(parseFloat(price)) || parseFloat(price) <= 0) {
+  const parsedPrice = parseFloat(price);
+  if (isNaN(parsedPrice) || parsedPrice <= 0) {
     return handleError(res, {
       statusCode: 400,
       message: "Harga harus berupa angka positif.",
     });
   }
+  if (parsedPrice > MAX_PRODUCT_PRICE) {
+    return handleError(res, {
+      statusCode: 400,
+      message: `Harga maksimal Rp${MAX_PRODUCT_PRICE.toLocaleString("id-ID")}.`,
+    });
+  }
 
-  if (isNaN(parseInt(stock)) || parseInt(stock) < 0) {
+  const parsedStock = parseInt(stock);
+  if (isNaN(parsedStock) || parsedStock < 0) {
     return handleError(res, {
       statusCode: 400,
       message: "Stok harus berupa angka non-negatif.",
+    });
+  }
+  if (parsedStock > MAX_PRODUCT_STOCK) {
+    return handleError(res, {
+      statusCode: 400,
+      message: `Stok maksimal ${MAX_PRODUCT_STOCK.toLocaleString("id-ID")} unit.`,
+    });
+  }
+
+  if (!VALID_CATEGORIES.includes(normalizedCategory)) {
+    return handleError(res, {
+      statusCode: 400,
+      message: `Kategori harus salah satu dari: ${VALID_CATEGORIES.join(", ")}.`,
     });
   }
 
@@ -125,9 +155,9 @@ exports.createProduct = async (req, res) => {
         owner_uid: uid,
         name,
         description,
-        price: parseFloat(price),
-        stock: parseInt(stock),
-        category,
+        price: parsedPrice,
+        stock: parsedStock,
+        category: normalizedCategory,
         product_image_url: productImageURL,
       })
       .select()
@@ -153,6 +183,7 @@ exports.getAllProducts = async (req, res) => {
       searchById,
       searchByName,
       category,
+      shopId,
       sortBy,
       order = "asc",
       page = 1,
@@ -160,8 +191,8 @@ exports.getAllProducts = async (req, res) => {
       nameCaseInsensitive = "true",
     } = req.query;
 
-    const pageNum = parseInt(page, 10) || 1;
-    const limitNum = parseInt(limit, 10) || 10;
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10) || 10));
     const offset = (pageNum - 1) * limitNum;
     const isNameSearchCaseInsensitive = nameCaseInsensitive === "true";
 
@@ -177,6 +208,13 @@ exports.getAllProducts = async (req, res) => {
     } else {
       if (category) {
         query = query.eq("category", category);
+      }
+
+      // Filter per toko: dipakai frontend untu menampilkan "Produk lain dari
+      // toko ini" di detail produk (DetailMenuPage) — agar tidak campur produk
+      // dari toko lain.
+      if (shopId) {
+        query = query.eq("shop_id", shopId);
       }
 
       if (searchByName) {
@@ -422,6 +460,12 @@ exports.updateProduct = async (req, res) => {
           message: "Harga harus berupa angka positif.",
         });
       }
+      if (parsedPrice > MAX_PRODUCT_PRICE) {
+        return handleError(res, {
+          statusCode: 400,
+          message: `Harga maksimal Rp${MAX_PRODUCT_PRICE.toLocaleString("id-ID")}.`,
+        });
+      }
       fieldsToUpdate.price = parsedPrice;
     }
     if (stock !== undefined && stock !== "") {
@@ -432,10 +476,23 @@ exports.updateProduct = async (req, res) => {
           message: "Stok harus berupa angka non-negatif.",
         });
       }
+      if (parsedStock > MAX_PRODUCT_STOCK) {
+        return handleError(res, {
+          statusCode: 400,
+          message: `Stok maksimal ${MAX_PRODUCT_STOCK.toLocaleString("id-ID")} unit.`,
+        });
+      }
       fieldsToUpdate.stock = parsedStock;
     }
     if (category && category.trim() !== "") {
-      fieldsToUpdate.category = category.trim();
+      const normalizedCategory = category.trim();
+      if (!VALID_CATEGORIES.includes(normalizedCategory)) {
+        return handleError(res, {
+          statusCode: 400,
+          message: `Kategori harus salah satu dari: ${VALID_CATEGORIES.join(", ")}.`,
+        });
+      }
+      fieldsToUpdate.category = normalizedCategory;
     }
 
     if (Object.keys(fieldsToUpdate).length === 0) {

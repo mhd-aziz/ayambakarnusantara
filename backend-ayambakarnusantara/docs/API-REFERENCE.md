@@ -48,7 +48,7 @@ Legend: publik = tanpa login, login = perlu akun, seller = perlu role seller.
 | GET | `/product/my-products` | seller | Produk toko sendiri |
 | PUT | `/product/:productId` | seller | multipart, field sama + `removeProductImage?` |
 | DELETE | `/product/:productId` | seller | Hapus produk + gambar storage |
-| GET | `/product?category=&searchByName=&sortBy=&order=&page=&limit=` | publik | Katalog, default sort terbaru, limit 10 |
+| GET | `/product?category=&searchByName=&shopId=&sortBy=&order=&page=&limit=` | publik | Katalog, default sort terbaru, limit 10. `shopId` memfilter produk milik satu toko (dipakai blok "produk lain dari toko ini") |
 | GET | `/product/recommendations` | publik | Produk rating 4 ke atas |
 | GET | `/product/:productId` | publik | Detail produk |
 
@@ -58,7 +58,7 @@ Legend: publik = tanpa login, login = perlu akun, seller = perlu role seller.
 |---|---|---|---|
 | POST | `/cart/items` | login | `{ productId, quantity }`, cek stok, salin info item |
 | GET | `/cart` | login | `{ items, totalPrice }` |
-| PUT | `/cart/items/:productId` | login | `{ quantity }`, 0 = hapus |
+| PUT | `/cart/items/:productId` | login | `{ newQuantity }`, 0 = hapus |
 | DELETE | `/cart/items/:productId` | login | Hapus item |
 | DELETE | `/cart` | login | Kosongkan keranjang |
 
@@ -93,7 +93,7 @@ Legend: publik = tanpa login, login = perlu akun, seller = perlu role seller.
 | GET | `/rating/:productId` | publik | Rating produk + info user |
 | PUT | `/rating/:ratingId` | login | `{ ratingValue?, reviewText? }`, hitung ulang rata-rata |
 | DELETE | `/rating/:ratingId` | login | Hapus, hitung ulang rata-rata |
-| GET | `/rating?sortBy=&order=&limit=` | publik | Semua rating (dipakai beranda) |
+| GET | `/rating?sortBy=&sortOrder=&limit=` | publik | Semua rating (dipakai beranda). `sortBy` = `created_at` / `rating_value` |
 
 ## Chat
 

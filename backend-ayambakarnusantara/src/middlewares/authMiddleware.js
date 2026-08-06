@@ -40,6 +40,37 @@ function isJwtExpiredError(error) {
   return msg.includes("JWT expired") || msg.includes("Token has expired");
 }
 
+// Single-flight refresh: hanya SATU pemanggilan refreshSession yang berjalan
+// per refresh token dalam satu waktu. Request paralel yang access token-nya
+// kedaluwarsa bersama-sama menunggu hasil refresh yang sama — mencegah rotasi
+// refresh token saling membatalkan (race) yang berujung logout paksa user.
+let refreshInFlight = null; // { refreshToken, promise }
+
+async function refreshSessionSingleFlight(refreshToken) {
+  if (refreshInFlight && refreshInFlight.refreshToken === refreshToken) {
+    try {
+      return await refreshInFlight.promise;
+    } catch {
+      // refresh yang sedang berjalan gagal — lanjut coba sendiri di bawah
+    }
+  }
+  const promise = (async () => {
+    const { data, error } = await supabaseAnon.auth.refreshSession({
+      refresh_token: refreshToken,
+    });
+    if (error) throw error;
+    return data.session || null;
+  })();
+  refreshInFlight = { refreshToken, promise };
+  try {
+    return await promise;
+  } finally {
+    if (refreshInFlight && refreshInFlight.promise === promise) {
+      refreshInFlight = null;
+    }
+  }
+}
+
 exports.authenticateToken = async (req, res, next) => {
   let token = null;
 
@@ -73,22 +104,19 @@ exports.authenticateToken = async (req, res, next) => {
       const refreshToken = req.cookies && req.cookies.authRefreshToken;
       if (refreshToken) {
         try {
-          const { data: refreshData, error: refreshError } =
-            await supabaseAnon.auth.refreshSession({
-              refresh_token: refreshToken,
-            });
-          if (!refreshError && refreshData?.session) {
-            res.cookie("authToken", refreshData.session.access_token, authCookieOptions);
+          const session = await refreshSessionSingleFlight(refreshToken);
+          if (session) {
+            res.cookie("authToken", session.access_token, authCookieOptions);
             res.cookie(
               "authRefreshToken",
-              refreshData.session.refresh_token,
+              session.refresh_token,
               refreshCookieOptions
             );
             const { data: userData } = await supabaseAdmin.auth.getUser(
-              refreshData.session.access_token
+              session.access_token
             );
             req.user = normalizeUser(userData.user);
-            req.supabaseAccessToken = refreshData.session.access_token;
+            req.supabaseAccessToken = session.access_token;
             return next();
           }
         } catch (refreshErr) {

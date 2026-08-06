@@ -83,9 +83,28 @@ export const AuthProvider = ({ children }) => {
     const responseInterceptor = axios.interceptors.response.use(
       (response) => response,
       async (error) => {
+        // Retry SEKALI untuk 401 (di luar endpoint auth): saat access token
+        // kedaluwarsa dan browser mengirim beberapa request paralel, request
+        // yang kalah refresh bisa menerima 401 karena refresh token sudah
+        // dirotasi oleh request lain. Cookie baru sudah ter-set oleh request
+        // pemenang, jadi retry ini berjalan dengan sesi yang sudah segar.
+        // Endpoint auth/login|register|logout dikecualikan agar alur login
+        // (yang bisa 401 saat data profil belum lengkap) tidak ikut retry.
+        const originalRequest = error.config;
+        const url = (originalRequest && originalRequest.url) || "";
+        const isAuthFlowEndpoint = /\/auth\/(login|register|logout)$/.test(url);
+        if (
+          error.response?.status === 401 &&
+          originalRequest &&
+          !originalRequest._retried &&
+          !isAuthFlowEndpoint
+        ) {
+          originalRequest._retried = true;
+          return axios(originalRequest);
+        }
         if (error.response?.status === 401) {
           console.log(
-            "AuthContext: API mengembalikan 401, sesi habis. Memanggil logout."
+            "AuthContext: API mengembalikan 401 (retry gagal), sesi habis. Memanggil logout."
           );
           await logout();
         }

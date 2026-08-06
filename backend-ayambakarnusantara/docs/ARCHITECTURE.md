@@ -131,7 +131,7 @@ Role seller disimpan di tabel `profiles.role`. Middleware `isSeller` cek role da
 ## 6. Pola penting di kode
 
 1. Denormalisasi disengaja. Cart dan order menyimpan salinan `name`, `price`, `shopId` produk supaya checkout tidak membaca produk satu per satu dan perubahan harga tidak mengubah transaksi lama.
-2. Harga dan stok selalu dihitung ulang dari database saat membuat order. Nilai dari client tidak dipercaya.
+2. Stok selalu divalidasi dan dikurangi dari database saat membuat order. Harga memakai snapshot dari keranjang (ditetapkan dari harga DB saat item dimasukkan ke keranjang). Nilai dari client tidak dipercaya.
 3. Operasi multi-tulis memakai fungsi RPC atomik di Postgres (`create_order`, `cancel_order`, `add_rating`, dan seterusnya), bukan batch manual.
 4. Upload gambar lewat Supabase Storage. File yang dihapus dari database ikut dihapus dari storage.
 5. Polling, bukan websocket: chat (interval di GlobalChat), notifikasi (60 detik di Navbar), status pembayaran (tombol cek manual).

@@ -186,7 +186,7 @@ Chatbot tidak selalu tersedia. Kalau server chatbot mati, muncul error "chatbot 
 ## 10. Skenario yang harus tetap benar
 
 1. Stok tidak boleh minus. Buat order memvalidasi dan mengurangi stok atomik; cancel mengembalikan.
-2. Harga tidak bisa dimanipulasi client. Total selalu dihitung ulang dari database.
+2. Harga tidak bisa dimanipulasi client (berasal dari harga DB saat item dimasukkan ke keranjang). Stok selalu divalidasi dan dikurangi dari database saat membuat order.
 3. Rating tidak bisa spam. Satu order dikali satu produk = satu rating, hanya setelah COMPLETED.
 4. Seller hanya memproses pesanan yang memuat produk tokonya.
 5. Hapus = tuntas. Hapus produk ikut menghapus gambar; hapus akun menghapus semuanya.

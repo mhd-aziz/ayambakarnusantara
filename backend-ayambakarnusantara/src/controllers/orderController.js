@@ -435,10 +435,10 @@ exports.getOrderDetailsForSeller = async (req, res) => {
         message: "Pesanan tidak memiliki item.",
       });
     }
-    const orderBelongsToSellerShop = orderRow.items.every(
+    const orderHasItemFromSellerShop = orderRow.items.some(
       (item) => item.shopId === sellerOwnedShopId
     );
-    if (!orderBelongsToSellerShop) {
+    if (!orderHasItemFromSellerShop) {
       return handleError(res, {
         statusCode: 403,
         message:
@@ -608,14 +608,14 @@ exports.updateOrderStatusBySeller = async (req, res) => {
       });
     }
 
-    const orderBelongsToSellerShop = orderRow.items.every(
+    const orderHasItemFromSellerShop = orderRow.items.some(
       (item) => item.shopId === sellerShopId
     );
-    if (!orderBelongsToSellerShop) {
+    if (!orderHasItemFromSellerShop) {
       return handleError(res, {
         statusCode: 403,
         message:
-          "Anda tidak berhak memperbarui status pesanan ini karena tidak semua item berasal dari toko Anda.",
+          "Anda tidak berhak memperbarui status pesanan ini karena tidak terkait dengan toko Anda.",
       });
     }
 
@@ -959,6 +959,9 @@ exports.getOrders = async (req, res) => {
           message: "Seller tidak memiliki informasi toko yang valid.",
         });
       }
+      // Filter toko dilakukan DI SQL (shop_ids @> {shopId}) sebelum limit,
+      // supaya pesanan toko ini tidak terpotong oleh batas 50 order terbaru.
+      ordersQuery = ordersQuery.contains("shop_ids", [sellerOwnedShopId]);
       if (statusQuery && statusQuery.toUpperCase() !== "ALL") {
         ordersQuery = ordersQuery.eq("order_status", statusQuery.toUpperCase());
       }
@@ -984,17 +987,14 @@ exports.getOrders = async (req, res) => {
     let fetchedOrders = await mapOrdersAsync(orderRows || []);
 
     if (userRole === "seller") {
-      const sellerOwnedShopId = userData.shop_id;
-      fetchedOrders = fetchedOrders.filter(
-        (order) =>
-          order.items && order.items.some((item) => item.shopId === sellerOwnedShopId)
-      );
-
+      // Filter toko sudah dilakukan di SQL (contains shop_ids) — tidak perlu
+      // filter ulang di JavaScript yang bisa menghilangkan pesanan karena
+      // batas 50 order terbaru.
       if (fetchedOrders.length === 0) {
         return handleSuccess(
           res,
           200,
-          "Tidak ada pesanan yang cocok untuk toko Anda setelah filter.",
+          "Tidak ada pesanan untuk toko Anda.",
           []
         );
       }
