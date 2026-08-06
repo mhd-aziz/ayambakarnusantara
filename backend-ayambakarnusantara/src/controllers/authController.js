@@ -193,11 +193,24 @@ exports.forgotPassword = async (req, res) => {
   }
 
   try {
-    // Cek keberadaan user tanpa membocorkan informasi ke peminta
-    const { data: existingUser } = await supabaseAdmin.auth.admin.getUserByEmail(
-      email
-    );
-    if (!existingUser?.user) {
+    // Cek keberadaan user tanpa membocorkan informasi ke peminta.
+    // getUserByEmail bisa melempar error bila email tidak terdaftar /
+    // permission terbatas — perlakukan sebagai "tidak terdaftar" agar tetap
+    // respons netral (anti-enumeration) dan tidak menjadi 500.
+    let isRegistered = false;
+    try {
+      const { data: existingUser, error: findError } =
+        await supabaseAdmin.auth.admin.getUserByEmail(email);
+      if (findError) throw findError;
+      isRegistered = Boolean(existingUser?.user);
+    } catch (findErr) {
+      console.log(
+        `Permintaan reset password untuk ${email}: pencarian {terdaftar:false / error:${findErr?.message}}`
+      );
+      isRegistered = false;
+    }
+
+    if (!isRegistered) {
       console.log(`Permintaan reset password untuk email tidak terdaftar: ${email}`);
       return handleSuccess(
         res,
