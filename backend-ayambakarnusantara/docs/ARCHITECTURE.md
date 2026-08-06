@@ -17,7 +17,7 @@ Backend (Express 5) ------------> Supabase (PostgreSQL)
                                   - Fungsi RPC atomik (order, rating)
           |
           +--> Midtrans Snap (pembayaran online + webhook)
-          +--> OmniRoute (chatbot, via env RASA_WEBHOOK_URL)
+          +--> OmniRoute (chatbot, via env OMNIROUTE_API_URL / OMNIROUTE_API_KEY / OMNIROUTE_MODEL)
 ```
 
 Aturan dasar:
@@ -104,6 +104,7 @@ Route utama:
 | `/notifikasi` | Notifikasi | Login |
 | `/toko-saya/*` | Dashboard seller | Seller |
 | `/login`, `/register`, `/forgot-password` | Auth | Publik |
+| `/reset-password` | Atur ulang password (token dari URL hash) | Publik |
 
 ## 5. Sesi dan autentikasi
 
@@ -141,7 +142,7 @@ Role seller disimpan di tabel `profiles.role`. Middleware `isSeller` cek role da
 | Layanan | Cara dipakai | Kalau gagal |
 |---|---|---|
 | Midtrans Snap | `POST /payment/charge/:orderId` -> `redirect_url` -> buka tab baru. Status disinkron lewat webhook `POST /payment/notification` (verifikasi signature sha512, idempoten) + polling manual | Order tetap menunggu pembayaran |
-| OmniRoute (chatbot) | `POST /chatbot/ask` -> backend proxy ke `RASA_WEBHOOK_URL` | 503 "chatbot tidak tersedia" |
+| OmniRoute (chatbot) | `POST /chatbot/ask` -> backend proxy ke `OMNIROUTE_API_URL` (env `OMNIROUTE_API_KEY`, `OMNIROUTE_MODEL`) | 503 "chatbot tidak tersedia" |
 | Supabase | Admin + anon client; RLS melindungi tabel; fungsi RPC untuk transaksi | 500 dari handleError |
 
 ## 8. Aturan main saat mengubah kode

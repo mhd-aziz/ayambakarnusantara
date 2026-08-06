@@ -52,6 +52,24 @@ const forgotPassword = async (emailData) => {
   }
 };
 
+const resetPassword = async ({ accessToken, refreshToken, newPassword }) => {
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/auth/reset-password`,
+      { accessToken, refreshToken, newPassword },
+      { withCredentials: true }
+    );
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data || {
+        success: false,
+        message: "Terjadi kesalahan saat mengatur ulang password.",
+      }
+    );
+  }
+};
+
 const logoutUser = async () => {
   try {
     const response = await axios.post(
@@ -74,4 +92,4 @@ const logoutUser = async () => {
 };
 
 
-export { registerUser, loginUser, forgotPassword, logoutUser};
+export { registerUser, loginUser, forgotPassword, resetPassword, logoutUser};

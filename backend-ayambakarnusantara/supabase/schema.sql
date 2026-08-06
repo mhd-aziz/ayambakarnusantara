@@ -179,6 +179,7 @@ create table if not exists public.feedback (
   email text,
   subject text,
   message text,
+  status text not null default 'new',
   created_at timestamptz not null default now()
 );
 

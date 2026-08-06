@@ -13,12 +13,13 @@ Dokumentasi lengkap ada di `backend-ayambakarnusantara/docs/`. Urutan bacaan yan
 
 1. `docs/MVP.md` — gambaran singkat produk, fitur, dan cara pakai
 2. `docs/IDEA.md` — visi dan alasan project ini dibuat
-3. `docs/ARCHITECTURE.md` — bagaimana sistem bekerja dari atas ke bawah
-4. `docs/DATA-MODEL.md` — struktur tabel database
-5. `docs/API-REFERENCE.md` — daftar lengkap endpoint backend
-6. `docs/BUSINESS-FLOW.md` — aturan bisnis dan alur pesanan
-7. `docs/ROADMAP.md` — masalah yang sudah/belum diperbaiki
-8. `docs/REVIEW-2026-08-05.md` — hasil audit menyeluruh kode (backend + frontend)
+3. `docs/PRD.md` — kebutuhan fungsional dan non-fungsional produk
+4. `docs/ARCHITECTURE.md` — bagaimana sistem bekerja dari atas ke bawah
+5. `docs/DATA-MODEL.md` — struktur tabel database
+6. `docs/API-REFERENCE.md` — daftar lengkap endpoint backend
+7. `docs/BUSINESS-FLOW.md` — aturan bisnis dan alur pesanan
+8. `docs/ROADMAP.md` — masalah yang sudah/belum diperbaiki
+9. `docs/REVIEW-2026-08-05.md` — hasil audit menyeluruh kode (backend + frontend)
 
 ## Menjalankan di lokal
 

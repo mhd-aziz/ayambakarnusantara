@@ -26,6 +26,9 @@ vi.mock("./firebase-config", async (importOriginal) => ({
 }));
 
 vi.mock("./pages/HomePage", () => ({ default: () => <div>HomePage</div> }));
+vi.mock("./pages/ResetPasswordPage", () => ({
+  default: () => <div>ResetPasswordPage</div>,
+}));
 vi.mock("./pages/MenuPage", () => ({ default: () => <div>MenuPage</div> }));
 vi.mock("./pages/DetailMenuPage", () => ({ default: () => <div>DetailMenuPage</div> }));
 vi.mock("./pages/ShopPage", () => ({ default: () => <div>ShopPage</div> }));

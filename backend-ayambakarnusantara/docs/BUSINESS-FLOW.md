@@ -139,21 +139,51 @@ Pesan dirender sebagai teks polos di frontend (tanpa innerHTML). Ini sengaja, su
 - Tersimpan di tabel `notifications` (in-app).
 - Badge di navbar polling tiap 60 detik.
 
-## 8. Alur chatbot
+## 8. Alur lupa / reset password
+
+```
+ForgotPasswordForm (/forgot-password) -> email
+   v
+POST /auth/forgot-password { email }
+   v
+Supabase kirim email berisi tautan:
+   frontend /reset-password#access_token=...&refresh_token=...&type=recovery
+   v
+ResetPasswordPage (/reset-password) baca token dari hash URL
+   v
+User isi password baru + konfirmasi (min 6 karakter, harus sama)
+   v
+POST /auth/reset-password { accessToken, refreshToken, newPassword }
+   v
+Backend bangun sesi dari token recovery, update password di Supabase,
+hapus cookie sesi -> sukses -> redirect /login
+```
+
+- Tautan yang kedaluwarsa/tidak valid => halaman menampilkan "Minta Tautan Baru".
+- Password baru minimal 6 karakter; backend memvalidasi di server (bukan hanya di client).
+
+## 9. Alur chatbot
 
 ```
 Pane chatbot (tab di GlobalChat)
    v
 POST /chatbot/ask { message }
    v
-Backend proxy ke OmniRoute (env RASA_WEBHOOK_URL) + simpan riwayat
+Backend pilih konteks sesuai intent user:
+   - soal pesanan            -> DATA PESANAN USER (ambil order milik user, terbaru / by ID)
+   - soal produk / menu      -> DATA MENU UNGGULAN (8 produk terbaru + nama toko)
+   - soal toko / penjual     -> DATA TOKO TERSEDIA (10 toko terbaru + alamat)
+   - lainnya                 -> pengetahuan statis di SYSTEM_PROMPT (aturan marketplace)
+   v
+Backend proxy ke OmniRoute (env OMNIROUTE_API_URL / OMNIROUTE_API_KEY / OMNIROUTE_MODEL)
+   + simpan riwayat
    v
 Riwayat dimuat saat buka pane (20 terakhir)
 ```
 
 Chatbot tidak selalu tersedia. Kalau server chatbot mati, muncul error "chatbot tidak tersedia".
 
-## 9. Skenario yang harus tetap benar
+## 10. Skenario yang harus tetap benar
 
 1. Stok tidak boleh minus. Buat order memvalidasi dan mengurangi stok atomik; cancel mengembalikan.
 2. Harga tidak bisa dimanipulasi client. Total selalu dihitung ulang dari database.
@@ -162,7 +192,7 @@ Chatbot tidak selalu tersedia. Kalau server chatbot mati, muncul error "chatbot 
 5. Hapus = tuntas. Hapus produk ikut menghapus gambar; hapus akun menghapus semuanya.
 6. Transisi status tidak bisa melompat. Backend menolak transisi yang tidak valid.
 
-## 10. Batasan yang diketahui
+## 11. Batasan yang diketahui
 
 - Order multi-toko belum tuntas (lihat ROADMAP #3). Keranjang bisa berisi produk dari toko berbeda, notifikasi sudah ke semua seller, tapi seller belum bisa mengakses/mengupdate order multi-toko. Keputusan desain (blokir di checkout vs sub-order) masih terbuka.
 - Tidak ada pengiriman. Hanya ambil di tempat.

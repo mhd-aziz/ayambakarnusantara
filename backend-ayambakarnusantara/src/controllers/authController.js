@@ -232,6 +232,71 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
+exports.resetPassword = async (req, res) => {
+  const { accessToken, refreshToken, newPassword } = req.body;
+
+  if (!accessToken || !refreshToken) {
+    return handleError(res, {
+      statusCode: 400,
+      message: "Tautan reset password tidak valid. Silakan minta tautan baru.",
+    });
+  }
+  if (!newPassword) {
+    return handleError(res, {
+      statusCode: 400,
+      message: "Password baru wajib diisi.",
+    });
+  }
+  if (newPassword.length < 6) {
+    return handleError(res, {
+      statusCode: 400,
+      message: "Password baru minimal 6 karakter.",
+    });
+  }
+
+  try {
+    // Token recovery dikirim Supabase lewat URL email (hash #access_token + refresh_token).
+    // Bangun sesi dari token itu supaya updateUser berjalan atas nama pemilik email.
+    const { data: sessionData, error: sessionError } =
+      await supabaseAnon.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken,
+      });
+    if (sessionError || !sessionData?.user) {
+      console.error(
+        "resetPassword: sesi dari token recovery gagal dibuat:",
+        sessionError?.message || "user tidak ditemukan"
+      );
+      return handleError(res, {
+        statusCode: 400,
+        message:
+          "Tautan reset password tidak valid atau sudah kedaluwarsa. Silakan minta tautan baru.",
+      });
+    }
+
+    const { error: updateError } = await supabaseAnon.auth.updateUser({
+      password: newPassword,
+    });
+    if (updateError) throw updateError;
+
+    // Bersihkan sesi reset; user login ulang dengan password baru.
+    clearSessionCookies(res);
+
+    return handleSuccess(
+      res,
+      200,
+      "Password berhasil diubah. Silakan login dengan password baru Anda."
+    );
+  } catch (error) {
+    console.error("Error in resetPassword process:", error.code, error.message);
+    return handleError(
+      res,
+      error,
+      "Gagal mengubah password. Silakan coba lagi atau minta tautan baru."
+    );
+  }
+};
+
 exports.deleteUser = async (req, res) => {
   const uid = req.user?.uid;
   if (!uid) {

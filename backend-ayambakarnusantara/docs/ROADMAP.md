@@ -7,6 +7,7 @@ Acuan kerja untuk agen AI atau pengembang saat akan memperbaiki atau mengembangk
 - Semua alur utama jalan: akun, toko, produk, keranjang, pesanan, bayar, rating, chat, notifikasi.
 - Kode adalah sumber kebenaran. Dokumen dibuat dari pembacaan kode.
 - Audit menyeluruh terakhir: 5 Agustus 2026 (lihat `REVIEW-2026-08-05.md`).
+- 6 Agustus 2026: alur reset password diaktifkan (backend + halaman frontend), chatbot diperluas + kolom query diperbaiki, kolom `status` ditambahkan ke tabel `feedback`, dan `PRD.md` dibuat. Detail di Log perubahan.
 
 ## Prioritas 1 - Bug yang bisa crash atau memblokir alur
 
@@ -60,3 +61,4 @@ Acuan kerja untuk agen AI atau pengembang saat akan memperbaiki atau mengembangk
 |---|---|
 | 2026-08-04 | Analisis kode menyeluruh; semua dokumen dibuat |
 | 2026-08-05 | Migrasi frontend ke Vite + Tailwind lalu dikembalikan ke source original Bootstrap di atas Vite (user memilih tampilan original). Keamanan: XSS chat, rate limit feedback, webhook. Audit menyeluruh pertama (REVIEW-2026-08-05.md). Dokumen dipindah ke `backend-ayambakarnusantara/docs/`, skema SQL ke `backend-ayambakarnusantara/supabase/`, README dibuat di root |
+| 2026-08-06 | Fix alur reset password: backend `POST /auth/reset-password` (validasi token recovery Supabase + password min 6 karakter) dan halaman frontend `/reset-password` (`ResetPasswordPage`) yang membaca token dari hash URL. Chatbot: query daftar toko diperbaiki dari kolom `name` (tidak ada) menjadi `shop_name`, SYSTEM_PROMPT diperluas dengan pengetahuan lengkap marketplace (cara pesan, 2 metode bayar, status, rating, pickup only), konteks dinamis dipilih per intent (pesanan/menu/toko). Schema: kolom `status text not null default 'new'` ditambahkan ke tabel `feedback` (selaras dengan kode). Dokumen `PRD.md` dibuat |

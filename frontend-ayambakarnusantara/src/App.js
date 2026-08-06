@@ -14,6 +14,7 @@ import NavigationBar from "./components/Layout/NavigationBar";
 import Footer from "./components/Layout/Footer";
 import GlobalChat from "./components/Chat/GlobalChat";
 import HomePage from "./pages/HomePage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import LoginForm from "./components/Auth/LoginForm";
 import RegisterForm from "./components/Auth/RegisterForm";
 import ForgotPasswordForm from "./components/Auth/ForgotPasswordForm";
@@ -200,6 +201,7 @@ function App() {
           <Route path="/login" element={<HomePage />} />
           <Route path="/register" element={<HomePage />} />
           <Route path="/forgot-password" element={<HomePage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/menu" element={<MenuPage />} />
           <Route path="/menu/:productId" element={<DetailMenuPage />} />
           <Route path="/toko" element={<ShopPage />} />

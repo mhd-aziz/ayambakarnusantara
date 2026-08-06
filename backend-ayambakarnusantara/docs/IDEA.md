@@ -1,6 +1,6 @@
 # IDEA — Ayam Bakar Nusantara
 
-Dokumen ini adalah acuan keputusan: kenapa project ini dibuat, untuk siapa, dan apa saja yang masuk dalam cakupan. Detail teknis ada di dokumen lain (`MVP.md`, `ARCHITECTURE.md`, `DATA-MODEL.md`, `API-REFERENCE.md`, `BUSINESS-FLOW.md`, `ROADMAP.md`).
+Dokumen ini adalah acuan keputusan: kenapa project ini dibuat, untuk siapa, dan apa saja yang masuk dalam cakupan. Detail teknis ada di dokumen lain (`PRD.md`, `MVP.md`, `ARCHITECTURE.md`, `DATA-MODEL.md`, `API-REFERENCE.md`, `BUSINESS-FLOW.md`, `ROADMAP.md`).
 
 ## Visi
 

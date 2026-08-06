@@ -102,8 +102,8 @@ Unik: satu `(user_id, product_id, order_id)` hanya boleh satu rating.
 | Tabel | Field penting |
 |---|---|
 | notifications | `user_id` (penerima), `title`, `body`, `data` (type: NEW_ORDER, ORDER_STATUS_UPDATE, dst.), `is_read` |
-| chatbot_histories | `user_id`, `chats` jsonb `[{role, text, createdAt}]` |
-| feedback | `name`, `email`, `subject`, `message`, `status` |
+| chat_histories | `user_id`, `chats` jsonb `[{role, text, createdAt}]` |
+| feedback | `name`, `email`, `subject`, `message`, `status` (default `new`) |
 
 ## Relasi
 
@@ -129,6 +129,6 @@ profiles 1:N notifications
 ## Catatan
 
 1. Denormalisasi disengaja. Harga di cart dan order adalah salinan; kalau penjual ubah harga, transaksi lama tidak ikut berubah.
-2. Tidak ada tabel transaksi Midtrans terpisah. Semua ada di `orders.payment_details`.
+2. Tidak ada tabel transaksi Midtrans yang dipakai kode. Semua data pembayaran ada di `orders.payment_details`. Catatan: `schema.sql` masih mendefinisikan tabel `transactions` (relik dari desain awal) beserta RLS-nya, tapi tidak dipakai controller mana pun.
 3. Tidak ada tabel log stok. Stok langsung dikurangi di produk.
 4. Hapus akun seller = hapus user, toko, produk, gambar, order, rating, chat, cart, riwayat chatbot (cascade + cleanup manual di `authController.deleteUser`).

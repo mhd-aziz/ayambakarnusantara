@@ -64,7 +64,7 @@ Pesanan bisa dibatalkan hanya di dua status awal. Stok otomatis kembali.
 | Login | Supabase Auth, token JWT lewat cookie httpOnly (auto-refresh) |
 | Upload gambar | Supabase Storage |
 | Pembayaran | Midtrans Snap + webhook notifikasi |
-| Chatbot | OmniRoute (proxy lewat env `RASA_WEBHOOK_URL`) |
+| Chatbot | OmniRoute (proxy lewat env `OMNIROUTE_API_URL` / `OMNIROUTE_API_KEY` / `OMNIROUTE_MODEL`) |
 | Frontend | React 19 + Vite + React Bootstrap |
 
 ## Menjalankan di lokal

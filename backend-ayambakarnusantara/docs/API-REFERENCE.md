@@ -16,6 +16,7 @@ Legend: publik = tanpa login, login = perlu akun, seller = perlu role seller.
 | POST | `/auth/login` | publik | `{ email, password }`, set cookie |
 | POST | `/auth/logout` | login | Hapus cookie |
 | POST | `/auth/forgot-password` | publik | `{ email }`, kirim email reset |
+| POST | `/auth/reset-password` | publik | `{ accessToken, refreshToken, newPassword }`, setel ulang password (token recovery dari email) |
 | DELETE | `/auth/account/delete` | login | Hapus akun dan semua data terkait |
 
 ## Profil

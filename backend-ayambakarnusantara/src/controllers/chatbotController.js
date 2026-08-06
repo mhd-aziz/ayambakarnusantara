@@ -8,10 +8,25 @@ const OMNIROUTE_API_KEY = process.env.OMNIROUTE_API_KEY || "";
 const OMNIROUTE_MODEL = process.env.OMNIROUTE_MODEL || "auto/best-chat";
 
 const SYSTEM_PROMPT =
-  "Kamu adalah customer service Ayam Bakar Nusantara, marketplace multi-vendor ayam bakar. " +
+  "Kamu adalah customer service Ayam Bakar Nusantara, marketplace multi-vendor ayam bakar dan makanan Nusantara. " +
   "Bantu pelanggan dengan ramah dalam Bahasa Indonesia, jawab singkat (maks 3-4 kalimat) dan sopan. " +
   "Kamu bisa menjawab: produk & menu, toko, cara pemesanan, pembayaran (online via Midtrans atau " +
-  "bayar di tempat), status pesanan, dan lainnya.\n" +
+  "bayar di tempat), status pesanan, rating, chat penjual, dan lainnya.\n" +
+  "PENGETAHUAN TENTANG MARKETPLACE INI:\n" +
+  "1. Pembeli bisa melihat menu, menambah ke keranjang, checkout, membayar, chat penjual, dan memberi rating. " +
+  "Penjual bisa buka toko gratis, mengunggah produk, memproses pesanan, dan melihat statistik toko.\n" +
+  "2. Satu akun bisa menjadi pembeli sekaligus penjual. Buka toko cukup satu formulir dan role otomatis jadi penjual. " +
+  "Satu akun maksimal satu toko; nama toko selalu sama dengan nama tampilan profil.\n" +
+  "3. Cara memesan: login, pilih produk di halaman menu (/menu), tentukan jumlah (maksimal stok), masuk ke keranjang, " +
+  "lalu checkout dengan memilih metode pembayaran dan catatan opsional.\n" +
+  "4. Dua metode pembayaran: (a) Bayar di Tempat — pesan, penjual proses, ambil dan bayar tunai di toko; " +
+  "(b) Pembayaran Online via Midtrans — bayar dengan transfer, QRIS, atau VA; pelunasan terdeteksi otomatis " +
+  "lewat webhook atau cek status. Tidak ada potongan biaya platform.\n" +
+  "5. Status pesanan: Menunggu Pembayaran/Menunggu Konfirmasi -> Dikonfirmasi -> Sedang Diproses -> Siap Diambil -> Selesai. " +
+  "Pesanan hanya bisa dibatalkan di dua status awal dan stok otomatis dikembalikan.\n" +
+  "6. Rating hanya bisa diberikan setelah pesanan selesai, satu rating per produk per pesanan.\n" +
+  "7. Penjual dapat menghapus toko kapan saja; produk dan toko ikut terhapus.\n" +
+  "8. Pengiriman tidak tersedia — pesanan diambil langsung di toko (pickup only).\n" +
   "ATURAN PENTING:\n" +
   "1. Bila diberikan \"DATA PESANAN USER\", GUNAKAN data itu untuk menjawab pertanyaan tentang " +
   "pesanan pengguna (sebutkan status, item, total, dan status pembayarannya). Jangan pernah mengaku " +
@@ -19,8 +34,8 @@ const SYSTEM_PROMPT =
   "2. Bila tidak ada \"DATA PESANAN USER\" dan pengguna bertanya soal pesanan, katakan dengan ramah " +
   "bahwa tidak ditemukan pesanan yang cocok (atau minta nomor pesanan), lalu tawarkan bantuan lain " +
   "seperti melihat menu atau cara memesan.\n" +
-  "3. Bila diberikan \"DATA MENU UNGGULAN\", gunakan untuk menjawab pertanyaan tentang menu/produk " +
-  "dengan harga yang nyata.\n" +
+  "3. Bila diberikan \"DATA MENU UNGGULAN\" atau \"DATA TOKO TERSEDIA\", gunakan untuk menjawab pertanyaan " +
+  "tentang menu/produk atau toko dengan harga dan nama yang nyata.\n" +
   "4. Jangan meminta pengguna meninggalkan aplikasi — semua layanan tersedia di aplikasi ini.\n" +
   "5. Jika pengguna menyebutkan nomor/nama pesanan yang tidak ditemukan, sampaikan dengan sopan dan " +
   "minta memastikan kembali nomornya.";
@@ -121,22 +136,50 @@ async function buildMenuContext() {
       .from("products")
       .select("name,price,shop_id")
       .order("created_at", { ascending: false })
-      .limit(5);
+      .limit(8);
     if (error || !products || products.length === 0) return null;
 
     const shopMap = {};
-    const { data: shopRows } = await supabaseAdmin.from("shops").select("id,name");
+    const { data: shopRows } = await supabaseAdmin
+      .from("shops")
+      .select("id,shop_name");
     (shopRows || []).forEach((s) => {
-      shopMap[s.id] = s.name;
+      shopMap[s.id] = s.shop_name;
     });
 
     const lines = products.map(
-      (p) => `- ${p.name} ${formatRupiah(p.price)} (toko: ${shopMap[p.shop_id] || "tidak diketahui"})`
+      (p) =>
+        `- ${p.name} ${formatRupiah(p.price)} (toko: ${shopMap[p.shop_id] || "tidak diketahui"})`
     );
     return (
       "DATA MENU UNGGULAN SAAT INI:\n" +
       lines.join("\n") +
       "\nGunakan data ini bila pengguna bertanya tentang menu/produk yang tersedia."
+    );
+  } catch (e) {
+    return null;
+  }
+}
+
+// Ambil daftar toko nyata sebagai konteks jawaban soal toko/penjual
+async function buildShopContext() {
+  try {
+    const { data: shops, error } = await supabaseAdmin
+      .from("shops")
+      .select("id,shop_name,shop_address")
+      .order("created_at", { ascending: false })
+      .limit(10);
+    if (error || !shops || shops.length === 0) return null;
+
+    const lines = shops.map(
+      (s) =>
+        `- ${s.shop_name}` +
+        (s.shop_address ? ` (alamat: ${s.shop_address})` : "")
+    );
+    return (
+      "DATA TOKO TERSEDIA SAAT INI:\n" +
+      lines.join("\n") +
+      "\nGunakan data ini bila pengguna bertanya tentang toko atau penjual yang tersedia."
     );
   } catch (e) {
     return null;
@@ -175,12 +218,23 @@ exports.forwardToChatbot = async (req, res) => {
       }
     }
 
-    // Konteks dinamis: data pesanan user (bila bertanya pesanan) + menu unggulan nyata
-    const [orderContext, menuContext] = await Promise.all([
-      buildOrderContext(userId, userMessageText),
-      buildMenuContext(),
-    ]);
-    const dynamicContext = [orderContext, menuContext].filter(Boolean).join("\n\n");
+    // Konteks dinamis: data pesanan user (bila bertanya pesanan), menu unggulan,
+    // dan daftar toko nyata. Konteks diisi sesuai intent supaya hemat token.
+    const { isOrder, orderId } = detectOrderIntent(userMessageText);
+    const lowerText = userMessageText.toLowerCase();
+    const asksAboutShop = /(toko|penjual|warung|outlet|seller)/i.test(lowerText);
+    const asksAboutMenu = /(menu|produk|makanan|minuman|camilan|harga|murah|enak|ayam|nasi|sate)/i.test(
+      lowerText
+    );
+
+    const contextJobs = [];
+    if (isOrder) contextJobs.push(buildOrderContext(userId, userMessageText));
+    if (asksAboutMenu || !asksAboutShop)
+      contextJobs.push(buildMenuContext());
+    if (asksAboutShop) contextJobs.push(buildShopContext());
+
+    const contexts = await Promise.all(contextJobs);
+    const dynamicContext = contexts.filter(Boolean).join("\n\n");
     const systemContent = dynamicContext
       ? `${SYSTEM_PROMPT}\n\n${dynamicContext}`
       : SYSTEM_PROMPT;
