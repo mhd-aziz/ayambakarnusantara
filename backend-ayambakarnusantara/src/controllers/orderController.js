@@ -307,7 +307,7 @@ exports.getSellerOrders = async (req, res) => {
         !(
           orderRow.items &&
           orderRow.items.length > 0 &&
-          orderRow.items.every((item) => item.shopId === sellerOwnedShopId)
+          orderRow.items.some((item) => item.shopId === sellerOwnedShopId)
         )
       ) {
         return null;
@@ -764,7 +764,7 @@ exports.confirmPayAtStorePaymentBySeller = async (req, res) => {
     if (
       !sellerUser ||
       sellerUser.role !== "seller" ||
-      !orderRow.items.every((item) => item.shopId === sellerUser.shop_id)
+      !orderRow.items.some((item) => item.shopId === sellerUser.shop_id)
     ) {
       return handleError(res, { statusCode: 403, message: "Akses ditolak." });
     }

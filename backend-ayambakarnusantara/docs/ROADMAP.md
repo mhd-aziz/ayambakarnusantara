@@ -16,7 +16,7 @@ Acuan kerja untuk agen AI atau pengembang saat akan memperbaiki atau mengembangk
 |---|---|---|---|
 | 1 | ReferenceError TDZ: `fetchedOrders` dipakai sebelum dideklarasi | `orderController.js` | Selesai (migrasi Supabase) |
 | 2 | `where("uid", "in", ...)` lebih dari 10 nilai | `ratingController.js` | Selesai (chunk query) |
-| 3 | Order multi-toko tidak didukung tapi tidak dicegah | `orderController.js` | Selesai (7 Agu 2026). Cek kepemilikan seller di `getOrderDetailsForSeller` & `updateOrderStatusBySeller` diganti dari `items.every()` (memblokir order multi-toko) menjadi `some()` per item. `getOrders` seller difilter di SQL `shop_ids @> {shopId}` sebelum limit (tidak lagi fetch semua lalu filter di JS) |
+| 3 | Order multi-toko tidak didukung tapi tidak dicegah | `orderController.js` | Selesai (7 Agu 2026). Kepemilikan seller diganti dari `items.every()` (memblokir order multi-toko) menjadi `items.some()` di **4 titik**: `getOrderDetailsForSeller`, `getSellerOrders`, `updateOrderStatusBySeller`, `confirmPayAtStorePaymentBySeller`. `getOrders` difilter di SQL `shop_ids @> {shopId}` sebelum limit |
 | 4 | Hapus toko meninggalkan gambar produk di storage | `shopController.js` | Selesai |
 | 5 | Tidak ada webhook Midtrans | `paymentController.js` | Selesai. Webhook `POST /payment/notification` aktif: verifikasi signature sha512, idempoten, sinkron status, notif customer |
 
