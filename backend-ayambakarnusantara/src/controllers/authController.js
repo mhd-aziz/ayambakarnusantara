@@ -1,4 +1,5 @@
 const { supabaseAdmin, supabaseAnon } = require("../config/supabaseConfig");
+const { resend, resendFromEmail } = require("../config/resendConfig");
 const { handleSuccess, handleError } = require("../utils/responseHandler");
 const {
   deleteFile,
@@ -193,23 +194,29 @@ exports.forgotPassword = async (req, res) => {
   }
 
   try {
-    // Cek keberadaan user tanpa membocorkan informasi ke peminta.
-    // getUserByEmail bisa melempar error bila email tidak terdaftar /
-    // permission terbatas — perlakukan sebagai "tidak terdaftar" agar tetap
-    // respons netral (anti-enumeration) dan tidak menjadi 500.
-    let isRegistered = false;
+    // Cek keberadaan user + buat OTP recovery via generateLink (admin).
+    // generateLink TIDAK mengirim email; ia hanya menghasilkan email_otp
+    // yang valid untuk dipertukarkan menjadi sesi via verifyOtp.
+    let linkData = null;
     try {
-      const { data: existingUser, error: findError } =
-        await supabaseAdmin.auth.admin.getUserByEmail(email);
-      if (findError) throw findError;
-      isRegistered = Boolean(existingUser?.user);
+      const { data, error } = await supabaseAdmin.auth.admin.generateLink({
+        type: "recovery",
+        email,
+      });
+      if (error) throw error;
+      linkData = data;
     } catch (findErr) {
       console.log(
-        `Permintaan reset password untuk ${email}: pencarian {terdaftar:false / error:${findErr?.message}}`
+        `Permintaan reset password untuk ${email}: pencarian {terdaftar:${
+          linkData ? "true" : "false"
+        } / error:${findErr?.message}}`
       );
-      isRegistered = false;
     }
 
+    const otp = linkData?.properties?.email_otp;
+    const isRegistered = Boolean(linkData?.user && otp);
+
+    // Anti-enumeration: balas 200 netral walaupun email tidak terdaftar.
     if (!isRegistered) {
       console.log(`Permintaan reset password untuk email tidak terdaftar: ${email}`);
       return handleSuccess(
@@ -219,16 +226,66 @@ exports.forgotPassword = async (req, res) => {
       );
     }
 
-    // Supabase mengirim email recovery otomatis (template bawaan dashboard)
-    const frontendUrl =
-      (process.env.CORS_ALLOWED_ORIGINS || "http://localhost:5173")
-        .split(",")[0]
-        .trim() || "http://localhost:5173";
+    // Tukar OTP recovery menjadi sesi (access_token + refresh_token) di sisi
+    // backend. verifyOtp TIDAK memakai halaman /auth/v1/verify Supabase, jadi
+    // tidak bergantung pada require SubAuth redirect URL/allowlist yang
+    // menolak redirectTo ber-IP mentah.
+    const { data: sessionData, error: sessionError } =
+      await supabaseAnon.auth.verifyOtp({
+        type: "recovery",
+        email,
+        token: otp,
+      });
+    if (sessionError || !sessionData?.session) {
+      console.error(
+        "forgotPassword: tukar OTP ke sesi gagal:",
+        sessionError?.message || "sesi kosong"
+      );
+      throw sessionError || new Error("Sesi recovery kosong.");
+    }
 
-    const { error } = await supabaseAnon.auth.resetPasswordForEmail(email, {
-      redirectTo: `${frontendUrl}/reset-password`,
+    // Redirect tautan ke origin yang sedang dipakai user (header Origin) bila
+    // terdaftar di CORS_ALLOWED_ORIGINS; fallback ke origin pertama.
+    const allowedOrigins = (process.env.CORS_ALLOWED_ORIGINS || "http://localhost:5173")
+      .split(",")
+      .map((o) => o.trim())
+      .filter(Boolean);
+    const requestOrigin = req.get("origin") || "";
+    const frontendUrl = allowedOrigins.includes(requestOrigin)
+      ? requestOrigin
+      : allowedOrigins[0] || "http://localhost:5173";
+
+    const resetLink =
+      `${frontendUrl}/reset-password` +
+      `#access_token=${sessionData.session.access_token}` +
+      `&refresh_token=${sessionData.session.refresh_token}` +
+      `&type=recovery`;
+
+    // Kirim email secara langsung melalui Resend (bukan via Supabase).
+    const { error: mailError } = await resend.emails.send({
+      from: `Ayam Bakar Nusantara <${resendFromEmail}>`,
+      to: [email],
+      subject: "Atur Ulang Password — Ayam Bakar Nusantara",
+      html: `
+        <div style="font-family:Arial,sans-serif;max-width:560px;margin:auto">
+          <h2 style="color:#C07722">Atur Ulang Password</h2>
+          <p>Halo,</p>
+          <p>Kami menerima permintaan untuk mengatur ulang password akun Anda.
+             Klik tombol di bawah untuk membuat password baru:</p>
+          <p style="text-align:center;margin:28px 0">
+            <a href="${resetLink}"
+               style="display:inline-block;background:#C07722;color:#fff;
+                      text-decoration:none;padding:12px 26px;border-radius:6px;
+                      font-weight:bold">Atur Ulang Password</a>
+          </p>
+          <p>Jika tombol tidak berfungsi, salin tautan ini ke browser:</p>
+          <p style="word-break:break-all;color:#666;font-size:13px">${resetLink}</p>
+          <p style="color:#999;font-size:12px">Abaikan email ini jika bukan Anda
+             yang memintanya. Tautan berlaku sementara dan aman.</p>
+        </div>
+      `,
     });
-    if (error) throw error;
+    if (mailError) throw mailError;
 
     return handleSuccess(
       res,
