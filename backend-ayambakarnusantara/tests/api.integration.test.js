@@ -8,13 +8,19 @@ import request from "supertest";
 import app from "../src/app.js";
 import { createClient } from "@supabase/supabase-js";
 
+const envOrThrow = (name) => {
+  const v = process.env[name];
+  if (!v) throw new Error(`Wajib set ${name} di .env.dev (lihat scripts/seed-demo.js) sebelum test.`);
+  return v;
+};
+
 const CUST = {
   email: process.env.DEMO_CUSTOMER_EMAIL || "siti.aulia.demo@example.com",
-  password: process.env.DEMO_CUSTOMER_PASSWORD || "SitiAulia-Demo-2026",
+  password: envOrThrow("DEMO_CUSTOMER_PASSWORD"),
 };
 const S1 = {
   email: process.env.DEMO_SELLER1_EMAIL || "budi.santoso.demo@example.com",
-  password: process.env.DEMO_SELLER1_PASSWORD || "BudiSantoso-Demo-2026",
+  password: envOrThrow("DEMO_SELLER1_PASSWORD"),
 };
 
 let admin; let shop1Id; let product1Id; let product2Id; let orderId;

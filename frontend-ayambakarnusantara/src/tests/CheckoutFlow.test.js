@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom";
 import { MemoryRouter } from "react-router-dom";
@@ -85,8 +85,13 @@ describe("Alur Checkout di Halaman Keranjang", () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   test("berhasil membuat pesanan dan mengarahkan pengguna saat checkout valid", async () => {
-    const user = userEvent.setup();
+    vi.useFakeTimers();
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     createOrder.mockResolvedValue({
       success: true,
       message: "Pesanan #mock-order-id berhasil dibuat!",
@@ -119,13 +124,13 @@ describe("Alur Checkout di Halaman Keranjang", () => {
       });
     });
 
-    await waitFor(
-      () => {
-        expect(mockClearCart).toHaveBeenCalledTimes(1);
-        expect(mockNavigate).toHaveBeenCalledWith("/pesanan/mock-order-id");
-      },
-      { timeout: 3500 }
-    );
+    // Redirect memakai setTimeout(3000) di CartPage — flush timer secara deterministik.
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(3000);
+    });
+
+    expect(mockClearCart).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith("/pesanan/mock-order-id");
   });
 
   test("tombol Konfirmasi Pesanan harus nonaktif jika metode pembayaran tidak dipilih", () => {

@@ -1,10 +1,18 @@
 // E2E NYATA — pesan eksplisit dari toko Budi (SANJAYA) → Budi majukan status → rating → chat → notif.
 // Cetak PASS/FAIL nyata. Gunakan cookie httpOnly; verifikasi langsung.
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+require("dotenv").config({ path: path.join(__dirname, "..", ".env.dev"), override: true });
 const axios = require("axios");
 const BASE = "http://localhost:5000";
-const CUST = { email: "siti.aulia.demo@example.com", password: "SitiAulia#2026" };
-const S1 = { email: "budi.santoso.demo@example.com", password: "BudiSantoso#2026" };
-const S2 = { email: "rina.maharani.demo@example.com", password: "RinaMaharani#2026" };
+const envOrThrow = (name) => {
+  const v = process.env[name];
+  if (!v) throw new Error(`Wajib set ${name} di .env.dev sebelum E2E (lihat scripts/sync-demo-passwords.js).`);
+  return v;
+};
+const CUST = { email: "siti.aulia.demo@example.com", password: envOrThrow("DEMO_CUSTOMER_PASSWORD") };
+const S1 = { email: "budi.santoso.demo@example.com", password: envOrThrow("DEMO_SELLER1_PASSWORD") };
+const S2 = { email: "rina.maharani.demo@example.com", password: envOrThrow("DEMO_SELLER2_PASSWORD") };
 
 const results = [];
 const check = (name, cond, extra = "") => { results.push({ name, cond, extra }); console.log((cond ? "PASS" : "FAIL") + " | " + name + (extra ? " — " + extra : "")); };
