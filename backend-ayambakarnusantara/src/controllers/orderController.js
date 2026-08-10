@@ -262,7 +262,10 @@ exports.getSellerOrders = async (req, res) => {
       });
     }
 
-    let ordersQuery = supabaseAdmin.from("orders").select("*");
+    let ordersQuery = supabaseAdmin
+      .from("orders")
+      .select("*")
+      .contains("shop_ids", [sellerOwnedShopId]);
 
     if (customerUserIdQuery) {
       ordersQuery = ordersQuery.eq("user_id", customerUserIdQuery);
@@ -504,10 +507,10 @@ exports.cancelOrder = async (req, res) => {
 
     if (error) throw error;
 
-    // Notifikasi seller
+    // Notifikasi ke SEMUA seller yang produknya ada di order (multi-toko)
     try {
-      const shopId = updatedOrder.items?.[0]?.shopId;
-      if (shopId) {
+      const shopIds = [...new Set((updatedOrder.items || []).map((i) => i.shopId).filter(Boolean))];
+      for (const shopId of shopIds) {
         const sellerUID = await getShopOwnerUid(shopId);
         if (sellerUID) {
           const notificationPayload = {

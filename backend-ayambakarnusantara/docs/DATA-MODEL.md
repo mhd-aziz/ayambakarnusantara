@@ -123,6 +123,7 @@ profiles 1:N notifications
 ## Keamanan
 
 - RLS aktif di semua tabel. User hanya bisa mengakses data miliknya.
+- `profiles_select` = `using (auth.uid() = id)` (own-only, fix 11 Agu 2026; migration: `supabase/migrations/20260811_rls_profiles_own_only.sql`). Backend memakai service role (bypass RLS) untuk query lintas-user.
 - Akses seller ke order diatur lewat `shop_ids` (query `@>`).
 - Transaksi yang butuh atomik (buat order + kurangi stok + kosongkan cart, rating + update rata-rata) dipindah ke fungsi RPC di `supabase/order-functions.sql` dan `supabase/rating-functions.sql`. Backend memanggilnya lewat `supabaseAdmin.rpc(...)`, bukan insert manual.
 

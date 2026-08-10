@@ -194,7 +194,8 @@ Chatbot tidak selalu tersedia. Kalau server chatbot mati, muncul error "chatbot 
 
 ## 11. Batasan yang diketahui
 
-- Order multi-toko belum tuntas (lihat ROADMAP #3). Keranjang bisa berisi produk dari toko berbeda, notifikasi sudah ke semua seller, tapi seller belum bisa mengakses/mengupdate order multi-toko. Keputusan desain (blokir di checkout vs sub-order) masih terbuka.
+- Order multi-toko: seller sudah bisa mengakses & mengupdate order multi-toko (fix 7 & 11 Agu 2026). Batasan tersisa: status order bersifat GLOBAL per order, belum ada sub-status per-toko — keputusan desain (sub-order vs split) masih terbuka (M2 deferred).
+- Notifikasi pembatalan order dikirim ke semua seller terkait (fix 11 Agu 2026).
 - Tidak ada pengiriman. Hanya ambil di tempat.
 - Satu toko = satu user. Belum ada admin platform.
 - Belum ada mekanisme refund pembayaran online.

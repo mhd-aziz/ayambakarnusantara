@@ -55,7 +55,8 @@ Frontend (`frontend-ayambakarnusantara/`):
 
 ```
 src/
-├── index.js                  # app Express: CORS, cookie-parser, json, routes
+├── index.js                  # entry server: listen (memuat app dari app.js)
+├── app.js                    # app Express: CORS, cookie-parser, json, routes (dipisah agar bisa dites supertest)
 ├── config/
 │   ├── supabaseConfig.js     # admin + anon client
 │   └── midtransConfig.js     # Snap, isProduction dari env
@@ -65,9 +66,10 @@ src/
 │   └── rateLimiter.js        # pembatas permintaan per IP (in-memory)
 ├── controllers/              # 12 controller, semua logika bisnis di sini
 ├── routes/                   # 12 file pemetaan URL ke controller
-└── utils/
-    ├── responseHandler.js    # format respons konsisten
-    └── storageHelper.js      # upload, hapus, signed URL
+├── utils/
+│   ├── responseHandler.js    # format respons konsisten
+│   └── storageHelper.js      # upload, hapus, signed URL
+└── (tests/ di level project: tests/api.integration.test.js — Vitest + Supertest)
 ```
 
 ## 4. Struktur frontend

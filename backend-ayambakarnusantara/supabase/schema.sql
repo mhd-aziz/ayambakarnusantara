@@ -265,8 +265,9 @@ alter table public.chat_histories enable row level security;
 alter table public.feedback enable row level security;
 alter table public.transactions enable row level security;
 
--- PROFILES: semua orang bisa baca data profil; tiap user ubah punya sendiri
-create policy "profiles_select" on public.profiles for select using (true);
+-- PROFILES: hanya pemilik yang bisa baca datanya sendiri;
+-- Backend memakai supabaseAdmin (service role, bypass RLS) untuk query lintas-user.
+create policy "profiles_select" on public.profiles for select using (auth.uid() = id);
 create policy "profiles_update_own" on public.profiles for update
   using (auth.uid() = id) with check (auth.uid() = id);
 
