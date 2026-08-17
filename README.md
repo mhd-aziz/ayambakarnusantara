@@ -6,10 +6,10 @@ Marketplace web sederhana untuk jualan ayam bakar dan makanan Nusantara. Pembeli
 
 | Folder | Isi |
 |---|---|
-| `backend-ayambakarnusantara/` | Server Node.js + Express 5, database Supabase (PostgreSQL), integrasi Midtrans |
-| `frontend-ayambakarnusantara/` | Aplikasi React (Vite + React Bootstrap) |
+| `backend/` | Server Node.js + Express 5, database Supabase (PostgreSQL), integrasi Midtrans |
+| `frontend/` | Aplikasi React (Vite + React Bootstrap) |
 
-Dokumentasi lengkap ada di `backend-ayambakarnusantara/docs/`. Urutan bacaan yang disarankan:
+Dokumentasi lengkap ada di `backend/docs/`. Urutan bacaan yang disarankan:
 
 1. `docs/MVP.md` — gambaran singkat produk, fitur, dan cara pakai
 2. `docs/IDEA.md` — visi dan alasan project ini dibuat
@@ -26,7 +26,7 @@ Dokumentasi lengkap ada di `backend-ayambakarnusantara/docs/`. Urutan bacaan yan
 Backend (port 5000):
 
 ```bash
-cd backend-ayambakarnusantara
+cd backend
 npm install
 cp .env.example .env.dev   # isi kredensial Supabase & Midtrans
 npm run dev
@@ -35,7 +35,7 @@ npm run dev
 Frontend (port 3000):
 
 ```bash
-cd frontend-ayambakarnusantara
+cd frontend
 npm install
 cp .env.example .env.dev   # atur VITE_API_BASE_URL (default http://localhost:5000)
 npm run dev

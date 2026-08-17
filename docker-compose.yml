@@ -1,0 +1,25 @@
+# Komposisi deploy homelab untuk Ayam Bakar Nusantara.
+# - backend  : Express, secret dipasok via env_file ./backend/.env (jangan commit .env ke git).
+# - frontend : static SPA dari hasil `vite build --mode prod`, disajikan serve.js (tanpa nginx).
+# Port host dipertahankan = 3000 (front) & 5000 (back) agar URL http://100.82.26.92:3000 tetap.
+
+services:
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    env_file: ./backend/.env
+    ports:
+      - "5000:5000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # URL API di-bake saat build. Ganti sesuai kebutuhan (tunnel/domain) tanpa ubah frontend.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://100.82.26.92:5000}
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend

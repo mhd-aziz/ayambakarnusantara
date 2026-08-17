@@ -71,13 +71,13 @@ Pesanan bisa dibatalkan hanya di dua status awal. Stok otomatis kembali.
 
 ```bash
 # Backend (port 5000)
-cd backend-ayambakarnusantara
+cd backend
 npm install
 cp .env.example .env.dev   # isi kredensial Supabase & Midtrans
 npm run dev
 
 # Frontend (port 3000)
-cd frontend-ayambakarnusantara
+cd frontend
 npm install
 cp .env.example .env.dev   # atur VITE_API_BASE_URL
 npm run dev
@@ -90,7 +90,7 @@ Buka `http://localhost:3000`.
 ```
 ayam-bakar-nusantara/
 ├── README.md                     # pintu masuk project ini
-├── backend-ayambakarnusantara/
+├── backend/
 │   ├── docs/                     # semua dokumentasi (.md)
 │   ├── supabase/                 # skema SQL dan fungsi RPC
 │   └── src/
@@ -99,7 +99,7 @@ ayam-bakar-nusantara/
 │       ├── middlewares/          # cek login, cek role, upload, rate limit
 │       ├── routes/               # daftar endpoint
 │       └── index.js              # titik masuk server
-└── frontend-ayambakarnusantara/
+└── frontend/
     └── src/
         ├── pages/                # halaman (menu, keranjang, pesanan, toko-saya, dll.)
         ├── components/           # komponen UI (navbar, chat, modal, dll.)

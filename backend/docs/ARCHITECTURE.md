@@ -28,7 +28,7 @@ Aturan dasar:
 
 ## 2. Teknologi
 
-Backend (`backend-ayambakarnusantara/`):
+Backend (`backend/`):
 
 | Paket | Fungsi |
 |---|---|
@@ -41,7 +41,7 @@ Backend (`backend-ayambakarnusantara/`):
 | axios | Proxy ke chatbot |
 | dotenv | Variabel lingkungan |
 
-Frontend (`frontend-ayambakarnusantara/`):
+Frontend (`frontend/`):
 
 | Paket | Fungsi |
 |---|---|
