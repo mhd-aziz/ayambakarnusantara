@@ -1,8 +1,8 @@
 # CI/CD Backend — Ayam Bakar Nusantara
 # - Push/PR ke main (path backend) → check + validasi Docker image (cloud runner).
 # - Deploy ke homelab hanya pada push ke main, lewat self-hosted runner (docker compose).
-# - Integration test (menghapus data demo) hanya manual via workflow_dispatch, memakai
-#   Supabase project TEST (bukan produksi pacojfmbhiejylcfirot).
+# - Integration test (reset data demo) otomatis di tiap push/PR ke main, memakai
+#   Supabase project TEST/DEV (bukan produksi pacojfmbhiejylcfirot).
 
 name: Backend CI/CD
 
@@ -19,12 +19,6 @@ on:
       - "backend/**"
       - ".github/workflows/backend.yml"
       - "docker-compose.yml"
-  workflow_dispatch:
-    inputs:
-      run_integration_tests:
-        description: "Jalankan integration test ke Supabase project TEST (menghapus data demo). Butuh secrets lengkap + project test ter-provisioning."
-        type: boolean
-        default: false
 
 concurrency:
   group: backend-${{ github.ref }}
@@ -62,10 +56,9 @@ jobs:
         run: docker build -t abn-backend:ci ./backend
 
   integration-test:
-    name: Integration test (project TEST)
+    name: Integration test (project DEV)
     runs-on: ubuntu-latest
     needs: check
-    if: github.event_name == 'workflow_dispatch' && inputs.run_integration_tests
     defaults:
       run:
         working-directory: backend
