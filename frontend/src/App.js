@@ -33,8 +33,6 @@ import SellerProductManagement from "./pages/Seller/SellerProductManagement";
 import SellerOrderManagement from "./pages/Seller/SellerOrderManagement";
 import CartPage from "./pages/CartPage";
 import NotFoundPage from "./pages/NotFoundPage";
-import { registerFCMToken } from "./services/ProfileService";
-import { getFCMToken } from "./firebase-config";
 import NotificationPage from "./pages/NotificationPage";
 import ScrollToAnchor from "./utils/ScrollToAnchor";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
@@ -54,25 +52,6 @@ function App() {
 
   const isAuthModalOpen =
     showLoginModal || showRegisterModal || showForgotPasswordModal;
-
-  useEffect(() => {
-    const setupAndRegisterFCM = async () => {
-      if (isLoggedIn && user) {
-        try {
-          const currentToken = await getFCMToken();
-          if (currentToken) {
-            await registerFCMToken({ token: currentToken });
-          }
-        } catch (error) {
-          console.error("Gagal melakukan setup FCM:", error);
-        }
-      }
-    };
-
-    if (!isLoading) {
-      setupAndRegisterFCM();
-    }
-  }, [isLoggedIn, isLoading, user]);
 
   useEffect(() => {
     if (location.pathname === "/login") {

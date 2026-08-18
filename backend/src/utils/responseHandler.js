@@ -13,7 +13,7 @@ exports.handleError = (
 ) => {
   console.error(
     `Error Handler: Message: "${error.message}"`,
-    error.code ? `Firebase Code: ${error.code}` : "",
+    error.code ? `Error Code: ${error.code}` : "",
     error.statusCode ? `Custom Status: ${error.statusCode}` : "",
     error.errorCode ? `Custom ErrorCode: ${error.errorCode}` : ""
   );

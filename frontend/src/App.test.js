@@ -17,14 +17,6 @@ vi.mock("./context/CartContext", async (importOriginal) => ({
   useCart: vi.fn(),
 }));
 
-vi.mock("./services/ProfileService", async (importOriginal) => ({
-  registerFCMToken: vi.fn().mockResolvedValue({ success: true }),
-}));
-
-vi.mock("./firebase-config", async (importOriginal) => ({
-  getFCMToken: vi.fn().mockResolvedValue("mock-fcm-token"),
-}));
-
 vi.mock("./pages/HomePage", () => ({ default: () => <div>HomePage</div> }));
 vi.mock("./pages/ResetPasswordPage", () => ({
   default: () => <div>ResetPasswordPage</div>,

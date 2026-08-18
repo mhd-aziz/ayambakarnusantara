@@ -3,7 +3,7 @@ const { handleSuccess, handleError } = require("../utils/responseHandler");
 
 /**
  * Simpan notifikasi in-app ke database.
- * (Push native FCM tidak dipakai lagi — Firebase sudah tidak aktif.
+ * (Push native tidak dipakai lagi — Firebase sudah tidak aktif.
  *  Notifikasi muncul realtime via Supabase Realtime di frontend.)
  */
 exports.sendNotification = async (notificationPayload) => {

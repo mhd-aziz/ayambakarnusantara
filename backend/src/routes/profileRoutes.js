@@ -19,6 +19,4 @@ router.delete(
   profileController.deleteProfilePhoto
 );
 
-router.post("/fcm-token", authenticateToken, profileController.addFcmToken);
-
 module.exports = router;

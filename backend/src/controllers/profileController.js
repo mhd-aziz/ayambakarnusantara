@@ -17,7 +17,6 @@ function mapProfile(row) {
     address: row.address,
     role: row.role,
     shopId: row.shop_id,
-    fcmTokens: row.fcm_tokens || [],
     createdAt: row.created_at,
   };
 }
@@ -156,51 +155,6 @@ exports.updateProfile = async (req, res) => {
       );
     }
     return handleError(res, error, "Gagal memperbarui profil.");
-  }
-};
-
-exports.addFcmToken = async (req, res) => {
-  const uid = req.user?.uid;
-  const { token } = req.body;
-
-  if (!uid) {
-    return handleError(res, {
-      statusCode: 401,
-      message: "Otentikasi diperlukan.",
-    });
-  }
-
-  if (!token || typeof token !== "string" || token.trim() === "") {
-    return handleError(res, {
-      statusCode: 400,
-      message: "FCM token diperlukan dan harus berupa string.",
-    });
-  }
-
-  try {
-    const { data: current, error: fetchError } = await supabaseAdmin
-      .from("profiles")
-      .select("fcm_tokens")
-      .eq("id", uid)
-      .maybeSingle();
-
-    if (fetchError) throw fetchError;
-
-    const existing = Array.isArray(current?.fcm_tokens)
-      ? current.fcm_tokens
-      : [];
-    if (!existing.includes(token.trim())) {
-      const { error: updateError } = await supabaseAdmin
-        .from("profiles")
-        .update({ fcm_tokens: [...existing, token.trim()] })
-        .eq("id", uid);
-      if (updateError) throw updateError;
-    }
-
-    return handleSuccess(res, 200, "Token FCM berhasil didaftarkan.");
-  } catch (error) {
-    console.error(`Error adding FCM token for user ${uid}:`, error);
-    return handleError(res, error, "Gagal mendaftarkan token FCM.");
   }
 };
 
