@@ -216,13 +216,16 @@ exports.forgotPassword = async (req, res) => {
     const otp = linkData?.properties?.email_otp;
     const isRegistered = Boolean(linkData?.user && otp);
 
-    // Anti-enumeration: balas 200 netral walaupun email tidak terdaftar.
+    // Anti-enumeration: balas 200 dengan pesan netral yang SAMA untuk email
+    // terdaftar maupun tidak, supaya penyerang tidak bisa memetakan akun dari
+    // isi respons. Jeda kecil di jalur tidak-terdaftar meratakan timing (jalur
+    // terdaftar lebih lambat karena benar-benar mengirim email via Resend).
     if (!isRegistered) {
-      console.log(`Permintaan reset password untuk email tidak terdaftar: ${email}`);
+      await new Promise((resolve) => setTimeout(resolve, 400));
       return handleSuccess(
         res,
         200,
-        `Jika email ${email} terdaftar, tautan reset password telah dikirim.`
+        "Jika email Anda terdaftar, tautan reset password telah dikirim."
       );
     }
 
@@ -290,7 +293,7 @@ exports.forgotPassword = async (req, res) => {
     return handleSuccess(
       res,
       200,
-      `Tautan reset password telah dikirim ke ${email}.`
+      "Jika email Anda terdaftar, tautan reset password telah dikirim."
     );
   } catch (error) {
     console.error("Error in forgotPassword process:", error.code, error.message);

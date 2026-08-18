@@ -29,9 +29,13 @@ begin
 
   -- 2. Validasi tiap item: produk ada, stok cukup, hitung ulang total
   for v_item in select * from jsonb_array_elements(v_cart.items) loop
+    -- FOR UPDATE: kunci baris produk agar dua checkout paralel untuk produk
+    -- yang sama terserialisasi (yang kedua menunggu commit yang pertama,
+    -- lalu membaca stok baru). Mencegah over-sell / 500 check (stock >= 0).
     select * into v_product
     from public.products
-    where id = (v_item->>'productId')::uuid;
+    where id = (v_item->>'productId')::uuid
+    for update;
 
     if not found then
       raise exception 'Produk dengan ID % (%) tidak ditemukan lagi. Harap hapus dari keranjang Anda.', v_item->>'productId', v_item->>'name';
@@ -91,11 +95,17 @@ begin
     (p_user_id, v_order_items, v_total, v_upper_method, v_initial_status, v_payment_details, p_notes, v_shop_ids)
   returning * into v_order;
 
-  -- 5. Kurangi stok tiap produk
+  -- 5. Kurangi stok tiap produk (guard atomik: kalau stok sudah berubah/berkurang
+  -- sejak validasi — mis. fungsi dipanggil langsung bypass controller — decrement
+  -- hanya jalan kalau stok masih >= qty; kalau tidak, tumbangkan transaksi).
   for v_item in select * from jsonb_array_elements(v_cart.items) loop
     update public.products
     set stock = stock - (v_item->>'quantity')::int
-    where id = (v_item->>'productId')::uuid;
+    where id = (v_item->>'productId')::uuid
+      and stock >= (v_item->>'quantity')::int;
+    if not found then
+      raise exception 'Stok untuk produk % tidak mencukupi saat membuat pesanan.', v_item->>'name';
+    end if;
   end loop;
 
   -- 6. Kosongkan keranjang
