@@ -6,7 +6,13 @@ const {
   uploadImage,
   deleteFile,
   extractPathFromPublicUrl,
+  validateImageMagicBytes,
 } = require("../utils/storageHelper");
+const {
+  validateChatText,
+  validateCoordinates,
+  validateMessageContent,
+} = require("../utils/chatValidation");
 
 function mapConversation(row) {
   if (!row) return null;
@@ -252,10 +258,28 @@ exports.sendMessage = async (req, res) => {
       message: "ID Percakapan diperlukan.",
     });
   }
-  if (!text?.trim() && !imageFile && (!latitude || !longitude)) {
+  // ROADMAP #14: validasi panjang teks + range koordinat.
+  const textCheck = validateChatText(text);
+  if (!textCheck.valid) {
+    return handleError(res, { statusCode: 400, message: textCheck.message });
+  }
+  const coordCheck = validateCoordinates(latitude, longitude);
+  if (!coordCheck.valid) {
+    return handleError(res, { statusCode: 400, message: coordCheck.message });
+  }
+  const contentCheck = validateMessageContent({
+    hasText: !!(text && String(text).trim()),
+    hasImage: !!imageFile,
+    hasLocation: !!(latitude && longitude),
+  });
+  if (!contentCheck.valid) {
+    return handleError(res, { statusCode: 400, message: contentCheck.message });
+  }
+  // ROADMAP #10: magic-bytes check untuk file gambar (bukan cuma mime).
+  if (imageFile && !validateImageMagicBytes(imageFile.buffer)) {
     return handleError(res, {
       statusCode: 400,
-      message: "Konten pesan tidak boleh kosong.",
+      message: "File gambar tidak valid (signature tidak dikenali).",
     });
   }
 

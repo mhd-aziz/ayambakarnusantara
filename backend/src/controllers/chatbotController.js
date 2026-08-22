@@ -257,6 +257,8 @@ exports.forwardToChatbot = async (req, res) => {
       },
       {
         headers: {
+          // CATATAN KEAMANAN (ROADMAP #12): jangan log OMNIROUTE_API_KEY;
+          // gunakan nilai const secara langsung tanpa menyisipkannya ke log.
           Authorization: `Bearer ${OMNIROUTE_API_KEY}`,
           "Content-Type": "application/json",
         },

@@ -1,14 +1,17 @@
 const multer = require("multer");
+
 const storageConfig = multer.memoryStorage();
+
+const ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/gif",
+  "image/webp",
+];
+
 const fileFilterConfig = (req, file, cb) => {
-  const allowedMimeTypes = [
-    "image/jpeg",
-    "image/png",
-    "image/gif",
-    "image/webp",
-  ];
-  if (allowedMimeTypes.includes(file.mimetype)) {
-    cb(null, true); 
+  if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+    cb(null, true);
   } else {
     const error = new Error(
       "Format file tidak didukung! Hanya gambar (JPEG, PNG, GIF, WEBP) yang diizinkan."

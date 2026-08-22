@@ -65,7 +65,7 @@ export const CartProvider = ({ children }) => {
     } else {
       setCart(null); // Kosongkan keranjang jika logout
     }
-  }, [isLoggedIn, fetchCart]);
+  }, [isLoggedIn]);
 
   const addItem = async (itemData) => {
     if (!isLoggedIn)

@@ -1,0 +1,37 @@
+# Deploy — Frontend to Homelab (self-hosted runner)
+# Triggers only on push to main (after CI passes).
+# Runs on self-hosted runner 'abn-homelab'.
+
+name: Frontend Deploy
+
+on:
+  workflow_run:
+    workflows: ["Frontend CI"]
+    types: [completed]
+    branches: [main]
+
+concurrency:
+  group: frontend-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy Frontend to Homelab
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, abn-homelab]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Pull latest & rebuild
+        run: |
+          set -euo pipefail
+          cd /media/bazyngan/DATA/Documents/ayam-bakar-nusantara
+          git pull --ff-only
+          docker compose up -d --build frontend
+
+      - name: Verify frontend container
+        run: |
+          sleep 5
+          docker compose -f /media/bazyngan/DATA/Documents/ayam-bakar-nusantara/docker-compose.yml ps frontend --format "table {{.Service}}\t{{.Status}}"
+          docker compose -f /media/bazyngan/DATA/Documents/ayam-bakar-nusantara/docker-compose.yml logs --tail=20 frontend
