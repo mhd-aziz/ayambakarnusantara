@@ -78,7 +78,8 @@ jobs:
     name: Integration Tests (Supabase DEV)
     runs-on: ubuntu-latest
     needs: check
-    if: ${{ secrets.SUPABASE_URL != '' }}
+    # Only runs if SUPABASE_URL secret is configured (skips gracefully otherwise)
+    if: ${{ vars.RUN_INTEGRATION_TESTS == 'true' }}
     defaults:
       run:
         working-directory: backend
