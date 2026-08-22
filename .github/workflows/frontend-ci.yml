@@ -86,7 +86,7 @@ jobs:
 
       - name: Verify image runs (smoke test)
         run: |
-          docker run --rm -d --name abn-frontend-test -p 3000:80 abn-frontend:ci
+          docker run --rm -d --name abn-frontend-test -p 3000:3000 abn-frontend:ci
           sleep 3
           curl -f http://localhost:3000/ || (docker logs abn-frontend-test && exit 1)
           docker stop abn-frontend-test
