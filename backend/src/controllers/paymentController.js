@@ -1089,12 +1089,197 @@ exports.getPaymentAudit = async (req, res) => {
   }
 };
 
-module.exports = {
-  createPayment,
-  handlePaymentNotification,
-  handlePaymentStatusPolling,
-  retryPayment,
-  confirmPayAtStorePaymentBySeller,
-  refundPayment,
-  getPaymentAudit,
+// ROADMAP #16: refund + audit trail (pola exports.* konsisten dengan file ini)
+exports.refundPayment = async (req, res) => {
+  const actorUID = req.user?.uid;
+  const { orderId, reason, amount } = req.body;
+
+  if (!actorUID) {
+    return handleError(res, {
+      statusCode: 401,
+      message: "Otentikasi diperlukan.",
+    });
+  }
+  if (!orderId) {
+    return handleError(res, {
+      statusCode: 400,
+      message: "orderId diperlukan.",
+    });
+  }
+
+  try {
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("*")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (orderError) throw orderError;
+    if (!order) {
+      return handleError(res, {
+        statusCode: 404,
+        message: "Pesanan tidak ditemukan.",
+      });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", actorUID)
+      .maybeSingle();
+
+    const isAdmin = profile?.role === "admin";
+    const shopIds = order.shop_ids || [];
+    const isSeller = shopIds.includes(profile?.shop_id);
+
+    if (!isAdmin && !isSeller) {
+      return handleError(res, {
+        statusCode: 403,
+        message: "Anda tidak berhak memproses refund untuk pesanan ini.",
+      });
+    }
+
+    const refundableStatuses = ["COMPLETED"];
+    if (!refundableStatuses.includes(order.order_status)) {
+      return handleError(res, {
+        statusCode: 400,
+        message: `Pesanan tidak bisa di-refund (status: ${order.order_status}). Hanya status COMPLETED.`,
+      });
+    }
+
+    if (order.refunded_at) {
+      return handleError(res, {
+        statusCode: 400,
+        message: `Pesanan sudah di-refund pada ${order.refunded_at}.`,
+      });
+    }
+
+    const refundAmount =
+      amount && amount > 0 && amount <= order.total_price
+        ? amount
+        : order.total_price;
+
+    const oldStatus = order.payment_details?.status || order.order_status;
+    const newStatus = "REFUNDED";
+
+    const { error: updateError } = await supabaseAdmin
+      .from("orders")
+      .update({
+        refunded_at: new Date().toISOString(),
+        refund_reason: reason || "Refund oleh penjual/admin",
+        refund_amount: refundAmount,
+        payment_details: {
+          ...order.payment_details,
+          status: newStatus,
+          refundedAt: new Date().toISOString(),
+          refundReason: reason,
+          refundAmount,
+        },
+      })
+      .eq("id", orderId);
+
+    if (updateError) throw updateError;
+
+    // Audit log (abaikan error RPC agar refund tetap sukses)
+    try {
+      await supabaseAdmin.rpc("log_payment_status_change", {
+        p_order_id: orderId,
+        p_old_status: oldStatus,
+        p_new_status: newStatus,
+        p_source: "MANUAL_REFUND",
+        p_details: {
+          refundReason: reason,
+          refundAmount,
+          actorUid: actorUID,
+        },
+      });
+    } catch (auditErr) {
+      console.error("[Refund] Gagal menulis audit log:", auditErr);
+    }
+
+    try {
+      await sendNotification({
+        userId: order.user_id,
+        title: "Refund Diproses",
+        body: `Refund untuk pesanan #${orderId.substring(0, 20)} sebesar ${refundAmount.toLocaleString("id-ID")} telah diproses.`,
+        data: { orderId, type: "PAYMENT_REFUNDED" },
+      });
+    } catch (notifError) {
+      console.error("Gagal kirim notifikasi refund:", notifError);
+    }
+
+    return handleSuccess(res, 200, "Refund berhasil diproses.", {
+      orderId,
+      refundAmount,
+      refundedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error("[Refund] Error:", error);
+    return handleError(res, {
+      statusCode: 500,
+      message: `Gagal memproses refund: ${error.message || ""}`.trim(),
+    });
+  }
+};
+
+// ROADMAP #16: payment audit trail
+exports.getPaymentAudit = async (req, res) => {
+  const actorUID = req.user?.uid;
+  const { orderId } = req.params;
+
+  if (!actorUID) {
+    return handleError(res, {
+      statusCode: 401,
+      message: "Otentikasi diperlukan.",
+    });
+  }
+
+  try {
+    const { data: order, error: orderError } = await supabaseAdmin
+      .from("orders")
+      .select("user_id, shop_ids")
+      .eq("id", orderId)
+      .maybeSingle();
+
+    if (orderError) throw orderError;
+    if (!order) {
+      return handleError(res, {
+        statusCode: 404,
+        message: "Pesanan tidak ditemukan.",
+      });
+    }
+
+    const { data: profile } = await supabaseAdmin
+      .from("profiles")
+      .select("role, shop_id")
+      .eq("id", actorUID)
+      .maybeSingle();
+
+    const isAdmin = profile?.role === "admin";
+    const isCustomer = order.user_id === actorUID;
+    const isSeller = (order.shop_ids || []).includes(profile?.shop_id);
+
+    if (!isAdmin && !isCustomer && !isSeller) {
+      return handleError(res, {
+        statusCode: 403,
+        message: "Tidak berhak melihat audit pembayaran ini.",
+      });
+    }
+
+    const { data: history, error: histError } = await supabaseAdmin
+      .from("payment_status_history")
+      .select("*")
+      .eq("order_id", orderId)
+      .order("created_at", { ascending: true });
+
+    if (histError) throw histError;
+
+    return handleSuccess(res, 200, "Riwayat status pembayaran.", history || []);
+  } catch (error) {
+    console.error("[PaymentAudit] Error:", error);
+    return handleError(res, {
+      statusCode: 500,
+      message: `Gagal mengambil audit: ${error.message || ""}`.trim(),
+    });
+  }
 };
