@@ -49,7 +49,11 @@ function NavigationBar({ isAuthModalOpen }) {
   useEffect(() => {
     if (isLoggedIn) {
       fetchNotifications();
-      const interval = setInterval(fetchNotifications, 60000);
+      const interval = setInterval(() => {
+        // ROADMAP #20: skip polling saat tab tidak aktif (hemat resource)
+        if (document.hidden) return;
+        fetchNotifications();
+      }, 60000);
       return () => clearInterval(interval);
     }
   }, [isLoggedIn, fetchNotifications]);

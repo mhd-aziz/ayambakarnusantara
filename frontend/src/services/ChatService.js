@@ -148,9 +148,9 @@ const getMessages = async (conversationId, queryParams = {}) => {
 };
 
 const askChatbot = async (data) => {
-  if (!data || !data.question || !data.userId) {
+  if (!data || !data.question) {
     const err = new Error(
-      "Question (string) and userId (string) are required."
+      "Question (string) is required."
     );
     err.success = false;
     err.statusCode = 400;

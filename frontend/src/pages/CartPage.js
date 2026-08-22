@@ -52,7 +52,7 @@ function CartPage() {
   const [orderError, setOrderError] = useState("");
   const [orderSuccessMessage, setOrderSuccessMessage] = useState("");
 
-  useEffect(() => {}, [isLoggedIn, fetchCart]);
+
 
   const handleUpdateQuantity = async (productId, currentQuantity, change) => {
     const newQuantity = currentQuantity + change;

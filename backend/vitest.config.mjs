@@ -7,5 +7,6 @@ export default defineConfig({
     // easily exceeds Vitest's 5s default on the multi-await order tests.
     testTimeout: 30000,
     hookTimeout: 30000,
+    globals: true,
   },
 });

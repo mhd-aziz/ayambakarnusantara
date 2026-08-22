@@ -1,3 +1,7 @@
+// --- Magic-bytes validation (ROADMAP #10) ---
+// Delegated to imageValidation.js (pure module, safe to unit-test).
+const { validateImageMagicBytes, ALLOWED_IMAGE_FORMATS } = require("./imageValidation");
+
 const { supabaseAdmin, supabaseUrl } = require("../config/supabaseConfig");
 
 /**
@@ -57,10 +61,18 @@ async function getSignedUrl(bucket, filePath, expiresIn = 3600) {
  */
 function extractPathFromPublicUrl(url, bucket) {
   if (!url || typeof url !== "string") return null;
+  // Tolak path traversal / skema absolut (ROADMAP #11).
+  if (url.includes("..") || url.includes("//") || /^[a-zA-Z]+:/.test(url)) {
+    return null;
+  }
   const prefix = `/object/public/${bucket}/`;
   const idx = url.indexOf(prefix);
   if (idx === -1) return null;
-  return url.slice(idx + prefix.length);
+  const path = url.slice(idx + prefix.length);
+  // Guard tambahan: path relatif di dalam bucket tidak boleh mengandung
+  // segmen ".." maupun diawali "/".
+  if (!path || path.startsWith("/") || path.includes("..")) return null;
+  return path;
 }
 
 /**
@@ -96,4 +108,6 @@ module.exports = {
   extractPathFromPublicUrl,
   mapPaymentProofUrls,
   deleteFile,
+  validateImageMagicBytes,
+  ALLOWED_IMAGE_FORMATS,
 };

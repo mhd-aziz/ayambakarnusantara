@@ -27,4 +27,18 @@ router.post(
   paymentController.handlePaymentNotification
 );
 
+// Refund (seller/admin) — ROADMAP #16
+router.post(
+  "/refund",
+  authenticateToken,
+  paymentController.refundPayment
+);
+
+// Payment audit trail — ROADMAP #16
+router.get(
+  "/audit/:orderId",
+  authenticateToken,
+  paymentController.getPaymentAudit
+);
+
 module.exports = router;
