@@ -1,6 +1,6 @@
 # Deploy — Frontend to Homelab (self-hosted runner)
-# Triggers only on push to main (after CI passes).
-# Runs on self-hosted runner 'abn-homelab'.
+# Triggers on push to main (after CI passes) or manually via workflow_dispatch.
+# Runs on self-hosted runner 'abn-homelab' (label 'abn').
 
 name: Frontend Deploy
 
@@ -9,6 +9,7 @@ on:
     workflows: ["Frontend CI"]
     types: [completed]
     branches: [main]
+  workflow_dispatch:
 
 concurrency:
   group: frontend-deploy-${{ github.ref }}
@@ -17,8 +18,8 @@ concurrency:
 jobs:
   deploy:
     name: Deploy Frontend to Homelab
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: [self-hosted, abn-homelab]
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: [self-hosted, abn]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
