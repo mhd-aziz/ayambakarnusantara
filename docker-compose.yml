@@ -1,8 +1,3 @@
-# Komposisi deploy homelab untuk Ayam Bakar Nusantara.
-# - backend  : Express, secret dipasok via env_file ./backend/.env (jangan commit .env ke git).
-# - frontend : static SPA dari hasil `vite build --mode prod`, disajikan serve.js (tanpa nginx).
-# Port host dipertahankan = 3000 (front) & 5000 (back) agar URL http://100.82.26.92:3000 tetap.
-
 services:
   backend:
     build:
@@ -16,8 +11,6 @@ services:
     build:
       context: ./frontend
       args:
-        # URL API di-bake saat build, diekspos publik via Cloudflare tunnel
-        # (subdomain 2-level agar tercakup Universal SSL gratis Cloudflare).
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://abn-api.zisaltech.site}
     restart: unless-stopped
     ports:
