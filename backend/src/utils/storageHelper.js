@@ -1,6 +1,10 @@
 // --- Magic-bytes validation (ROADMAP #10) ---
 // Delegated to imageValidation.js (pure module, safe to unit-test).
-const { validateImageMagicBytes, ALLOWED_IMAGE_FORMATS } = require("./imageValidation");
+const {
+  validateImageMagicBytes,
+  assertValidImageBuffer,
+  ALLOWED_IMAGE_FORMATS,
+} = require("./imageValidation");
 
 const { supabaseAdmin, supabaseUrl } = require("../config/supabaseConfig");
 
@@ -13,6 +17,7 @@ const { supabaseAdmin, supabaseUrl } = require("../config/supabaseConfig");
  * @returns {Promise<string>} URL publik permanen
  */
 async function uploadImage(bucket, filePath, buffer, contentType) {
+  assertValidImageBuffer(buffer);
   const { error } = await supabaseAdmin.storage
     .from(bucket)
     .upload(filePath, buffer, { contentType, upsert: true });
@@ -26,6 +31,7 @@ async function uploadImage(bucket, filePath, buffer, contentType) {
  * @returns {Promise<string>} path relatif dalam bucket (bukan URL penuh)
  */
 async function uploadPrivateImage(bucket, filePath, buffer, contentType) {
+  assertValidImageBuffer(buffer);
   const { error } = await supabaseAdmin.storage
     .from(bucket)
     .upload(filePath, buffer, { contentType, upsert: true });

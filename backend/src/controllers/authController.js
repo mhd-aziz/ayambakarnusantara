@@ -177,8 +177,18 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.logout = (req, res) => {
+exports.logout = async (req, res) => {
   try {
+    // Revoke the refresh token server-side so a stolen session does not stay
+    // valid for 7 days after logout.
+    const refreshToken = req.cookies?.authRefreshToken;
+    if (refreshToken) {
+      try {
+        await supabaseAdmin.auth.admin.signOut(refreshToken);
+      } catch (revokeErr) {
+        console.warn("Logout: gagal revoke refresh token:", revokeErr.message);
+      }
+    }
     clearSessionCookies(res);
     return handleSuccess(res, 200, "Logout berhasil.");
   } catch (error) {

@@ -623,7 +623,7 @@ exports.getShopDetails = async (req, res) => {
     if (shopData.user_id) {
       const { data: ownerUser } = await supabaseAdmin
         .from("profiles")
-        .select("id, display_name, photo_url, email")
+        .select("id, display_name, photo_url")
         .eq("id", shopData.user_id)
         .maybeSingle();
 
@@ -633,7 +633,6 @@ exports.getShopDetails = async (req, res) => {
           uid: ownerUser.id,
           displayName: ownerUser.display_name,
           photoURL: ownerUser.photo_url,
-          email: ownerUser.email,
         };
       }
     }
