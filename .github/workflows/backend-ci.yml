@@ -51,7 +51,7 @@ jobs:
           echo "All source files pass syntax check"
 
       - name: Run unit tests (no DB)
-        run: npx vitest run tests/security-fixes.test.js tests/new-fixes.test.js --reporter=verbose
+        run: npx vitest run tests/security-fixes.test.js tests/new-fixes.test.js tests/qa-audit-fix-2026-08-25.test.js --reporter=verbose
         env:
           NODE_ENV: test
           PORT: "5000"

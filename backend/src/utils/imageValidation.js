@@ -45,8 +45,24 @@ function validateImageMagicBytes(buffer) {
   );
 }
 
+/**
+ * Validate a buffer and throw a client-facing 400 error when it is not a
+ * recognized image. Used by storage helpers so every upload path enforces
+ * magic-byte checks (REVIEW-2026-08-25 H2), not just chat.
+ * @param {Buffer} buffer - file content
+ * @throws {Error} with statusCode 400 when the buffer is not a recognized image
+ */
+function assertValidImageBuffer(buffer) {
+  if (!validateImageMagicBytes(buffer)) {
+    const error = new Error("Isi file bukan gambar yang valid (JPEG, PNG, GIF, WEBP).");
+    error.statusCode = 400;
+    throw error;
+  }
+}
+
 module.exports = {
   ALLOWED_IMAGE_FORMATS,
   matchesSignature,
   validateImageMagicBytes,
+  assertValidImageBuffer,
 };

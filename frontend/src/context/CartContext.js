@@ -90,7 +90,6 @@ export const CartProvider = ({ children }) => {
   };
 
   const updateItemQuantity = async (productId, newQuantity) => {
-    // ... (mirip dengan addItem, panggil apiUpdateCartItemQuantity dan setCart)
     setIsLoading(true);
     try {
       const response = await apiUpdateCartItemQuantity(productId, newQuantity);
@@ -110,7 +109,6 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeItem = async (productId) => {
-    // ... (mirip dengan addItem, panggil apiRemoveCartItem dan setCart)
     setIsLoading(true);
     try {
       const response = await apiRemoveCartItem(productId);
