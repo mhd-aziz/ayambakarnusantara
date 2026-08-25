@@ -16,8 +16,9 @@ services:
     build:
       context: ./frontend
       args:
-        # URL API di-bake saat build. Ganti sesuai kebutuhan (tunnel/domain) tanpa ubah frontend.
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://100.82.26.92:5000}
+        # URL API di-bake saat build, diekspos publik via Cloudflare tunnel
+        # (subdomain 2-level agar tercakup Universal SSL gratis Cloudflare).
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://abn-api.zisaltech.site}
     restart: unless-stopped
     ports:
       - "3000:3000"
