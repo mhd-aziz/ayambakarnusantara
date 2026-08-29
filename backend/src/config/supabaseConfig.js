@@ -1,5 +1,13 @@
+const path = require("path");
 const { createClient } = require("@supabase/supabase-js");
-require("dotenv").config();
+
+const envDir = path.join(__dirname, "../..");
+require("dotenv").config({ path: path.join(envDir, ".env") });
+const envFile =
+  process.env.NODE_ENV === "production" ? ".env.prod" : ".env.dev";
+require("dotenv").config({
+  path: path.join(envDir, envFile),
+});
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

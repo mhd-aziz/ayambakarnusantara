@@ -6,13 +6,17 @@ const path = require("path");
 // Pilihan file ditentukan NODE_ENV: 'production' → .env.prod, selain itu → .env.dev.
 // `override: true` membuat nilai di file spesifik-environment menang atas .env.
 const envDir = path.join(__dirname, "..");
+const initialNodeEnv = process.env.NODE_ENV;
 require("dotenv").config({ path: path.join(envDir, ".env") });
 const envFile =
-  process.env.NODE_ENV === "production" ? ".env.prod" : ".env.dev";
+  initialNodeEnv === "production" ? ".env.prod" : ".env.dev";
 require("dotenv").config({
   path: path.join(envDir, envFile),
   override: true,
 });
+if (initialNodeEnv === "test") {
+  process.env.NODE_ENV = "test";
+}
 const express = require("express");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");

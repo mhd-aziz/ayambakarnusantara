@@ -67,17 +67,15 @@ async function getSignedUrl(bucket, filePath, expiresIn = 3600) {
  */
 function extractPathFromPublicUrl(url, bucket) {
   if (!url || typeof url !== "string") return null;
-  // Tolak path traversal / skema absolut (ROADMAP #11).
-  if (url.includes("..") || url.includes("//") || /^[a-zA-Z]+:/.test(url)) {
-    return null;
-  }
   const prefix = `/object/public/${bucket}/`;
   const idx = url.indexOf(prefix);
   if (idx === -1) return null;
   const path = url.slice(idx + prefix.length);
-  // Guard tambahan: path relatif di dalam bucket tidak boleh mengandung
-  // segmen ".." maupun diawali "/".
-  if (!path || path.startsWith("/") || path.includes("..")) return null;
+  // Guard: path relatif di dalam bucket tidak boleh kosong, diawali "/",
+  // atau mengandung ".." maupun "//".
+  if (!path || path.startsWith("/") || path.includes("..") || path.includes("//")) {
+    return null;
+  }
   return path;
 }
 

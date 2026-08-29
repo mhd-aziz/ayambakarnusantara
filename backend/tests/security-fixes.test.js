@@ -11,22 +11,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import fs from "fs";
 import path from "path";
-
-// --- Fix D: copy function implementation untuk test (pure, tidak butuh supabaseConfig) ---
-function extractPathFromPublicUrl(url, bucket) {
-  if (!url || typeof url !== "string") return null;
-  // Tolak path traversal / skema absolut (ROADMAP #11).
-  // JANGAN tolak URL normal yg punya scheme (https://...).
-  // Hanya tolak jika path hasil ekstrak mengandung ".." atau "//".
-  const prefix = `/object/public/${bucket}/`;
-  const idx = url.indexOf(prefix);
-  if (idx === -1) return null;
-  const path = url.slice(idx + prefix.length);
-  // Guard: path relatif di dalam bucket tidak boleh mengandung
-  // segmen ".." maupun diawali "/".
-  if (!path || path.startsWith("/") || path.includes("..")) return null;
-  return path;
-}
+import { extractPathFromPublicUrl } from "../src/utils/storageHelper.js";
 
 describe("Fix D — storageHelper.extractPathFromPublicUrl tolak path traversal", () => {
   const bucket = "product-images";
@@ -37,9 +22,27 @@ describe("Fix D — storageHelper.extractPathFromPublicUrl tolak path traversal"
     expect(extractPathFromPublicUrl(url, bucket)).toBe("shop-1/abc.png");
   });
 
+  it("mengembalikan path relatif untuk URL lengkap Supabase dengan ref dan bucket lain", () => {
+    const url =
+      "https://my-project-ref.supabase.co/storage/v1/object/public/shop-banners/shop-123/banner.jpg";
+    expect(extractPathFromPublicUrl(url, "shop-banners")).toBe("shop-123/banner.jpg");
+  });
+
+  it("mengembalikan path relatif untuk path bersarang (nested path)", () => {
+    const url =
+      "https://xyz.supabase.co/storage/v1/object/public/product-images/category/food/item.png";
+    expect(extractPathFromPublicUrl(url, bucket)).toBe("category/food/item.png");
+  });
+
   it("null untuk path traversal '..' dalam path", () => {
     const url =
       "https://xyz.supabase.co/storage/v1/object/public/product-images/../secret.png";
+    expect(extractPathFromPublicUrl(url, bucket)).toBeNull();
+  });
+
+  it("null untuk path traversal bertingkat '../../etc/passwd'", () => {
+    const url =
+      "https://xyz.supabase.co/storage/v1/object/public/product-images/../../etc/passwd";
     expect(extractPathFromPublicUrl(url, bucket)).toBeNull();
   });
 
@@ -52,6 +55,18 @@ describe("Fix D — storageHelper.extractPathFromPublicUrl tolak path traversal"
   it("null untuk path yang diawali '/' (double slash)", () => {
     const url =
       "https://xyz.supabase.co/storage/v1/object/public/product-images//etc/passwd";
+    expect(extractPathFromPublicUrl(url, bucket)).toBeNull();
+  });
+
+  it("null untuk path yang mengandung '//' di tengah path", () => {
+    const url =
+      "https://xyz.supabase.co/storage/v1/object/public/product-images/shop-1//abc.png";
+    expect(extractPathFromPublicUrl(url, bucket)).toBeNull();
+  });
+
+  it("null jika bucket dalam URL tidak cocok", () => {
+    const url =
+      "https://xyz.supabase.co/storage/v1/object/public/other-bucket/shop-1/abc.png";
     expect(extractPathFromPublicUrl(url, bucket)).toBeNull();
   });
 });

@@ -43,6 +43,16 @@ async function resetDemo() {
   await clear("notifications");
   await clear("orders");
   await clear("carts", "user_id");
+
+  // Restore stok produk demo (50) agar test suite stabil dan dapat dijalankan berulang
+  try {
+    await admin
+      .from("products")
+      .update({ stock: 50 })
+      .neq("id", "00000000-0000-0000-0000-000000000000");
+  } catch (e) {
+    /* abaikan jika gagal */
+  }
 }
 
 beforeAll(async () => {
