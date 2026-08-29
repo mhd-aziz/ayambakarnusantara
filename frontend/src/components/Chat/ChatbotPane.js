@@ -96,9 +96,7 @@ function ChatbotPane() {
         setError("");
         setMessages([]);
         try {
-          const historyResponse = await ChatService.getChatbotHistory(
-            currentUser.uid
-          );
+          const historyResponse = await ChatService.getChatbotHistory();
           if (
             historyResponse &&
             historyResponse.success &&

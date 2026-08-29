@@ -11,7 +11,7 @@ import {
   Alert,
 } from "react-bootstrap";
 import { Link } from "react-router-dom";
-import { getProducts } from "../services/MenuService";
+import { getProducts, getProductRecommendations } from "../services/MenuService";
 import { getAllRatings } from "../services/RatingService";
 import { sendFeedback } from "../services/FeedbackService";
 import {
@@ -137,16 +137,11 @@ function HomePage() {
     setIsRecommendationsLoading(true);
     setRecommendationsError(null);
     try {
-      const response = await getProducts({
+      const response = await getProductRecommendations({
         limit: 4,
-        sortBy: "averageRating",
-        order: "desc",
       });
-      if (response && response.data && Array.isArray(response.data.products)) {
-        const productsWithRating = response.data.products.filter(
-          (p) => p.averageRating > 0
-        );
-        setRecommendedProducts(productsWithRating);
+      if (response && response.data && Array.isArray(response.data.recommendations)) {
+        setRecommendedProducts(response.data.recommendations);
       } else {
         setRecommendationsError("Gagal memuat data produk rekomendasi.");
       }

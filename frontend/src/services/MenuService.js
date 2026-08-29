@@ -111,6 +111,20 @@ const getMyProducts = async () => {
   }
 };
 
+const getProductRecommendations = async (params = {}) => {
+  try {
+    const response = await axios.get(`${BASE_URL}/product/recommendations`, {
+      params,
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response && error.response.data) {
+      throw error.response.data;
+    }
+    throw error;
+  }
+};
+
 export {
   getProducts,
   getProductById,
@@ -118,4 +132,5 @@ export {
   updateProduct,
   deleteProduct,
   getMyProducts,
+  getProductRecommendations,
 };

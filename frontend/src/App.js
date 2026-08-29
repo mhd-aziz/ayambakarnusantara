@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, lazy, Suspense } from "react";
 import {
   Routes,
   Route,
@@ -24,9 +24,7 @@ import DetailMenuPage from "./pages/DetailMenuPage";
 import ShopPage from "./pages/ShopPage";
 import ShopDetailPage from "./pages/ShopDetailPage";
 import OrderPage from "./pages/OrderPage";
-import OrderDetailPage from "./pages/OrderDetailPage";
 import ProfilePage from "./pages/ProfilePage";
-import SellerPage from "./pages/Seller/SellerPage";
 import SellerDashboardOverview from "./pages/Seller/SellerDashboardOverview";
 import SellerShopInfo from "./pages/Seller/SellerShopInfo";
 import SellerProductManagement from "./pages/Seller/SellerProductManagement";
@@ -37,6 +35,21 @@ import NotificationPage from "./pages/NotificationPage";
 import ScrollToAnchor from "./utils/ScrollToAnchor";
 import TermsConditionsPage from "./pages/TermsConditionsPage";
 import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+
+const SellerPage = lazy(() => import("./pages/Seller/SellerPage"));
+const OrderDetailPage = lazy(() => import("./pages/OrderDetailPage"));
+
+const PageLoadingFallback = () => (
+  <Container
+    fluid
+    className="d-flex justify-content-center align-items-center py-5"
+    style={{ minHeight: "50vh" }}
+  >
+    <Spinner animation="border" role="status">
+      <span className="visually-hidden">Memuat...</span>
+    </Spinner>
+  </Container>
+);
 
 function App() {
   const { isLoggedIn, isLoading, user } = useAuth();
@@ -198,7 +211,9 @@ function App() {
             path="/pesanan/:orderId"
             element={
               isLoggedIn ? (
-                <OrderDetailPage onOpenChatbot={handleOpenChatbot} />
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <OrderDetailPage onOpenChatbot={handleOpenChatbot} />
+                </Suspense>
               ) : (
                 <Navigate to="/login" replace />
               )
@@ -214,7 +229,9 @@ function App() {
             path="/toko-saya/*"
             element={
               isLoggedIn ? (
-                <SellerPage />
+                <Suspense fallback={<PageLoadingFallback />}>
+                  <SellerPage />
+                </Suspense>
               ) : (
                 <Navigate to="/login" state={{ from: "/toko-saya" }} replace />
               )

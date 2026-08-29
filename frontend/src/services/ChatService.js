@@ -147,6 +147,34 @@ const getMessages = async (conversationId, queryParams = {}) => {
   }
 };
 
+const markConversationAsRead = async (conversationId) => {
+  if (!conversationId || typeof conversationId !== "string") {
+    const err = new Error("conversationId (string) wajib diisi.");
+    err.success = false;
+    err.statusCode = 400;
+    throw err;
+  }
+  try {
+    const response = await axios.patch(
+      `${CHAT_API_URL}/conversations/${conversationId}/read`,
+      {},
+      {
+        withCredentials: true,
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data || {
+        success: false,
+        message:
+          "Terjadi kesalahan pada server saat menandai percakapan sudah dibaca.",
+        statusCode: error.response?.status || 500,
+      }
+    );
+  }
+};
+
 const askChatbot = async (data) => {
   if (!data || !data.question) {
     const err = new Error(
@@ -176,15 +204,7 @@ const askChatbot = async (data) => {
   }
 };
 
-const getChatbotHistory = async (userId) => {
-  if (!userId || typeof userId !== "string") {
-    const err = new Error(
-      "userId (string) wajib diisi untuk mengambil riwayat chatbot."
-    );
-    err.success = false;
-    err.statusCode = 400;
-    throw err;
-  }
+const getChatbotHistory = async () => {
   try {
     const response = await axios.get(`${CHATBOT_API_URL}/history`, {
       withCredentials: true,
@@ -202,11 +222,31 @@ const getChatbotHistory = async (userId) => {
   }
 };
 
+const clearChatbotHistory = async () => {
+  try {
+    const response = await axios.delete(`${CHATBOT_API_URL}/history/clear`, {
+      withCredentials: true,
+    });
+    return response.data;
+  } catch (error) {
+    throw (
+      error.response?.data || {
+        success: false,
+        message:
+          "Terjadi kesalahan pada server saat menghapus riwayat chatbot.",
+        statusCode: error.response?.status || 500,
+      }
+    );
+  }
+};
+
 export {
   startOrGetConversation,
   getAllConversations,
   sendMessage,
   getMessages,
+  markConversationAsRead,
   askChatbot,
   getChatbotHistory,
+  clearChatbotHistory,
 };

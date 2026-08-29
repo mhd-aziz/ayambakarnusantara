@@ -338,6 +338,11 @@ function GlobalChat({
       );
       if (targetConversation) {
         setSelectedConversation(targetConversation);
+        if (targetConversation._id) {
+          ChatService.markConversationAsRead(targetConversation._id).catch(
+            () => {}
+          );
+        }
       }
     }
   }, [conversationToLoad, conversations]);
@@ -459,6 +464,9 @@ function GlobalChat({
       selectedConversation?._id !== conversation._id
     ) {
       setSelectedConversation(conversation);
+      if (conversation?._id) {
+        ChatService.markConversationAsRead(conversation._id).catch(() => {});
+      }
     }
   };
 
