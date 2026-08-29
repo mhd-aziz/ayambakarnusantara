@@ -198,4 +198,4 @@ Chatbot tidak selalu tersedia. Kalau server chatbot mati, muncul error "chatbot 
 - Notifikasi pembatalan order dikirim ke semua seller terkait (fix 11 Agu 2026).
 - Tidak ada pengiriman. Hanya ambil di tempat.
 - Satu toko = satu user. Belum ada admin platform.
-- Belum ada mekanisme refund pembayaran online.
+- Refund pembayaran online tersedia: seller/admin bisa memproses refund via `POST /payment/refund` untuk order berstatus COMPLETED. Refund mencatat `refunded_at`, `refund_reason`, `refund_amount` di order dan log ke `payment_status_history` (audit trail).

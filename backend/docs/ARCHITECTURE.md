@@ -59,7 +59,8 @@ src/
 ├── app.js                    # app Express: CORS, cookie-parser, json, routes (dipisah agar bisa dites supertest)
 ├── config/
 │   ├── supabaseConfig.js     # admin + anon client
-│   └── midtransConfig.js     # Snap, isProduction dari env
+│   ├── midtransConfig.js     # Snap, isProduction dari env
+│   └── resendConfig.js       # Resend API (email reset password)
 ├── middlewares/
 │   ├── authMiddleware.js     # authenticateToken (JWT + auto-refresh) & isSeller
 │   ├── multerConfig.js       # upload gambar (MIME, 5MB)
@@ -68,7 +69,9 @@ src/
 ├── routes/                   # 12 file pemetaan URL ke controller
 ├── utils/
 │   ├── responseHandler.js    # format respons konsisten
-│   └── storageHelper.js      # upload, hapus, signed URL
+│   ├── storageHelper.js      # upload, hapus, signed URL
+│   ├── imageValidation.js    # validasi magic bytes gambar (PNG/JPEG/GIF/WEBP)
+│   └── chatValidation.js     # batas karakter & range lat/long pesan chat
 └── (tests/ di level project: tests/api.integration.test.js — Vitest + Supertest)
 ```
 

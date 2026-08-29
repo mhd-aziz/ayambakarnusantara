@@ -26,7 +26,6 @@ Legend: publik = tanpa login, login = perlu akun, seller = perlu role seller.
 | GET | `/profile` | login | Data profil |
 | PUT | `/profile/update` | login | multipart: `displayName, phoneNumber, address, profileImage?` |
 | DELETE | `/profile/photo` | login | Hapus foto profil + file storage |
-| POST | `/profile/fcm-token` | login | `{ token }`, tambah token FCM |
 
 ## Toko (seller)
 
@@ -75,6 +74,7 @@ Legend: publik = tanpa login, login = perlu akun, seller = perlu role seller.
 | PATCH | `/order/:orderId/seller/status` | seller | `{ newStatus }`, hanya transisi valid |
 | PATCH | `/order/:orderId/seller/confirm-payment` | seller | multipart: `paymentProofs[]`, `paymentConfirmationNotes?` |
 | GET | `/order/:orderId/payment-proofs` | login | Bukti bayar (signed URL) |
+| GET | `/order/all?status=&limit=` | login | Daftar semua order user: customer = order sendiri, seller = order yang memuat produk tokonya (filter di SQL `shop_ids`, limit 50) |
 
 ## Pembayaran (Midtrans)
 
@@ -84,6 +84,8 @@ Legend: publik = tanpa login, login = perlu akun, seller = perlu role seller.
 | POST | `/payment/retry/:orderId` | login | Token baru setelah transaksi expire/cancel |
 | GET | `/payment/status/:orderId` | login | Polling status Midtrans, sinkron status order |
 | POST | `/payment/notification` | webhook | Notifikasi Midtrans. Verifikasi signature sha512, idempoten, sinkron status + notif customer |
+| POST | `/payment/refund` | login | Refund pesanan (seller/admin, status COMPLETED/PAID) |
+| GET | `/payment/audit/:orderId` | login | Trail audit pembayaran (riwayat status) |
 
 ## Rating
 

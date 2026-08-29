@@ -65,6 +65,9 @@ Total keranjang dihitung ulang saat dibaca, bukan disimpan.
 | payment_method | text | `ONLINE_PAYMENT` atau `PAY_AT_STORE` (check) |
 | order_status | text | State machine, check constraint di SQL |
 | payment_details | jsonb | `{snapToken?, redirectUrl?, status?, paidAt?}` |
+| refunded_at | timestamptz? | Waktu refund (migration 23 Agu 2026) |
+| refund_reason | text? | Alasan refund |
+| refund_amount | numeric(12,2)? | Jumlah yang di-refund |
 | notes | text? | Catatan pembeli |
 | shop_ids | uuid[] | Semua toko yang terlibat (dipakai notifikasi multi-seller + index GIN) |
 
