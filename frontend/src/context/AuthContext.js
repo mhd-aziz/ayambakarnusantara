@@ -26,21 +26,33 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error("AuthContext: Error saat logout dari backend:", error);
     } finally {
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+      try {
+        localStorage.removeItem("user");
+      } catch {}
+      setUser(null);
+      setIsLoggedIn(false);
+      navigate("/login");
     }
-  }, []);
+  }, [navigate]);
 
   const login = useCallback(
     (userData, options = { navigateAfterLogin: false, navigateTo: "/" }) => {
-      if (typeof userData === "object" && userData !== null) {
-        localStorage.setItem("user", JSON.stringify(userData));
-        setUser(userData);
-        setIsLoggedIn(true);
-      } else {
+      if (typeof userData !== "object" || userData === null) {
         console.error("Login function called with invalid userData:", userData);
         return;
       }
+      const uid = userData.uid || userData.id;
+      if (typeof uid !== "string" || !uid) {
+        console.error("Login function called with userData missing uid/id:", userData);
+        return;
+      }
+      try {
+        localStorage.setItem("user", JSON.stringify(userData));
+      } catch (e) {
+        console.error("Failed to persist user to localStorage:", e);
+      }
+      setUser(userData);
+      setIsLoggedIn(true);
 
       if (options.navigateAfterLogin) {
         navigate(options.navigateTo);
@@ -49,17 +61,28 @@ export const AuthProvider = ({ children }) => {
     [navigate]
   );
   useEffect(() => {
+    const isValidStoredUser = (obj) => {
+      if (typeof obj !== "object" || obj === null) return false;
+      const uid = obj.uid || obj.id;
+      return typeof uid === "string" && uid.length > 0;
+    };
     const checkAuthStatusFromLocalStorage = () => {
       setIsLoading(true);
-      const storedUser = localStorage.getItem("user");
+      let storedUser = null;
+      try {
+        storedUser = localStorage.getItem("user");
+      } catch {}
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
+          if (!isValidStoredUser(parsedUser)) throw new Error("Invalid user shape");
           setUser(parsedUser);
           setIsLoggedIn(true);
         } catch (e) {
           console.error("Error parsing stored user data:", e);
-          localStorage.removeItem("user");
+          try {
+            localStorage.removeItem("user");
+          } catch {}
           setIsLoggedIn(false);
           setUser(null);
         }

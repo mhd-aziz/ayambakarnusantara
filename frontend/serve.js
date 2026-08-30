@@ -35,30 +35,108 @@ function safeResolve(urlPath) {
   return file;
 }
 
+const SECURITY_HEADERS = {
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Cross-Origin-Opener-Policy": "same-origin",
+};
+
+function cacheControlFor(urlPath, ext) {
+  if (urlPath.startsWith("/assets/")) {
+    return "public, max-age=31536000, immutable";
+  }
+  if (ext === ".html") return "no-cache";
+  return "public, max-age=3600";
+}
+
 http
   .createServer((req, res) => {
     let urlPath;
     try {
-      urlPath = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
+      urlPath = decodeURIComponent(
+        new URL(req.url, "http://localhost").pathname
+      );
     } catch {
-      res.writeHead(400);
+      res.writeHead(400, SECURITY_HEADERS);
       res.end("Bad Request");
       return;
     }
     if (urlPath === "/") urlPath = "/index.html";
 
-    let filePath = safeResolve(urlPath);
-    let ext = path.extname(filePath).toLowerCase();
-
-    // SPA fallback: path tidak ada → index.html (routing client-side React).
-    if (!filePath || !fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
-      filePath = path.join(DIST, "index.html");
-      ext = ".html";
+    // Jangan telan /api/* dengan SPA fallback — kembalikan 404 agar tidak sembunyikan error API
+    if (urlPath.startsWith("/api/")) {
+      res.writeHead(404, {
+        "Content-Type": "application/json; charset=utf-8",
+        ...SECURITY_HEADERS,
+      });
+      res.end(JSON.stringify({ message: "Not Found" }));
+      return;
     }
 
-    const type = MIME[ext] || "application/octet-stream";
-    res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-cache" });
-    fs.createReadStream(filePath).pipe(res);
+    const isHead = req.method === "HEAD";
+    // Hanya layani GET/HEAD untuk aset statis; method lain 405
+    if (req.method !== "GET" && !isHead) {
+      res.writeHead(405, {
+        ...SECURITY_HEADERS,
+        Allow: "GET, HEAD",
+      });
+      res.end("Method Not Allowed");
+      return;
+    }
+
+    let filePath = safeResolve(urlPath);
+    let ext = path.extname(filePath || "").toLowerCase();
+
+    const serveFile = (fp, fileExt, cacheUrlPath) => {
+      const type = MIME[fileExt] || "application/octet-stream";
+      const headers = {
+        "Content-Type": type,
+        "Cache-Control": cacheControlFor(cacheUrlPath, fileExt),
+        ...SECURITY_HEADERS,
+      };
+      try {
+        const stat = fs.statSync(fp);
+        headers["Content-Length"] = stat.size;
+      } catch {}
+      res.writeHead(200, headers);
+      if (isHead) {
+        res.end();
+        return;
+      }
+      const stream = fs.createReadStream(fp);
+      stream.on("error", () => {
+        if (!res.headersSent) {
+          res.writeHead(500, SECURITY_HEADERS);
+        }
+        res.end("Internal Server Error");
+      });
+      stream.pipe(res);
+    };
+
+    // Cek file ada & bukan direktori — pakai sync yang sudah ada tapi tanpa blokir ganda;
+    // tetap aman karena safeResolve sudah cegah traversal. Async penuh bisa di-upgrade nanti.
+    let exists = false;
+    let isDir = false;
+    if (filePath) {
+      try {
+        exists = fs.existsSync(filePath);
+        if (exists) isDir = fs.statSync(filePath).isDirectory();
+      } catch {
+        exists = false;
+      }
+    }
+
+    if (!filePath || !exists || isDir) {
+      // SPA fallback: routing client-side React
+      filePath = path.join(DIST, "index.html");
+      ext = ".html";
+      serveFile(filePath, ext, urlPath);
+      return;
+    }
+
+    serveFile(filePath, ext, urlPath);
   })
   .listen(PORT, "0.0.0.0", () => {
     console.log(`Ayam Bakar Nusantara frontend serving ${DIST} on :${PORT}`);

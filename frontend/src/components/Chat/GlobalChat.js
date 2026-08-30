@@ -28,7 +28,17 @@ import * as ChatService from "../../services/ChatService";
 import ChatbotPane from "./ChatbotPane";
 import "../../css/GlobalChat.css";
 
-const MAPS_API_KEY = import.meta.env.VITE_MAPS_API_KEY || "YOUR_Maps_API_KEY";
+const MAPS_API_KEY = import.meta.env.VITE_MAPS_API_KEY || "";
+
+function isSafeHttpsUrl(url) {
+  if (typeof url !== "string" || !url) return false;
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
 
 function firestoreTimestampToDate(tsObject) {
   if (!tsObject) return null;
@@ -159,7 +169,7 @@ const MessageBubble = ({ message, isSender }) => {
     const { latitude, longitude } = message.location;
     const gmapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
 
-    if (MAPS_API_KEY === "YOUR_Maps_API_KEY") {
+    if (!MAPS_API_KEY) {
       return (
         <a
           href={gmapsUrl}
@@ -207,7 +217,7 @@ const MessageBubble = ({ message, isSender }) => {
             {message.text}
           </div>
         )}
-        {message.imageUrl && (
+        {message.imageUrl && isSafeHttpsUrl(message.imageUrl) && (
           <Image
             src={message.imageUrl}
             alt="Gambar terkirim"
@@ -215,7 +225,9 @@ const MessageBubble = ({ message, isSender }) => {
             rounded
             className="my-2 chat-message-image"
             style={{ maxHeight: "250px", cursor: "pointer" }}
-            onClick={() => window.open(message.imageUrl, "_blank")}
+            onClick={() =>
+              window.open(message.imageUrl, "_blank", "noopener,noreferrer")
+            }
           />
         )}
         {message.type === "location" && renderLocation()}
