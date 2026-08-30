@@ -18,7 +18,7 @@ import {
   ClipboardData,
   ExclamationTriangleFill,
 } from "react-bootstrap-icons";
-import CreateSellerForm from "../../components/Seller/CreateSellerForm";
+import SellerEmptyState from "../../components/Seller/SellerEmptyState";
 import { getMyShopStatistics } from "../../services/ShopService";
 
 const StatCard = ({ title, value, description, icon, isLoading }) => (
@@ -55,7 +55,7 @@ const StatCard = ({ title, value, description, icon, isLoading }) => (
 
 function SellerDashboardOverview() {
   const outletContext = useOutletContext();
-  const { currentUserProfile, userRole, shopData, hasShop, handleShopCreated } =
+  const { currentUserProfile, userRole, shopData, hasShop, handleShopCreated, loadInitialData } =
     outletContext || {};
 
   const [stats, setStats] = useState(null);
@@ -90,28 +90,11 @@ function SellerDashboardOverview() {
 
   if (userRole === "customer" || (userRole === "seller" && !hasShop)) {
     return (
-      <Container>
-        <Row className="justify-content-center">
-          <Col md={10} lg={8}>
-            {userRole === "customer" && (
-              <Alert variant="info" className="mb-4 text-center">
-                <InfoCircleFill size={20} className="me-2" />
-                Anda saat ini terdaftar sebagai pelanggan. <br />
-                Lengkapi form di bawah ini untuk membuka toko Anda!
-              </Alert>
-            )}
-            {userRole === "seller" && !hasShop && (
-              <Alert variant="warning" className="mb-4 text-center">
-                <InfoCircleFill size={20} className="me-2" />
-                Anda terdaftar sebagai penjual, namun data toko tidak ditemukan.{" "}
-                <br />
-                Silakan buat toko Anda sekarang.
-              </Alert>
-            )}
-            <CreateSellerForm onShopCreated={handleShopCreated} />
-          </Col>
-        </Row>
-      </Container>
+      <SellerEmptyState
+        userRole={userRole}
+        handleShopCreated={handleShopCreated}
+        loadInitialData={loadInitialData}
+      />
     );
   }
 

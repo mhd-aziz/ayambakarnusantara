@@ -18,7 +18,7 @@ import {
   ArrowClockwise,
 } from "react-bootstrap-icons";
 
-import CreateSellerForm from "../../components/Seller/CreateSellerForm";
+import SellerEmptyState from "../../components/Seller/SellerEmptyState";
 import SellerOrderList from "../../components/Seller/SellerOrderList";
 import SellerOrderDetailModal from "../../components/Seller/SellerOrderDetailModal";
 import UpdateOrderStatusModal from "../../components/Seller/UpdateOrderStatusModal";
@@ -342,24 +342,11 @@ function SellerOrderManagement() {
 
   if (userRole !== "seller" || !hasShop) {
     return (
-      <Container className="seller-page-content">
-        <Alert variant="warning" className="mt-3 shadow-sm text-center">
-          <InfoCircleFill className="me-2" />
-          Anda perlu memiliki toko untuk mengelola pesanan.
-        </Alert>
-        {(userRole === "customer" || (userRole === "seller" && !hasShop)) && (
-          <Row className="justify-content-center mt-4">
-            <Col md={10} lg={8} className="seller-form">
-              <CreateSellerForm
-                onShopCreated={() => {
-                  if (handleShopCreated) handleShopCreated();
-                  if (loadSellerPageData) loadSellerPageData();
-                }}
-              />
-            </Col>
-          </Row>
-        )}
-      </Container>
+      <SellerEmptyState
+        userRole={userRole}
+        handleShopCreated={handleShopCreated}
+        loadInitialData={loadSellerPageData}
+      />
     );
   }
 

@@ -27,7 +27,7 @@ import {
   CalendarCheck,
   ClockHistory,
 } from "react-bootstrap-icons";
-import CreateSellerForm from "../../components/Seller/CreateSellerForm";
+import SellerEmptyState from "../../components/Seller/SellerEmptyState";
 import { updateMyShop, deleteMyShop } from "../../services/ShopService";
 import "../../css/SellerShopInfo.css";
 import { handleShopImageError as handleImageError } from "../../utils/imageFallback";
@@ -172,28 +172,11 @@ function SellerShopInfo() {
     (userRole === "seller" && !hasShop && !isEditing)
   ) {
     return (
-      <Container className="seller-page-content">
-        <Row className="justify-content-center">
-          <Col md={10} lg={8}>
-            {userRole === "customer" && (
-              <Alert variant="info" className="mb-4 text-center shadow-sm">
-                <InfoCircleFill size={20} className="me-2" />
-                Anda perlu mendaftar sebagai penjual dan membuat toko terlebih
-                dahulu.
-              </Alert>
-            )}
-            {userRole === "seller" && !hasShop && (
-              <Alert variant="warning" className="mb-4 text-center shadow-sm">
-                <InfoCircleFill size={20} className="me-2" />
-                Data toko tidak ditemukan. Silakan buat toko Anda.
-              </Alert>
-            )}
-            <div className="seller-form">
-              <CreateSellerForm onShopCreated={handleShopCreated} />
-            </div>
-          </Col>
-        </Row>
-      </Container>
+      <SellerEmptyState
+        userRole={userRole}
+        handleShopCreated={handleShopCreated}
+        loadInitialData={loadInitialData}
+      />
     );
   }
 

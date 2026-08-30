@@ -14,7 +14,7 @@ import {
   PlusCircleFill,
   ExclamationTriangleFill,
 } from "react-bootstrap-icons";
-import CreateSellerForm from "../../components/Seller/CreateSellerForm";
+import SellerEmptyState from "../../components/Seller/SellerEmptyState";
 import ProductListItem from "../../components/Seller/ProductListItem";
 import ProductForm from "../../components/Seller/ProductForm";
 import {
@@ -185,24 +185,11 @@ function SellerProductManagement() {
 
   if (userRole !== "seller" || !hasShop) {
     return (
-      <Container className="py-4">
-        <Alert variant="warning" className="mt-3 shadow-sm">
-          <InfoCircleFill className="me-2" />
-          Anda perlu memiliki toko untuk mengelola produk.
-        </Alert>
-        {(userRole === "customer" || (userRole === "seller" && !hasShop)) && (
-          <Row className="justify-content-center mt-4">
-            <Col md={10} lg={8}>
-              <CreateSellerForm
-                onShopCreated={() => {
-                  if (handleShopCreated) handleShopCreated();
-                  if (loadSellerPageData) loadSellerPageData();
-                }}
-              />
-            </Col>
-          </Row>
-        )}
-      </Container>
+      <SellerEmptyState
+        userRole={userRole}
+        handleShopCreated={handleShopCreated}
+        loadInitialData={loadSellerPageData}
+      />
     );
   }
 
