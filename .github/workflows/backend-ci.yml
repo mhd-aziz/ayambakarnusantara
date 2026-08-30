@@ -51,7 +51,7 @@ jobs:
           echo "All source files pass syntax check"
 
       - name: Run unit tests (no DB)
-        run: npx vitest run tests/security-fixes.test.js tests/new-fixes.test.js tests/qa-audit-fix-2026-08-25.test.js --reporter=verbose
+        run: npx vitest run --reporter=verbose --exclude tests/integration.test.js
         env:
           NODE_ENV: test
           PORT: "5000"
@@ -117,7 +117,7 @@ jobs:
         run: npm ci
 
       - name: Run integration tests
-        run: npx vitest run tests/api.integration.test.js --reporter=verbose
+        run: npx vitest run tests/integration.test.js --reporter=verbose
         timeout-minutes: 10
 
   # 3. Docker Build Validation
