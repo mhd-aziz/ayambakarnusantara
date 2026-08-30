@@ -39,6 +39,8 @@ create table if not exists public.shops (
   updated_at timestamptz not null default now()
 );
 create index if not exists shops_user_id_idx on public.shops(user_id);
+-- 1 akun 1 toko (cegah N toko via SQL langsung; aplikasi sudah 1:1 via profiles.shop_id)
+create unique index if not exists shops_user_id_unique on public.shops(user_id);
 
 -- FK sirkular: profiles.shop_id -> shops.id (diisi saat user buka toko)
 alter table public.profiles
@@ -92,6 +94,9 @@ create table if not exists public.orders (
   payment_details jsonb, -- {snapToken?, redirectUrl?, status?, paidAt?}
   notes text,
   shop_ids uuid[] not null default '{}', -- semua toko yang terlibat (multi-shop)
+  refunded_at timestamptz,
+  refund_reason text,
+  refund_amount numeric(12,2),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -124,7 +129,7 @@ create index if not exists ratings_shop_id_idx on public.ratings(shop_id);
 create table if not exists public.conversations (
   id text primary key,
   participant_uids uuid[] not null,
-  participant_info jsonb not null default '[]'::jsonb, -- [{uid, displayName, photoURL, role}]
+  participant_info jsonb not null default '{}'::jsonb, -- {uid: {displayName, photoURL}} (object keyed by UID, sesuai chatController)
   last_message jsonb, -- {text, senderUID, timestamp, type}
   unread_counts jsonb not null default '{}'::jsonb, -- {uid: jumlahBelumDibaca}
   created_at timestamptz not null default now(),
@@ -289,6 +294,8 @@ create policy "products_insert_owner" on public.products for insert
 create policy "products_update_owner" on public.products for update
   using (exists (
     select 1 from public.shops where shops.id = shop_id and shops.user_id = auth.uid()
+  )) with check (exists (
+    select 1 from public.shops where shops.id = shop_id and shops.user_id = auth.uid()
   ));
 create policy "products_delete_owner" on public.products for delete
   using (exists (
@@ -368,3 +375,59 @@ create policy "transactions_select_own" on public.transactions for select
       select user_id from public.shops where shops.id = any(orders.shop_ids)
     ))
   ));
+
+-- ----------------------------------------------------------------------------
+-- 13. PAYMENT_STATUS_HISTORY — audit trail status pembayaran (merge dari
+--     migration 20260823_payment_audit_refund.sql agar fresh DB lengkap)
+-- ----------------------------------------------------------------------------
+create table if not exists public.payment_status_history (
+  id uuid primary key default gen_random_uuid(),
+  order_id uuid not null references public.orders(id) on delete cascade,
+  old_status text,
+  new_status text not null,
+  source text not null,
+  details jsonb,
+  created_at timestamptz not null default now()
+);
+create index if not exists payment_status_history_order_id_idx
+  on public.payment_status_history(order_id);
+create index if not exists payment_status_history_created_at_idx
+  on public.payment_status_history(created_at);
+
+create or replace function public.log_payment_status_change(
+  p_order_id uuid,
+  p_old_status text,
+  p_new_status text,
+  p_source text,
+  p_details jsonb
+) returns void language plpgsql as $$
+begin
+  insert into public.payment_status_history (order_id, old_status, new_status, source, details)
+  values (p_order_id, p_old_status, p_new_status, p_source, p_details);
+end $$;
+
+alter table public.payment_status_history enable row level security;
+
+drop policy if exists "payment_status_history_select_own" on public.payment_status_history;
+create policy "payment_status_history_select_own"
+  on public.payment_status_history for select
+  using (
+    exists (
+      select 1 from public.orders o
+      where o.id = payment_status_history.order_id
+      and o.user_id = auth.uid()
+    )
+    or exists (
+      select 1 from public.orders o
+      where o.id = payment_status_history.order_id
+      and exists (
+        select 1 from public.shops s
+        where s.id = any(o.shop_ids) and s.user_id = auth.uid()
+      )
+    )
+  );
+
+drop policy if exists "payment_status_history_insert_service" on public.payment_status_history;
+create policy "payment_status_history_insert_service"
+  on public.payment_status_history for insert
+  with check (true);

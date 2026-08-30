@@ -43,6 +43,7 @@ end $$;
 -- 4. RLS untuk payment_status_history
 alter table public.payment_status_history enable row level security;
 
+drop policy if exists "payment_status_history_select_own" on public.payment_status_history;
 create policy "payment_status_history_select_own"
   on public.payment_status_history for select
   using (
@@ -53,12 +54,10 @@ create policy "payment_status_history_select_own"
     )
     or exists (
       select 1 from public.orders o
-      join public.products p on p.id = any(
-        select jsonb_array_elements(o.items)->>'productId' 
-      )::uuid
       where o.id = payment_status_history.order_id
-      and p.shop_id in (
-        select shop_id from public.profiles where id = auth.uid()
+      and exists (
+        select 1 from public.shops s
+        where s.id = any(o.shop_ids) and s.user_id = auth.uid()
       )
     )
   );

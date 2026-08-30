@@ -117,8 +117,10 @@ begin
 end $$;
 
 -- ----------------------------------------------------------------------------
--- CANCEL_ORDER (atomik) — pengganti batch Firestore di cancelOrder.
--- Set status CANCELLED + paymentDetails.status cancelled_by_user + restore stok.
+-- CANCEL_ORDER (atomik + idempoten + FOR UPDATE) — pengganti batch Firestore
+-- di cancelOrder. Fix race double-restore (2026-08-23): kunci baris produk
+-- FOR UPDATE + idempotensi jika sudah CANCELLED. Disinkronkan dengan
+-- migrations/20260823_cancel_order_race_fix.sql agar fresh DB aman.
 -- ----------------------------------------------------------------------------
 create or replace function public.cancel_order(
   p_order_id uuid,
@@ -139,22 +141,31 @@ begin
     raise exception 'Anda tidak diizinkan untuk membatalkan pesanan ini.';
   end if;
 
+  -- Idempotensi: bila sudah CANCELLED, jangan restore stok lagi.
+  if v_order.order_status = 'CANCELLED' then
+    return v_order;
+  end if;
+
   if v_order.order_status not in ('AWAITING_PAYMENT', 'PENDING_CONFIRMATION') then
     raise exception 'Pesanan dengan status % tidak dapat dibatalkan oleh Anda saat ini.', v_order.order_status;
   end if;
+
+  -- Kunci baris produk FOR UPDATE agar dua cancel paralel terserialisasi
+  for v_item in select * from jsonb_array_elements(v_order.items) loop
+    perform 1 from public.products
+    where id = (v_item->>'productId')::uuid
+    for update;
+
+    update public.products
+    set stock = stock + (v_item->>'quantity')::int
+    where id = (v_item->>'productId')::uuid;
+  end loop;
 
   update public.orders
   set order_status = 'CANCELLED',
       payment_details = jsonb_set(coalesce(payment_details, '{}'::jsonb), '{status}', '"cancelled_by_user"'),
       updated_at = now()
   where id = p_order_id;
-
-  -- Restore stok
-  for v_item in select * from jsonb_array_elements(v_order.items) loop
-    update public.products
-    set stock = stock + (v_item->>'quantity')::int
-    where id = (v_item->>'productId')::uuid;
-  end loop;
 
   select * into v_order from public.orders where id = p_order_id;
   return v_order;
