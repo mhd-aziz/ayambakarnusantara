@@ -8,12 +8,12 @@ const { createRateLimiter } = require("../middlewares/rateLimiter");
 // Lewati saat testing (NODE_ENV === "test") agar tidak memicu 429 pada integration test suite.
 const rawLoginLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 15,
   message: "Terlalu banyak percobaan login. Silakan coba lagi 15 menit lagi.",
 });
 const rawSensitiveActionLimiter = createRateLimiter({
   windowMs: 15 * 60 * 1000,
-  max: 5,
+  max: 15,
   message: "Terlalu banyak permintaan. Silakan coba lagi nanti.",
 });
 

@@ -30,6 +30,16 @@ async function mapOrdersAsync(rows) {
   return Promise.all(rows.map(mapOrderAsync));
 }
 
+async function getOrderRow(orderId) {
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
 async function getShopOwnerUid(shopId) {
   if (!shopId) return null;
   const { data } = await supabaseAdmin

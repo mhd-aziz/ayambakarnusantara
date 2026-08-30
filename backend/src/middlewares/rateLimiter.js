@@ -5,7 +5,6 @@
 
 const { handleError } = require("../utils/responseHandler");
 
-const buckets = new Map(); // key: IP -> { start: timestamp, count: number }
 const DEFAULT_WINDOW_MS = 10 * 60 * 1000; // 10 menit
 const DEFAULT_MAX = 5;
 
@@ -14,6 +13,18 @@ function createRateLimiter({
   max = DEFAULT_MAX,
   message = "Terlalu banyak permintaan. Silakan coba lagi beberapa saat lagi.",
 } = {}) {
+  // Bucket per-instance (per-route) — jangan global agar /auth tidak memakan kuota /feedback
+  const buckets = new Map(); // key: IP -> { start: timestamp, count: number }
+  const cleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [ip, entry] of buckets) {
+      if (now - entry.start >= windowMs) {
+        buckets.delete(ip);
+      }
+    }
+  }, windowMs);
+  if (cleanupTimer.unref) cleanupTimer.unref();
+
   return function rateLimitMiddleware(req, res, next) {
     const ip =
       req.ip ||
@@ -38,19 +49,6 @@ function createRateLimiter({
     }
     return next();
   };
-}
-
-// Bersihkan entri yang sudah lewat window secara berkala
-const cleanupTimer = setInterval(() => {
-  const now = Date.now();
-  for (const [ip, entry] of buckets) {
-    if (now - entry.start >= DEFAULT_WINDOW_MS) {
-      buckets.delete(ip);
-    }
-  }
-}, DEFAULT_WINDOW_MS);
-if (cleanupTimer.unref) {
-  cleanupTimer.unref();
 }
 
 module.exports = { createRateLimiter };
